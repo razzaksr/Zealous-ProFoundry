@@ -1,0 +1,144 @@
+// REST Client Requests
+### Create Test
+POST http://localhost:8000/api/test/create
+Content-Type: application/json
+
+{
+    "test_name": "Sample Test",
+    "test_language": "Css",
+    "test_total_score": 100,
+    "test_mcq_id": [],
+    "test_coding_id": []
+}
+
+### Get All Tests
+GET http://localhost:8000/api/test/all
+
+### Get Test by ID
+GET http://localhost:8000/api/test/get
+Content-Type: application/json
+
+{
+    "test_id": "849bec16-8463-4ceb-8218-48afa9c65883"
+}
+
+### Update Test (Add MCQ & Coding Test ID)
+PUT http://localhost:8000/api/test/update
+Content-Type: application/json
+
+{
+    "test_id": "3d48305d-303d-4477-aa71-8833af28abc1",
+    "mcq_id": ["mcq_id-2","mcq_id-5"],
+    "coding_test_id": ["coding_id-5","coding_id-6"]
+}
+
+### Delete Test
+DELETE http://localhost:8000/api/test/delete
+Content-Type: application/json
+
+{
+    "test_id": "e2231823-e386-4e63-adf6-52795b74d382"
+}
+
+#############################################################################################################
+
+### Create MCQ
+POST http://localhost:8000/api/mcq/add_mcq
+Content-Type: application/json
+
+{
+    "mcq_question": "What is JavaScript?",
+    "mcq_options": ["Language", "Library", "Framework", "Database"],
+    "mcq_answer": "Language",
+    "mcq_tag": ["Programming", "Frontend"]
+}
+
+### Get All MCQs
+GET http://localhost:8000/api/mcq/get_all_mcqs
+
+
+### Update MCQ
+PUT http://localhost:8000/api/mcq/update_mcq
+Content-Type: application/json
+
+{
+    "test_mcq_id": "8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0",
+    "mcq_question": "What is JavaScript?",
+    "mcq_options": ["Option A", "Option B", "Option C", "Option D"],
+    "mcq_answer": "Option A",
+    "mcq_tag": ["Updated"]
+}
+
+### Delete MCQ
+DELETE http://localhost:8000/api/mcq/remove_mcq
+Content-Type: application/json
+
+{
+"test_mcq_id": "8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0"
+}
+
+##############################TestCase######################################
+///Create a Test Id and Post the testCase
+POST http://localhost:8000/api/testcase/create_testCase
+Content-Type: application/json
+
+{
+  "testcase_input": ["input1", "input2"],
+  "testcase_output": ["output1", "output2"],
+  "testcase_tags": ["tag1", "tag2"]
+}
+###
+//Read all the testCase 
+GET http://localhost:8000/api/testcase/get_all_testCases
+
+###
+GET http://localhost:8000/api/testcase/get_testCase_id/03c83529-656e-4bb1-b600-0ca2e8a536b5
+
+###
+//update the TestCase Using 
+PUT http://localhost:8000/api/testcase/update_testCase/
+Content-Type: application/json
+
+{
+    "testcase_id": "03c83529-656e-4bb1-b600-0ca2e8a536b5",
+    "testcase_input": "5 3",
+    "testcase_output": "8",
+    "testcase_tags": ["math", "addition"]
+}
+
+####
+//Delete the TestCase 
+DELETE http://localhost:8000/api/testcase/delete_testCase/674e03da-f9a5-4b1a-8a5e-3a5ff52c37ab
+
+
+########################################Coding##########################################
+//Create a Coding data
+POST http://localhost:8000/api/coding/code
+Content-Type: application/json
+
+{
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+###
+//Get All Codes
+GET http://localhost:8000/api/coding/get_allCodes
+
+
+###
+///Update the Code
+PUT http://localhost:8000/api/coding/update_code
+Content-Type: application/json
+
+{
+  "code_id": "f3f7b614-c4f9-423d-8562-c7ad6d58b6d4",
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+###
+//Delete a code
+DELETE http://localhost:8000/api/coding/delete_code/47f8f519-d7ca-4bbc-ac06-191b5611e445
