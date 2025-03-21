@@ -49,12 +49,30 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete Organization
+
 router.delete("/:id", async (req, res) => {
   try {
-    await Organization.findOneAndDelete({ org_id: req.params.id });
-    res.json({ message: "Deleted Successfully" });
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Organization ID is required" });
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+      return res.status(400).json({ error: "Invalid Organization ID format" });
+    }
+
+    const organization = await Organization.findOne({ org_id: id });
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+    
+    await Organization.findOneAndDelete({ org_id: id });
+
+    res.status(200).json({ message: "Deleted Successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error deleting organization:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

@@ -1,32 +1,36 @@
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const expertSchema = new mongoose.Schema({
-    poc_id: {
+    mod_expert_id: { 
         type: String,
-        default: uuidv4,  // Auto-generate UUID for poc_id
+        default: uuidv4, 
         unique: true
     },
+    poc_id: {
+        type: [String], 
+        default: []
+    },
     mod_id: {
-        type: String
+        type: [String],
+        default: []
     },
     mod_expert_name: {
         type: String,
         required: true
     },
-    mod_expert_mobile: {
+    mod_expert_mobile: {    
         type: String,
-        required: true
+        required: true,
     },
     mod_expert_role: {
         type: String,
         required: true
     },
     mod_expert_profile: {
-        type: String, // URL string
-        required: true
+        type: String,
+        required: true,
     }
 });
 
-const Expert = mongoose.model('Expert', expertSchema);
-module.exports = Expert;
+module.exports = mongoose.model('Expert', expertSchema);

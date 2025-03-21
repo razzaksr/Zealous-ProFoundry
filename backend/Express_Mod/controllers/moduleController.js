@@ -3,7 +3,7 @@ const router = express.Router();
 const Module = require("../models/Module");
 
 // Create Module
-router.post("/", async (req, res) => {
+router.post("/add_module", async (req, res) => {
   try {
     const module = new Module(req.body);
     await module.save();
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
 });
 
 // Get All Modules
-router.get("/", async (req, res) => {
+router.get("/get_all_module", async (req, res) => {
   try {
     const modules = await Module.find();
     res.json(modules);
@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
 });
 
 // Get Module by ID
-router.get("/:id", async (req, res) => {
+router.get("/get_module_by_id/:id", async (req, res) => {
   try {
     const module = await Module.findOne({ mod_id: req.params.id });
     if (!module) return res.status(404).json({ message: "Not Found" });
@@ -35,7 +35,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update Module
-router.put("/:id", async (req, res) => {
+router.put("/update_module/:id", async (req, res) => {
   try {
     const module = await Module.findOneAndUpdate(
       { mod_id: req.params.id },
@@ -49,10 +49,15 @@ router.put("/:id", async (req, res) => {
 });
 
 // Delete Module
-router.delete("/:id", async (req, res) => {
+router.delete("/delete_module/:id", async (req, res) => {
   try {
-    await Module.findOneAndDelete({ mod_id: req.params.id });
-    res.json({ message: "Deleted Successfully" });
+    const module = await Module.findOneAndDelete({ mod_id: req.params.id });
+
+    if (!module) {
+      return res.status(404).json({ message: "Module not found for deletion." });
+    }
+
+    res.json({ message: "Module deleted successfully." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

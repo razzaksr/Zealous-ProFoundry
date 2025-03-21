@@ -1,0 +1,96 @@
+### Create Organization
+POST http://localhost:5000/organization
+Content-Type: application/json
+
+{
+  "org_name": "Muthayammal",
+  "org_address": "Rasipuram",
+  "org_email": "mec@gmail.com",
+  "org_contact": "9876543210",
+  "org_associated_date": "2025-03-16"
+}
+
+### Get All Organizations
+GET http://localhost:5000/organization
+
+### Get Organization by ID
+GET http://localhost:5000/organization/8b44b5af-2a4a-4eff-a2b8-e3a3730dd45d
+
+### Update Organization
+PUT http://localhost:5000/organization/72ca3922-dea0-4e31-8c1d-406ae2bebd1f
+Content-Type: application/json
+
+{
+  "org_name": " mec",
+  "org_address": "Rasipuram",
+  "org_email": "mec1@gmail.com",
+  "org_contact": "9876543211",
+  "org_associated_date": "2025-03-16"
+}
+
+### Delete Organization
+DELETE http://localhost:5000/organization/8a0ba8d7-375d-4182-a5ef-ca607014778a
+
+### User Login
+POST http://localhost:5000/user/login
+Content-Type: application/json
+
+{
+  "email": "dharun@gmail.com",
+  "password": "securepassword"
+}
+
+### Create User
+POST http://localhost:5000/user/add_user
+Content-Type: application/json
+
+{
+  "full_name": "John Doe",
+  "department": "Computer Science",
+  "college": "XYZ University",
+  "rollno": "CS2025001",
+  "email": "johndoe@example.com",
+  "password": "securepassword",
+  "status": "active",
+  "user_last_login": "2025-03-16T10:00:00Z"
+}
+
+### Get All Users
+GET http://localhost:5000/user/read_all_users
+
+### Get User by ID
+POST http://localhost:5000/user/get_user_by_id
+Content-Type: application/json
+
+{
+  "user_id": "a184c2d5-a52d-4f03-8bbb-0f1d8221bc13"
+}
+
+### Update User
+PUT http://localhost:5000/user/update_user
+Content-Type: application/json
+
+{
+  "user_id": "a184c2d5-a52d-4f03-8bbb-0f1d8221bc13",
+  "full_name": "Updated John Doe",
+  "email": "updated@example.com",
+  "password": "newpassword123"
+}
+
+### Update User Last Login
+PUT http://localhost:5000/user/update_last_login
+Content-Type: application/json
+
+{
+  "user_id": "a184c2d5-a52d-4f03-8bbb-0f1d8221bc13",
+  "user_last_login": "2025-03-16T12:30:00Z"
+}
+
+### Delete User
+DELETE http://localhost:5000/user/delete_user
+Content-Type: application/json
+
+{
+  "user_id": "a184c2d5-a52d-4f03-8bbb-0f1d8221bc13"
+}
+

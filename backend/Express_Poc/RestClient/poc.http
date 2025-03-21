@@ -1,0 +1,39 @@
+### Create a new POC
+POST http://localhost:6000/poc/add_poc
+Content-Type: application/json
+
+{
+    "mod_poc_name": "John Doe",
+    "mod_poc_role": "Admin",
+    "mod_poc_email": "john.doe@example.com",
+    "mod_poc_mobile": "9876543210"
+}
+
+### Get all POCs
+GET http://localhost:6000/poc/read_all_poc
+
+### Get POC by mod_poc_id
+GET http://localhost:6000/poc/get_poc_by_poc_id/d4977291-88f9-4e07-a07c-713f652a2e79
+
+### Update POC details
+PUT http://localhost:6000/poc/update_poc/d4977291-88f9-4e07-a07c-713f652a2e79
+Content-Type: application/json
+
+{
+    "mod_poc_name": "dharun",
+    "mod_poc_role": "TA",
+    "mod_poc_email": "dharun@gmail.com",
+    "mod_poc_mobile": "9998887776"
+}
+
+### Update only mod_tests and mod_users
+PUT http://localhost:6000/poc/update_mod_field/d4977291-88f9-4e07-a07c-713f652a2e79
+Content-Type: application/json
+
+{
+    "mod_tests": ["test1", "test2"],
+    "mod_users": ["user1"]
+}
+
+### Delete POC by mod_poc_id
+DELETE http://localhost:6000/poc/delete_poc/d4977291-88f9-4e07-a07c-713f652a2e79

@@ -4,8 +4,8 @@ const mongoose = require("./config/db");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
-const modules = require("./controllers/moduleController");
-const organization = require("./controllers/organizationController");
+const poc = require("./controllers/pocController");
+const expert = require("./controllers/expertController");
 
 
 const app = express();
@@ -17,8 +17,8 @@ app.use(bodyParser.json());
 
 // Called Services
 
-app.use("/modules", modules);
-app.use("/organization", organization);
+app.use("/poc", poc);
+app.use("/expert", expert);
 
 
 app.listen(PORT, () => {
