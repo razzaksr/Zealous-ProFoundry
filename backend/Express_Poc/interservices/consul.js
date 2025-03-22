@@ -1,7 +1,8 @@
 const Consul = require('consul');
 const consul = new Consul();
 
-const serviceKey = "test_details-service"
+const serviceKey = "Express_Poc"
+
 
 
 // register expert service in consul discovery server
@@ -9,7 +10,7 @@ consul.agent.service.register({
     id:serviceKey,
     name:serviceKey,
     address:"localhost",
-    port:8000
+    port:6000
 },
 (err)=>{
     if(err)
@@ -19,7 +20,7 @@ consul.agent.service.register({
 // Gracefully deregister service when shutting down
 process.on('SIGINT', async () => {
     try {
-        await consul.agent.service.deregister('test_details-service');
+        await consul.agent.service.deregister('Express_Poc');
         console.log('Beneficiary Service deregistered from Consul');
         process.exit();
     } catch (err) {

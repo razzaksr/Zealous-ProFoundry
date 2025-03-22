@@ -3,9 +3,9 @@ POST http://localhost:6000/poc/add_poc
 Content-Type: application/json
 
 {
-    "mod_poc_name": "John Doe",
-    "mod_poc_role": "Admin",
-    "mod_poc_email": "john.doe@example.com",
+    "mod_poc_name": "Dharun",
+    "mod_poc_role": "TA",
+    "mod_poc_email": "dharun@gmail.com",
     "mod_poc_mobile": "9876543210"
 }
 

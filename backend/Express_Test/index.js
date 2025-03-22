@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const connectDB = require("./config/db");
+const mongoose = require("./config/db");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const { exec } = require("child_process");
@@ -9,7 +9,7 @@ const MCQ = require("./controllers/mcqController");
 const Test = require("./controllers/testController");
 const TestCase = require("./controllers/testcaseController");
 const Coding = require("./controllers/codeController");
-const consul = require("./middleware/consul_service");
+const consul = require("./interservices/consul");
 
 const app = express();
 const port = process.env.PORT;
@@ -38,8 +38,6 @@ exec("consul members", (err, stdout, stderr) => {
 app.use(cors());
 app.use(bodyParser.json());
 
-// Connect to MongoDB
-connectDB();
 
 // API Routes
 app.use("/mcq", MCQ);

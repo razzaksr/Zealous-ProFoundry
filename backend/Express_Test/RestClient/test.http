@@ -26,7 +26,7 @@ PUT http://localhost:8000/test/update
 Content-Type: application/json
 
 {
-    "test_id": "3d48305d-303d-4477-aa71-8833af28abc1",
+    "test_id": "4466d187-682c-4727-8f45-c405763dc0d0",
     "mcq_id": ["mcq_id-2","mcq_id-5"],
     "coding_test_id": ["coding_id-5","coding_id-6"]
 }
