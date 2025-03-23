@@ -1,8 +1,8 @@
-const express = require('express');
-const User = require('../models/User');
+const express = require("express");
 const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+
 const router = express.Router();
-require('dotenv').config(); 
 
 // Create a new User
 router.post("/add_user", async (req, res) => {
@@ -32,7 +32,7 @@ router.post("/add_user", async (req, res) => {
       email,
       password: hashedPassword, // Store the hashed password
       status: status || "active",
-      user_last_login: user_last_login || new Date().toISOString()
+      user_last_login: user_last_login || new Date().toISOString(),
     });
 
     const user = await newUser.save();
@@ -43,89 +43,93 @@ router.post("/add_user", async (req, res) => {
 });
 
 // Get all Users
-router.get('/read_all_users', async (req, res) => {
-    try {
-        const users = await User.find();
-        res.send(users);
-    } catch (error) {
-        res.status(500).send(error);
-    }
+router.get("/read_all_users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ msg: "Server Error", error });
+  }
 });
 
 // Get User by user_id
-router.post('/get_user_by_id', async (req, res) => {
-    try {
-        const user = await User.findOne({ user_id: req.body.user_id });
-        if (!user) return res.status(404).send({ message: 'User not found' });
-        res.send(user);
-    } catch (error) {
-        res.status(500).send(error);
-    }
+router.get("/get_user_by_id/:user_id", async (req, res) => {
+  try {
+    const user = await User.findOne({ user_id: req.params.user_id });
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ msg: "Server Error", error });
+  }
 });
 
 // Update User details by user_id
-router.put('/update_user', async (req, res) => {
+router.put("/update_user/:user_id", async (req, res) => {
   try {
-      const { user_id, password, ...updateFields } = req.body;
+    const { password, ...updateFields } = req.body;
 
-      // Check if the user exists
-      const user = await User.findOne({ user_id });
-      if (!user) return res.status(404).send({ message: 'User not found' });
+    // Check if the user exists
+    const user = await User.findOne({ user_id: req.params.user_id });
+    if (!user) return res.status(404).json({ msg: "User not found" });
 
-      // If password is provided, hash it before updating
-      if (password) {
-          const salt = await bcrypt.genSalt(10);
-          updateFields.password = await bcrypt.hash(password, salt);
-      }
+    // If password is provided, hash it before updating
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateFields.password = await bcrypt.hash(password, salt);
+    }
 
-      // Perform the update
-      const updatedUser = await User.findOneAndUpdate(
-          { user_id }, // Find user by ID
-          updateFields, // Update fields (including hashed password if provided)
-          { new: true, runValidators: true }
-      );
+    // Perform the update
+    const updatedUser = await User.findOneAndUpdate(
+      { user_id: req.params.user_id },
+      updateFields,
+      { new: true, runValidators: true }
+    );
 
-      res.send(updatedUser);
+    res.json(updatedUser);
   } catch (error) {
-      res.status(400).send(error);
+    res.status(500).json({ msg: "Server Error", error });
   }
 });
 
 // Update user_last_login using user_id
-router.put('/update_last_login', async (req, res) => {
+router.put("/update_last_login/:user_id", async (req, res) => {
   try {
-      const { user_id, user_last_login } = req.body;
+    const { user_last_login } = req.body;
 
-      if (!user_id || !user_last_login) {
-          return res.status(400).json({ msg: "User ID and last login timestamp are required" });
-      }
+    if (!user_last_login) {
+      return res.status(400).json({ msg: "Last login timestamp is required" });
+    }
 
-      // Update the user_last_login field
-      const updatedUser = await User.findOneAndUpdate(
-          { user_id },  // Find user by ID
-          { user_last_login }, // Update user_last_login with provided value
-          { new: true, runValidators: true } // Return updated user and run validation
-      );
+    // Update the user_last_login field
+    const updatedUser = await User.findOneAndUpdate(
+      { user_id: req.params.user_id },
+      { user_last_login },
+      { new: true, runValidators: true }
+    );
 
-      if (!updatedUser) {
-          return res.status(404).json({ msg: "User not found" });
-      }
+    if (!updatedUser) {
+      return res.status(404).json({ msg: "User not found" });
+    }
 
-      res.status(200).json({ msg: "Last login updated successfully", user: updatedUser });
+    res.json({ msg: "Last login updated successfully", user: updatedUser });
   } catch (error) {
-      res.status(500).json({ msg: "Server Error", error });
+    res.status(500).json({ msg: "Server Error", error });
   }
 });
 
 // Delete User by user_id
-router.delete('/delete_user', async (req, res) => {
-    try {
-        const deletedUser = await User.findOneAndDelete({ user_id: req.body.user_id });
-        if (!deletedUser) return res.status(404).send({ message: 'User not found' });
-        res.send(deletedUser);
-    } catch (error) {
-        res.status(500).send(error);
-    }
+router.delete("/delete_user/:user_id", async (req, res) => {
+  try {
+    const deletedUser = await User.findOneAndDelete({ user_id: req.params.user_id });
+
+    if (!deletedUser) return res.status(404).json({ msg: "User not found" });
+
+    res.json({ msg: "User deleted successfully", user: deletedUser });
+  } catch (error) {
+    res.status(500).json({ msg: "Server Error", error });
+  }
 });
 
 module.exports = router;

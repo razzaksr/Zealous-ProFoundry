@@ -3,17 +3,17 @@ POST http://localhost:6000/poc/add_poc
 Content-Type: application/json
 
 {
-    "mod_poc_name": "Dharun",
-    "mod_poc_role": "TA",
-    "mod_poc_email": "dharun@gmail.com",
-    "mod_poc_mobile": "9876543210"
+    "mod_poc_name": "Vetro",
+    "mod_poc_role": "ap",
+    "mod_poc_email": "vetri@gmail.com",
+    "mod_poc_mobile": "9871543410"
 }
 
 ### Get all POCs
 GET http://localhost:6000/poc/read_all_poc
 
 ### Get POC by mod_poc_id
-GET http://localhost:6000/poc/get_poc_by_poc_id/d4977291-88f9-4e07-a07c-713f652a2e79
+GET http://localhost:6000/poc/get_poc_by_poc_id/308592f6-83fb-498a-83ad-5e952d5f8249
 
 ### Update POC details
 PUT http://localhost:6000/poc/update_poc/d4977291-88f9-4e07-a07c-713f652a2e79
@@ -27,12 +27,12 @@ Content-Type: application/json
 }
 
 ### Update only mod_tests and mod_users
-PUT http://localhost:6000/poc/update_mod_field/d4977291-88f9-4e07-a07c-713f652a2e79
+PUT http://localhost:6000/poc/update_mod_field/308592f6-83fb-498a-83ad-5e952d5f8249
 Content-Type: application/json
 
 {
-    "mod_tests": ["test1", "test2"],
-    "mod_users": ["user1"]
+    "mod_tests": ["4466d187-682c-4727-8f45-c405763dc0d0"],
+    "mod_users": ["717150b2-2a19-45e8-9c24-69d93b4751c2"]
 }
 
 ### Delete POC by mod_poc_id

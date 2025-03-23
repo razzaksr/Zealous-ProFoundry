@@ -14,12 +14,7 @@ Content-Type: application/json
 GET http://localhost:8000/test/all
 
 ### Get Test by ID
-GET http://localhost:8000/test/get
-Content-Type: application/json
-
-{
-    "test_id": "849bec16-8463-4ceb-8218-48afa9c65883"
-}
+GET http://localhost:8000/test/get_by_test_id/4466d187-682c-4727-8f45-c405763dc0d0
 
 ### Update Test (Add MCQ & Coding Test ID)
 PUT http://localhost:8000/test/update

@@ -23,9 +23,9 @@ router.get('/all', async (req, res) => {
 });
 
 // Read Single Test by test_id
-router.get('/get', async (req, res) => {
+router.get('/get_by_test_id/:test_id', async (req, res) => {
     try {
-        const { test_id } = req.body;
+        const { test_id } = req.params; // Retrieve test_id from the URL parameters
         const test = await Test.findOne({ test_id }).populate('test_mcq_id');
         if (!test) return res.status(404).json({ message: 'Test not found' });
         res.status(200).json(test);
@@ -33,6 +33,7 @@ router.get('/get', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // Update Test (Special Update: Add mcq_id and coding_test_id)
 router.put('/update', async (req, res) => {
