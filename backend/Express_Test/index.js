@@ -10,6 +10,7 @@ const Test = require("./controllers/testController");
 const TestCase = require("./controllers/testcaseController");
 const Coding = require("./controllers/codeController");
 const consul = require("./middleware/consul_service");
+const interService = require("./interServices/linked_services");
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -46,6 +47,7 @@ app.use("/api/mcq", MCQ);
 app.use("/api/test", Test);
 app.use("/api/testcase", TestCase);
 app.use("/api/coding", Coding);
+app.use('/api/interService', interService);
 
 // ✅ Start Server
 app.listen(port, () => {

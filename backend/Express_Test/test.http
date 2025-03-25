@@ -1,12 +1,11 @@
-// REST Client Requests
 ### Create Test
 POST http://localhost:8000/api/test/create
 Content-Type: application/json
 
 {
-    "test_name": "Sample Test",
-    "test_language": "Css",
-    "test_total_score": 100,
+    "test_name": "Docker and Kubernetes ",
+    "test_language": "MERN",
+    "test_total_score": 25,
     "test_mcq_id": [],
     "test_coding_id": []
 }
@@ -15,20 +14,15 @@ Content-Type: application/json
 GET http://localhost:8000/api/test/all
 
 ### Get Test by ID
-GET http://localhost:8000/api/test/get
-Content-Type: application/json
-
-{
-    "test_id": "849bec16-8463-4ceb-8218-48afa9c65883"
-}
+GET http://localhost:8000/api/test/get_by_test_id/7cfad215-cc75-4fe6-9b4b-166a71e7c745
 
 ### Update Test (Add MCQ & Coding Test ID)
 PUT http://localhost:8000/api/test/update
 Content-Type: application/json
 
 {
-    "test_id": "3d48305d-303d-4477-aa71-8833af28abc1",
-    "mcq_id": ["mcq_id-2","mcq_id-5"],
+    "test_id": "b1625a48-fa58-48b9-916e-aa7ecbdf8a15",
+    "mcq_id": ["1742897087803"],
     "coding_test_id": ["coding_id-5","coding_id-6"]
 }
 
@@ -37,32 +31,199 @@ DELETE http://localhost:8000/api/test/delete
 Content-Type: application/json
 
 {
-    "test_id": "e2231823-e386-4e63-adf6-52795b74d382"
+    "test_id": "7cfad215-cc75-4fe6-9b4b-166a71e7c745"
 }
 
-#############################################################################################################
 
-### Create MCQ
+#####################################MCQ Test#####################################
+###Mcq with question Id
 POST http://localhost:8000/api/mcq/add_mcq
 Content-Type: application/json
 
 {
-    "mcq_question": "What is JavaScript?",
-    "mcq_options": ["Language", "Library", "Framework", "Database"],
-    "mcq_answer": "Language",
-    "mcq_tag": ["Programming", "Frontend"]
+    "mcqs": [
+    {
+        "mcq_question": "What is Docker primarily used for?",
+        "mcq_options": ["Operating System Development", "Containerization", "Virtualization of Hardware", "Database Management"],
+        "mcq_answer": "Containerization",
+        "mcq_tag": ["Docker", "Basics"]
+    },
+    {
+        "mcq_question": "Which of the following is a key component of Docker?",
+        "mcq_options": ["Virtual Machine", "Image", "BIOS", "Kernel"],
+        "mcq_answer": "Image",
+        "mcq_tag": ["Docker", "Components"]
+    },
+    {
+        "mcq_question": "Which command is used to list all running Docker containers?",
+        "mcq_options": ["docker images", "docker ps", "docker list", "docker show"],
+        "mcq_answer": "docker ps",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "Which tool is required to enable Docker on Windows?",
+        "mcq_options": ["Windows Hypervisor Platform", "Docker Desktop", "Both A and B", "None of the above"],
+        "mcq_answer": "Both A and B",
+        "mcq_tag": ["Docker", "Windows"]
+    },
+    {
+        "mcq_question": "Which command is used to pull an image from DockerHub?",
+        "mcq_options": ["docker fetch", "docker pull", "docker get", "docker clone"],
+        "mcq_answer": "docker pull",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "Which of these is a backend framework mentioned in the workshop?",
+        "mcq_options": ["React", "Node.js", "Bootstrap", "JQuery"],
+        "mcq_answer": "Node.js",
+        "mcq_tag": ["Backend", "Frameworks"]
+    },
+    {
+        "mcq_question": "What is the default port used by MongoDB?",
+        "mcq_options": ["5432", "3306", "27017", "8080"],
+        "mcq_answer": "27017",
+        "mcq_tag": ["MongoDB", "Database"]
+    },
+    {
+        "mcq_question": "Which command is used to start a Docker container?",
+        "mcq_options": ["docker run", "docker start", "docker execute", "docker begin"],
+        "mcq_answer": "docker run",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "What is an instance of a Docker image called?",
+        "mcq_options": ["Container", "Virtual Machine", "Deployment", "Environment"],
+        "mcq_answer": "Container",
+        "mcq_tag": ["Docker", "Basics"]
+    },
+    {
+        "mcq_question": "Which database query is used to view all collections inside MongoDB?",
+        "mcq_options": ["show dbs", "show collections", "db.find()", "use db"],
+        "mcq_answer": "show collections",
+        "mcq_tag": ["MongoDB", "Commands"]
+    },
+    {
+        "mcq_question": "Which of the following is NOT a valid HTTP method?",
+        "mcq_options": ["GET", "POST", "UPDATE", "DELETE"],
+        "mcq_answer": "UPDATE",
+        "mcq_tag": ["Backend", "HTTP"]
+    },
+    {
+        "mcq_question": "Which command is used to remove a Docker container?",
+        "mcq_options": ["docker delete", "docker remove", "docker rm", "docker terminate"],
+        "mcq_answer": "docker rm",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "Which cloud platforms provide private Docker registries?",
+        "mcq_options": ["AWS", "Azure", "GCP", "All of the above"],
+        "mcq_answer": "All of the above",
+        "mcq_tag": ["Docker", "Cloud"]
+    },
+    {
+        "mcq_question": "Which command is used to build a Docker image?",
+        "mcq_options": ["docker build", "docker create", "docker compile", "docker make"],
+        "mcq_answer": "docker build",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "Which file is used to define multi-container Docker applications?",
+        "mcq_options": ["Dockerfile", "compose.yaml", "package.json", "config.xml"],
+        "mcq_answer": "compose.yaml",
+        "mcq_tag": ["Docker", "Compose"]
+    },
+    {
+        "mcq_question": "Which command is used to stop a running Docker container?",
+        "mcq_options": ["docker stop", "docker end", "docker pause", "docker shutdown"],
+        "mcq_answer": "docker stop",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "Which of these is NOT a NoSQL database?",
+        "mcq_options": ["MongoDB", "PostgreSQL", "Cassandra", "CouchDB"],
+        "mcq_answer": "PostgreSQL",
+        "mcq_tag": ["Databases", "NoSQL"]
+    },
+    {
+        "mcq_question": "What does the command `docker-compose up` do?",
+        "mcq_options": ["Runs a single container", "Builds and starts multiple containers", "Removes all containers", "Updates Docker"],
+        "mcq_answer": "Builds and starts multiple containers",
+        "mcq_tag": ["Docker", "Compose"]
+    },
+    {
+        "mcq_question": "Which of the following is NOT a valid Docker registry?",
+        "mcq_options": ["DockerHub", "AWS ECR", "Azure Container Registry", "GitHub"],
+        "mcq_answer": "GitHub",
+        "mcq_tag": ["Docker", "Registry"]
+    },
+    {
+        "mcq_question": "What is the command to remove a Docker image?",
+        "mcq_options": ["docker delete", "docker rmi", "docker remove", "docker purge"],
+        "mcq_answer": "docker rmi",
+        "mcq_tag": ["Docker", "Commands"]
+    },
+    {
+        "mcq_question": "Which command is used to check the logs of a Docker container?",
+        "mcq_options": ["docker logs", "docker inspect", "docker events", "docker console"],
+        "mcq_answer": "docker logs",
+        "mcq_tag": ["Docker", "Debugging"]
+    },
+    {
+        "mcq_question": "Which of the following is a feature required to enable Docker on Windows?",
+        "mcq_options": ["Windows Subsystem for Linux (WSL)", "Hyper-V", "Both A and B", "None of the above"],
+        "mcq_answer": "Both A and B",
+        "mcq_tag": ["Docker", "Windows"]
+    },
+    {
+        "mcq_question": "Which HTTP status code represents a successful request?",
+        "mcq_options": ["200", "404", "500", "403"],
+        "mcq_answer": "200",
+        "mcq_tag": ["Backend", "HTTP"]
+    },
+    {
+        "mcq_question": "Which of these tools is commonly used for Docker container management?",
+        "mcq_options": ["VS Code", "Docker CLI", "Jenkins", "Eclipse"],
+        "mcq_answer": "Docker CLI",
+        "mcq_tag": ["Docker", "Tools"]
+    },
+    {
+        "mcq_question": "Which command is used to execute a shell inside a running Docker container?",
+        "mcq_options": ["docker shell", "docker exec", "docker attach", "docker access"],
+        "mcq_answer": "docker exec",
+        "mcq_tag": ["Docker", "Commands"]
+    }
+]
+
 }
+
 
 ### Get All MCQs
 GET http://localhost:8000/api/mcq/get_all_mcqs
 
+
+### Get MCQ by ID
+GET http://localhost:8000/api/mcq/get_mcqs_by_test_id/1742885938638
+
+
+### Submit Answers
+POST http://localhost:8000/api/mcq/submit_answers
+Content-Type: application/json
+
+{
+    "test_mcq_id": "1742885938638",
+    "answers": [
+        { "mcq_id": "1", "answer": "Containerization" },
+        { "mcq_id": "2", "answer": "docker ps" }
+    ]
+}
 
 ### Update MCQ
 PUT http://localhost:8000/api/mcq/update_mcq
 Content-Type: application/json
 
 {
-    "test_mcq_id": "8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0",
+    "test_mcq_id": "7bfd6828-7e88-4578-82a3-453d530c0a95",
+    "mcq_id":1,
     "mcq_question": "What is JavaScript?",
     "mcq_options": ["Option A", "Option B", "Option C", "Option D"],
     "mcq_answer": "Option A",
@@ -74,8 +235,43 @@ DELETE http://localhost:8000/api/mcq/remove_mcq
 Content-Type: application/json
 
 {
-"test_mcq_id": "8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0"
+"test_mcq_id": "ed59a285-8848-40e7-b278-1133f1e0f7b6"
 }
+
+#####################################Coding Test#####################################
+### Create a Coding data
+POST http://localhost:8000/api/coding/code
+Content-Type: application/json
+
+{
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+### Get All Codes
+GET http://localhost:8000/api/coding/get_allCodes
+
+
+### Get Code by ID
+GET http://localhost:8000/api/coding/get_code/6117e878-bd80-4e32-93a8-abbd6e0076b1
+
+
+
+### Update the Code
+PUT http://localhost:8000/api/coding/update_code
+Content-Type: application/json
+
+{
+  "test_code_id": "6117e878-bd80-4e32-93a8-abbd6e0076b1",
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["testCaseObjectId3", "testCaseObjectId4"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+### Delete a code
+DELETE http://localhost:8000/api/coding/delete_code/99c8c317-8b50-4ea2-8f8c-92231ebae1f8
+
 
 ##############################TestCase######################################
 ///Create a Test Id and Post the testCase
@@ -95,50 +291,30 @@ GET http://localhost:8000/api/testcase/get_all_testCases
 GET http://localhost:8000/api/testcase/get_testCase_id/03c83529-656e-4bb1-b600-0ca2e8a536b5
 
 ###
-//update the TestCase Using 
-PUT http://localhost:8000/api/testcase/update_testCase/
+PUT http://localhost:8000/api/testcase/update_testCase
 Content-Type: application/json
 
 {
-    "testcase_id": "03c83529-656e-4bb1-b600-0ca2e8a536b5",
-    "testcase_input": "5 3",
-    "testcase_output": "8",
+    "testcase_id": "2c208859-a935-486c-b3be-de35309b5d26",
+    "testcase_input": ["5", "3"],
+    "testcase_output": ["8"],
     "testcase_tags": ["math", "addition"]
 }
+
 
 ####
 //Delete the TestCase 
 DELETE http://localhost:8000/api/testcase/delete_testCase/674e03da-f9a5-4b1a-8a5e-3a5ff52c37ab
 
 
-########################################Coding##########################################
-//Create a Coding data
-POST http://localhost:8000/api/coding/code
+### Submit a Result
+POST http://localhost:8000/api/interService/submit_result
 Content-Type: application/json
 
 {
-  "code_problem_statement": "Write a function to find the factorial of a number.",
-  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
-  "code_tags": ["math", "recursion", "factorial"]
+  "result_id": "12345",
+  "result_user_id": "67890",
+  "result_test_id": "54321",
+  "result_score": 95,
+  "result_poc_id": "98765"
 }
-
-###
-//Get All Codes
-GET http://localhost:8000/api/coding/get_allCodes
-
-
-###
-///Update the Code
-PUT http://localhost:8000/api/coding/update_code
-Content-Type: application/json
-
-{
-  "code_id": "f3f7b614-c4f9-423d-8562-c7ad6d58b6d4",
-  "code_problem_statement": "Write a function to find the factorial of a number.",
-  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
-  "code_tags": ["math", "recursion", "factorial"]
-}
-
-###
-//Delete a code
-DELETE http://localhost:8000/api/coding/delete_code/47f8f519-d7ca-4bbc-ac06-191b5611e445

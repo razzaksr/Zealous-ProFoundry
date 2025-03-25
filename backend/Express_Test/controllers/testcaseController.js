@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
 const TestCase = require("../models/TestCase");
+
+
 // ✅ Create TestCase
 router.post("/create_testCase", async (req, res) => {
   try {
@@ -55,23 +57,30 @@ router.get("/get_testCase_id/:id", async (req, res) => {
 // Update TestCase (Special Update: Add code_id to testcase_id)
 router.put('/update_testCase', async (req, res) => {
   try {
-      const { testcase_id, code_id } = req.body;
-      const testCase = await TestCase.findOne({ testcase_id });
-      if (!testCase) return res.status(404).json({ message: 'TestCase not found' });
+    const { testcase_id, testcase_input, testcase_output, testcase_tags } = req.body;
 
-      // Add only new Code IDs
-      if (code_id) {
-          const newCodeIds = Array.isArray(code_id) ? code_id : [code_id];
-          testCase.code_ids = testCase.code_ids || []; // Ensure the array exists
-          testCase.code_ids.push(...newCodeIds.filter(id => !testCase.code_ids.includes(id)));
-      }
+    const updatedTestCase = await TestCase.findOneAndUpdate(
+      { testcase_id },
+      {
+        $set: {
+          testcase_input: Array.isArray(testcase_input) ? testcase_input : [testcase_input],
+          testcase_output: Array.isArray(testcase_output) ? testcase_output : [testcase_output],
+          testcase_tags: Array.isArray(testcase_tags) ? testcase_tags : [testcase_tags]
+        }
+      },
+      { new: true } // Returns the updated document
+    );
 
-      await testCase.save();
-      res.status(200).json({ message: 'TestCase updated successfully', testCase });
+    if (!updatedTestCase) {
+      return res.status(404).json({ message: 'TestCase not found' });
+    }
+
+    res.status(200).json({ message: 'TestCase updated successfully', updatedTestCase });
   } catch (error) {
-      res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
+
 
 
 // ✅ Delete TestCase (FIXED)

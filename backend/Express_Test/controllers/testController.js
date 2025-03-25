@@ -23,9 +23,9 @@ router.get('/all', async (req, res) => {
 });
 
 // Read Single Test by test_id
-router.get('/get', async (req, res) => {
+router.get('/get_by_test_id/:test_id', async (req, res) => {
     try {
-        const { test_id } = req.body;
+        const { test_id } = req.params; // Retrieve test_id from the URL parameters
         const test = await Test.findOne({ test_id }).populate('test_mcq_id');
         if (!test) return res.status(404).json({ message: 'Test not found' });
         res.status(200).json(test);
@@ -34,7 +34,8 @@ router.get('/get', async (req, res) => {
     }
 });
 
-// Update Test (Special Update: Add mcq_id and coding_test_id)
+
+// Update Test (Replace mcq_id and coding_test_id)
 router.put('/update', async (req, res) => {
     try {
         const { test_id, mcq_id, coding_test_id } = req.body;
@@ -42,16 +43,14 @@ router.put('/update', async (req, res) => {
         const test = await Test.findOne({ test_id });
         if (!test) return res.status(404).json({ message: 'Test not found' });
 
-        // Add only new MCQ IDs
+        // ✅ Replace MCQ IDs (Instead of appending)
         if (mcq_id) {
-            const newMcqIds = Array.isArray(mcq_id) ? mcq_id : [mcq_id];
-            test.test_mcq_id.push(...newMcqIds.filter(id => !test.test_mcq_id.includes(id)));
+            test.test_mcq_id = Array.isArray(mcq_id) ? mcq_id : [mcq_id];
         }
 
-        // Add only new Coding Test IDs
+        // ✅ Replace Coding Test IDs (Instead of appending)
         if (coding_test_id) {
-            const newCodingIds = Array.isArray(coding_test_id) ? coding_test_id : [coding_test_id];
-            test.test_coding_id.push(...newCodingIds.filter(id => !test.test_coding_id.includes(id)));
+            test.test_coding_id = Array.isArray(coding_test_id) ? coding_test_id : [coding_test_id];
         }
 
         await test.save();
@@ -60,6 +59,7 @@ router.put('/update', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 
 // Delete Test
