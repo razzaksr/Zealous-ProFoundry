@@ -1,23 +1,22 @@
 const mongoose = require("mongoose");
 
-const performanceSchema = new mongoose.Schema({
+const overallSchema = new mongoose.Schema({
   report_id: String,
   report_mod: String,
   report_poc: String,
-  studentName: String,
-  studentId: String,
-  totalMarks: Number,
-  scoredMarks: Number,
+  student_name: String,
+  student_id: String,
+  total_marks: Number,
+  scored_marks: Number,
   percentage: {
     type: Number,
     default: function () {
-      return this.scoredMarks && this.totalMarks
-        ? (this.scoredMarks / this.totalMarks) * 100
+      return this.scored_marks && this.total_marks
+        ? (this.scored_marks / this.total_marks) * 100
         : 0;
     },
   },
 });
 
-const Performance = mongoose.model("Performance", performanceSchema);
-
-module.exports = Performance;   
+const Overall = mongoose.model("Overall", overallSchema);
+module.exports = Overall;

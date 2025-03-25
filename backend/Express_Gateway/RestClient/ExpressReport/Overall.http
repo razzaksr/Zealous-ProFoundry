@@ -1,5 +1,5 @@
 # ✅ Add a new student performance record (POST)
-POST http://localhost:9000/overall/post-overall
+POST http://localhost:4000/overall_gateway/overall/post-overall
 Content-Type: application/json
 
 {
@@ -13,15 +13,15 @@ Content-Type: application/json
 }
 
 ### ✅ Get all performance records (GET)
-GET http://localhost:9000/overall/get-all-overall
+GET http://localhost:4000/overall_gateway/overall/get-all-overall
 Content-Type: application/json
 
 ### ✅ Get a single student's performance (GET)
-GET http://localhost:9000/overall/STU001
+GET http://localhost:4000/overall_gateway/overall/STU001
 Content-Type: application/json
 
 ### ✅ Update a student's performance (PUT)
-PUT http://localhost:9000/overall//update-overall
+PUT http://localhost:4000/overall_gateway/overall//update-overall
 Content-Type: application/json
 
 {
@@ -37,5 +37,5 @@ Content-Type: application/json
 
 
 ### ✅ Delete a student's performance record (DELETE)
-DELETE http://localhost:9000/overall/delete-overall-by-stu-id/STU005
+DELETE http://localhost:4000/overall_gateway/overall/delete-overall-by-stu-id/STU005
 Content-Type: application/json

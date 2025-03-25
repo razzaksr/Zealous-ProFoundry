@@ -3,7 +3,7 @@ const router = express.Router();
 const StudentCertificate = require("../models/certificate");
 
 // **GET - Fetch All Certificates**
-router.get("/", async (req, res) => {
+router.get("/all-certificates", async (req, res) => {
   try {
     const certificates = await StudentCertificate.find();
     res.json(certificates);
@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
 });
 
 // **POST - Add a New Certificate**
-router.post("/", async (req, res) => {
+router.post("/post-certificates", async (req, res) => {
   try {
     const {
       certificate_id,
@@ -39,11 +39,10 @@ router.post("/", async (req, res) => {
   }
 });
 
-// **PUT - Update a Certificate**
-router.put("/:certificate_id", async (req, res) => {
+// Update certificate (PUT) - Now using req.body instead of req.params
+router.put("/update-certificates", async (req, res) => {
   try {
-    const { certificate_id } = req.params;
-    const updateData = req.body;
+    const { certificate_id, ...updateData } = req.body;
 
     const updatedCertificate = await StudentCertificate.findOneAndUpdate(
       { certificate_id },
@@ -62,7 +61,7 @@ router.put("/:certificate_id", async (req, res) => {
 });
 
 // **DELETE - Remove a Certificate**
-router.delete("/:certificate_user_id", async (req, res) => {
+router.delete("/delete-by-cert-user-id/:certificate_user_id", async (req, res) => {
   try {
     const { certificate_user_id } = req.params;
 

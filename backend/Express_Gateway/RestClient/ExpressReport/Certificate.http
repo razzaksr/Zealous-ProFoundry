@@ -1,4 +1,4 @@
-POST http://localhost:9000/certificates/post-certificates
+POST http://localhost:4000/certificates_gateway/certificates/post-certificates
 Content-Type: application/json
 
 {
@@ -10,12 +10,12 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:9000/certificates/all-certificates
+GET http://localhost:4000/certificates_gateway/certificates/all-certificates
 ###
 
 
 ###
-PUT http://localhost:9000/certificates/update-certificates
+PUT http://localhost:4000/certificates_gateway/certificates/update-certificates
 Content-Type: application/json
 
 {
@@ -29,4 +29,4 @@ Content-Type: application/json
 
 
 ###
-DELETE http://localhost:9000/certificates/delete-by-cert-user-id/USR102
+DELETE http://localhost:4000/certificates_gateway/certificates/delete-by-cert-user-id/USR102

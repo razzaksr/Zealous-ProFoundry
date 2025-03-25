@@ -1,10 +1,10 @@
 ### GET - Fetch All Attendance Records
-GET http://localhost:9000/attendance/get-all-attendance
+GET http://localhost:4000/attendance_gateway/attendance/get-all-attendance
 
 ### GET - Fetch Attendance by mod_id, class_name, poc_id
-GET http://localhost:9000/attendance/get-by-mod-id-and-class-name?mod_id=M2&class_name=Class B
+GET http://localhost:4000/attendance_gateway/attendance/get-by-mod-id-and-class-name?mod_id=M2&class_name=Class B
 ### ✅ POST - Create a New Attendance Record
-POST http://localhost:9000/attendance/post-attendance
+POST http://localhost:4000/attendance_gateway/attendance/post-attendance
 Content-Type: application/json
 
 {
@@ -20,7 +20,7 @@ Content-Type: application/json
 
 
 ###
-PUT http://localhost:9000/attendance/update-attendance
+PUT http://localhost:4000/attendance_gateway/attendance/update-attendance
 Content-Type: application/json
 
 {
@@ -35,4 +35,4 @@ Content-Type: application/json
 }
 
 ###  DELETE - Remove an Attendance Record (Replace {id} with actual record ID)
-DELETE http://localhost:9000/api/attendance/delete-by-id
+DELETE http://localhost:4000/attendance_gateway/api/attendance/delete-by-id

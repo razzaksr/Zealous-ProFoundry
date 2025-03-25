@@ -4,7 +4,7 @@ const Result = require("../models/results");
 const { v4: uuidv4 } = require("uuid");
 
 // **GET - Fetch All Results**
-router.get("/", async (req, res) => {
+router.get("/get-result", async (req, res) => {
   try {
     const results = await Result.find();
     res.json(results);
@@ -14,16 +14,16 @@ router.get("/", async (req, res) => {
 });
 
 // **POST - Add a New Result**
-router.post("/", async (req, res) => {
+router.post("/post-result", async (req, res) => {
   try {
-    const { result_user_id, result_test_id, result_score, result_poc_id } = req.body;
+    const { result_user_id, result_test_id, result_score, result_poc_id, result_id } = req.body;
 
-    if (!result_user_id || !result_test_id || !result_score || !result_poc_id) {
+    if (!result_id || !result_user_id || !result_test_id || !result_score || !result_poc_id) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     const newResult = new Result({
-      result_id: uuidv4(), // Generate unique ID
+      result_id: result_id || uuidv4(), // Generate ID if not provided
       result_user_id,
       result_test_id,
       result_score,
@@ -37,11 +37,14 @@ router.post("/", async (req, res) => {
   }
 });
 
-// **PUT - Update a Result**
-router.put("/:result_id", async (req, res) => {
+// ✅ PUT - Update an existing result
+router.put("/update-result", async (req, res) => {
   try {
-    const { result_id } = req.params;
-    const updateData = req.body;
+    const { result_id, ...updateData } = req.body;
+
+    if (!result_id) {
+      return res.status(400).json({ message: "result_id is required for update" });
+    }
 
     const updatedResult = await Result.findOneAndUpdate(
       { result_id },
@@ -59,8 +62,10 @@ router.put("/:result_id", async (req, res) => {
   }
 });
 
+
+
 // **DELETE - Remove a Result**
-router.delete("/:result_id", async (req, res) => {
+router.delete("/delete-by-result-id/:result_id", async (req, res) => {
   try {
     const { result_id } = req.params;
 

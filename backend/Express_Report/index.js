@@ -8,7 +8,7 @@ const consul = require("./interservices/consul");
 const attendanceRoutes = require("./controllers/attendanceController");
 const certificateRoutes = require("./controllers/certificateController");
 const resultRoutes = require("./controllers/resultsController");
-const reportRoutes = require("./controllers/individualController");
+const individualRoutes = require("./controllers/individualController");
 const overallRoutes = require("./controllers/overallController");
 
 // ✅ Initialize Express App
@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Register Routes
 app.use("/attendance", attendanceRoutes);
 app.use("/certificates", certificateRoutes);
-app.use("/reports", reportRoutes);
+app.use("/individual", individualRoutes);
 app.use("/results", resultRoutes);
 app.use("/overall", overallRoutes);
 
