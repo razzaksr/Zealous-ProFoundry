@@ -21,181 +21,156 @@ router.post("/add_poc", async (req, res) => {
 
 // Get all POCs
 
-router.get("/read_all_poc", async (req, res) => {
+router.get('/read_all_poc', async (req, res) => {
     try {
-        const allPocs = await Poc.find();
-
-        if (!allPocs || allPocs.length === 0) {
-            return res.status(404).json({ message: "No POCs found" });
-        }
-
-        // Get test service details from Consul
-        const services = await consul.agent.service.list();
-        const testService = Object.values(services).find(service => service.Service === TEST_SERVICE_NAME);
-        const userService = Object.values(services).find(service => service.Service === USER_SERVICE_NAME);
-
-        if (!testService) {
-            return res.status(500).json({ message: "Test service not registered in Consul" });
-        }
-        if (!userService) {
-            return res.status(500).json({ message: "User service not registered in Consul" });
-        }
-
-        // Fetch test details and user details for each POC
-        const enrichedPocs = await Promise.all(
-            allPocs.map(async (poc) => {
-                // Fetch test details
-                let testDetails = [];
-                if (poc.mod_tests && poc.mod_tests.length > 0) {
-                    const testRequests = poc.mod_tests.map(async (testId) => {
-                        try {
-                            const response = await axios.get(`http://${testService.Address}:${testService.Port}/test/get_by_test_id/${testId}`);
-                            return response.data;
-                        } catch (error) {
-                            console.error(`Error fetching test ${testId}:`, error.message);
-                            return null;
-                        }
-                    });
-
-                    const testResults = await Promise.allSettled(testRequests);
-                    testDetails = testResults
-                        .filter(result => result.status === "fulfilled" && result.value)
-                        .map(result => result.value);
-                }
-
-                // Fetch user details
-                let userDetails = [];
-                if (poc.mod_users && poc.mod_users.length > 0) {
-                    const userRequests = poc.mod_users.map(async (userId) => {
-                        try {
-                            const response = await axios.get(`http://${userService.Address}:${userService.Port}/user/get_user_by_id/${userId}`);
-                            return response.data;
-                        } catch (error) {
-                            console.error(`Error fetching user ${userId}:`, error.message);
-                            return null;
-                        }
-                    });
-
-                    const userResults = await Promise.allSettled(userRequests);
-                    userDetails = userResults
-                        .filter(result => result.status === "fulfilled" && result.value)
-                        .map(result => result.value);
-                }
-
-                return { ...poc.toObject(), mod_tests: testDetails, mod_users: userDetails };
-            })
-        );
-
-        res.json({ POCs: enrichedPocs });
+        const pocs = await Poc.find();
+        res.status(200).json(pocs);
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        res.status(500).json({ message: "Error fetching POCs", error: error.message });
     }
 });
 
 // Get POC by mod_poc_id
-
-router.get("/get_poc_by_poc_id/:mod_poc_id", async (req, res) => {
+router.get('/get_poc_by_poc_id/:mod_poc_id', async (req, res) => {
     try {
         const poc = await Poc.findOne({ mod_poc_id: req.params.mod_poc_id });
 
         if (!poc) return res.status(404).json({ message: "POC not found" });
 
-        // Get test service details from Consul
-        const services = await consul.agent.service.list();
-        const testService = Object.values(services).find(service => service.Service === TEST_SERVICE_NAME);
-        const userService = Object.values(services).find(service => service.Service === USER_SERVICE_NAME);
-
-        if (!testService) {
-            return res.status(500).json({ message: "Test service not registered in Consul" });
-        }
-        if (!userService) {
-            return res.status(500).json({ message: "User service not registered in Consul" });
-        }
-
-        // Fetch test details
-        let testDetails = [];
-        if (poc.mod_tests && poc.mod_tests.length > 0) {
-            const testRequests = poc.mod_tests.map(async (testId) => {
-                try {
-                    const response = await axios.get(`http://${testService.Address}:${testService.Port}/test/get_by_test_id/${testId}`);
-                    return response.data;
-                } catch (error) {
-                    console.error(`Error fetching test ${testId}:`, error.message);
-                    return null;
-                }
-            });
-
-            const testResults = await Promise.allSettled(testRequests);
-            testDetails = testResults
-                .filter(result => result.status === "fulfilled" && result.value)
-                .map(result => result.value);
-        }
-
-        // Fetch user details
-        let userDetails = [];
-        if (poc.mod_users && poc.mod_users.length > 0) {
-            const userRequests = poc.mod_users.map(async (userId) => {
-                try {
-                    const response = await axios.get(`http://${userService.Address}:${userService.Port}/user/get_user_by_id/${userId}`);
-                    return response.data;
-                } catch (error) {
-                    console.error(`Error fetching user ${userId}:`, error.message);
-                    return null;
-                }
-            });
-
-            const userResults = await Promise.allSettled(userRequests);
-            userDetails = userResults
-                .filter(result => result.status === "fulfilled" && result.value)
-                .map(result => result.value);
-        }
-
-        const updatedPoc = { ...poc.toObject(), mod_tests: testDetails, mod_users: userDetails };
-
-        res.json({ POC: updatedPoc });
+        res.status(200).json(poc);
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        res.status(500).json({ message: "Error fetching POC", error: error.message });
     }
 });
 
   
 
 // Update POC details
-router.put("/update_poc/:mod_poc_id", async (req, res) => {
+router.put("/update_poc", async (req, res) => {
+    try {
+      const { mod_poc_id, ...updateData } = req.body;
+  
+      if (!mod_poc_id) {
+        return res.status(400).json({ message: "mod_poc_id is required" });
+      }
+  
+      const updatedPoc = await Poc.findOneAndUpdate(
+        { mod_poc_id },
+        updateData,
+        { new: true, runValidators: true }
+      );
+  
+      if (!updatedPoc) return res.status(404).json({ message: "POC not found" });
+  
+      res.json(updatedPoc);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
+  // Add a test to a POC
+  router.put("/update_test", async (req, res) => {
+    try {
+        const { mod_poc_id, test_id } = req.body;
+
+        if (!mod_poc_id || !test_id) {
+            return res.status(400).json({ message: "mod_poc_id and test_id are required" });
+        }
+
+        // Find the existing POC
+        const poc = await Poc.findOne({ mod_poc_id });
+
+        if (!poc) {
+            return res.status(404).json({ message: "POC not found" });
+        }
+
+        // Ensure mod_tests is an object, not an array
+        if (!poc.mod_tests || typeof poc.mod_tests !== 'object' || Array.isArray(poc.mod_tests)) {
+            poc.mod_tests = {};  // Convert to an empty object if needed
+        }
+
+        // Check if the test_id already exists in mod_tests
+        const testExists = Object.values(poc.mod_tests).includes(test_id);
+        if (testExists) {
+            return res.status(400).json({ message: "Test ID already exists for another day" });
+        }
+
+        // Determine the next "Day N" key
+        const dayNumbers = Object.keys(poc.mod_tests)
+            .map(day => parseInt(day.replace("Day ", ""), 10))
+            .filter(num => !isNaN(num))
+            .sort((a, b) => a - b);
+
+        const nextDayNumber = (dayNumbers.length > 0 ? Math.max(...dayNumbers) : 0) + 1;
+        const newDayKey = `Day ${nextDayNumber}`;
+
+        // Update mod_tests dynamically
+        const updatedPoc = await Poc.findOneAndUpdate(
+            { mod_poc_id },
+            { $set: { [`mod_tests.${newDayKey}`]: test_id } }, // Dot notation to update mod_tests
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({ message: "Test added successfully", updatedPoc });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating mod_tests", error: error.message });
+    }
+});
+
+// Delete a test from a POC
+router.delete("/delete_test/:mod_poc_id", async (req, res) => {
   try {
-    const updatedPoc = await Poc.findOneAndUpdate(
-      { mod_poc_id: req.params.mod_poc_id },
-      req.body,
-      { new: true, runValidators: true }
-    );
+      const { mod_poc_id } = req.params;
 
-    if (!updatedPoc) return res.status(404).send({ message: "POC not found" });
+      if (!mod_poc_id) {
+          return res.status(400).json({ message: "mod_poc_id is required" });
+      }
 
-    res.send(updatedPoc);
+      // Find the existing POC
+      const poc = await Poc.findOne({ mod_poc_id });
+
+      if (!poc) {
+          return res.status(404).json({ message: "POC not found" });
+      }
+
+      // Delete the mod_tests field entirely
+      poc.mod_tests = {}; // Reset the mod_tests to an empty object
+
+      // Save the updated POC
+      await poc.save();
+
+      res.status(200).json({ message: "mod_tests deleted successfully", updatedPoc: poc });
   } catch (error) {
-    res.status(400).send(error);
+      res.status(500).json({ message: "Error deleting mod_tests", error: error.message });
   }
 });
+
+
+
 
 // Update only mod_tests and mod_users
-router.put("/update_mod_field/:mod_poc_id", async (req, res) => {
-  try {
-    const updatedPoc = await Poc.findOneAndUpdate(
-      { mod_poc_id: req.params.mod_poc_id },
-      {
-        mod_tests: req.body.mod_tests,
-        mod_users: req.body.mod_users,
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedPoc) return res.status(404).send({ message: "POC not found" });
-
-    res.send(updatedPoc);
-  } catch (error) {
-    res.status(400).send(error);
-  }
-});
+router.put("/update_mod_field", async (req, res) => {
+    try {
+      const { mod_poc_id, mod_tests, mod_users } = req.body;
+  
+      if (!mod_poc_id) {
+        return res.status(400).json({ message: "mod_poc_id is required" });
+      }
+  
+      const updatedPoc = await Poc.findOneAndUpdate(
+        { mod_poc_id },
+        { mod_tests, mod_users },
+        { new: true, runValidators: true }
+      );
+  
+      if (!updatedPoc) return res.status(404).json({ message: "POC not found" });
+  
+      res.json(updatedPoc);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+  
 
 // Delete a POC
 router.delete("/delete_poc/:mod_poc_id", async (req, res) => {

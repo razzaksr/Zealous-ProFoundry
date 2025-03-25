@@ -7,7 +7,6 @@ const cors = require("cors");
 const poc = require("./controllers/pocController");
 const expert = require("./controllers/expertController");
 const consul = require("./interservices/consul");
-const { exec } = require("child_process");
 
 const app = express();
 const PORT = process.env.PORT ;

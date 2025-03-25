@@ -1,22 +1,22 @@
 ### Create a new POC
-POST http://localhost:6000/poc/add_poc
+POST http://localhost:4000/poc_gateway/poc/add_poc
 Content-Type: application/json
 
 {
-    "mod_poc_name": "dharun",
+    "mod_poc_name": "dhacddcdcdvdvdruwwdn",
     "mod_poc_role": "AP",
-    "mod_poc_email": "dharun@gmail.com",
-    "mod_poc_mobile": "9871543410"
+    "mod_poc_email": "dharwdddvvdvdcddccwdun@gmail.com",
+    "mod_poc_mobile": "9871121121521143410"
 }
 
 ### Get all POCs
-GET http://localhost:6000/poc/read_all_poc
+GET http://localhost:4000/poc_gateway/poc/read_all_poc
 
 ### Get POC by mod_poc_id
-GET http://localhost:6000/poc/get_poc_by_poc_id/3722e660-e7ab-4d7d-ad03-7b11219e5386
+GET http://localhost:4000/poc_gateway/poc/get_poc_by_poc_id/d6e75618-09b7-40a6-a669-c5f3dfba4d05
 
 ### Update POC details
-PUT http://localhost:6000/poc/update_poc
+PUT http://localhost:4000/poc_gateway/poc/update_poc
 Content-Type: application/json
 
 {
@@ -29,7 +29,7 @@ Content-Type: application/json
 }
 
 ### Update only mod_tests and mod_users
-PUT http://localhost:6000/poc/update_mod_field 
+PUT http://localhost:4000/poc_gateway/poc/update_mod_field
 Content-Type: application/json
 
 {
@@ -38,21 +38,17 @@ Content-Type: application/json
     "mod_users": ["717150b2-2a19-45e8-9c24-69d93b4751c2"]
 }
 
-###
-
-PUT http://localhost:6000/poc/update_test
+### Update Test ID for a POC
+PUT http://localhost:4000/poc_gateway/poc/update_test
 Content-Type: application/json
 
 {
-    "mod_poc_id": "3fcfeeae-653a-410c-b54c-4030210b0c15",
+    "mod_poc_id": "f4e816ef-f669-405c-be8c-eb5338c6ef67",
     "test_id": "new_test_999821221"
 }
 
 ### Delete Test by mod_poc_id
-DELETE http://localhost:6000/poc/delete_test/f4e816ef-f669-405c-be8c-eb5338c6ef67
-
-
-
+DELETE http://localhost:4000/poc_gateway/poc/delete_test/f4e816ef-f669-405c-be8c-eb5338c6ef67
 
 ### Delete POC by mod_poc_id
-DELETE http://localhost:6000/poc/delete_poc/8ddcfe54-c282-4ce1-80d2-21cab5ec7819
+DELETE http://localhost:4000/poc_gateway/poc/delete_poc/f4e816ef-f669-405c-be8c-eb5338c6ef67

@@ -1,0 +1,32 @@
+POST http://localhost:9000/certificates
+Content-Type: application/json
+
+{
+  "certificate_id": "MLOO1",
+  "certificate_user_id": "USR002",
+  "certificate_mod_id": "MOD002",
+  "certificate_poc_id": "POC0021",
+  "certificate_generated_date": "2025-03-16"
+}
+
+###
+GET http://localhost:9000/certificates
+###
+
+
+###
+PUT http://localhost:9000/certificates/CERT1234
+Content-Type: application/json
+
+{
+  "certificate_id": "CERT12345",
+  "certificate_user_id": "USR031",
+  "certificate_mod_id": "MOD001",
+  "certificate_poc_id": "POC001",
+  "certificate_generated_date": "2025-03-15",
+  "certificate_url": "/certificates/certificate_user_123.pdf"
+}
+
+
+###
+DELETE http://localhost:9000/certificates/CERT123

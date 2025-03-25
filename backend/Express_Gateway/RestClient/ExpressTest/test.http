@@ -1,0 +1,37 @@
+### Create Test
+POST http://localhost:4000/test_gateway/test/create
+Content-Type: application/json
+
+{
+    "test_name": "Sample Test",
+    "test_language": "Css",
+    "test_total_score": 100,
+    "test_mcq_id": [],
+    "test_coding_id": []
+}
+
+### Get All Tests
+GET http://localhost:4000/test_gateway/test/all
+
+### Get Test by ID
+GET http://localhost:4000/test_gateway/test/get_by_test_id/4466d187-682c-4727-8f45-c405763dc0d0
+
+### Update Test (Add MCQ & Coding Test ID)
+PUT http://localhost:4000/test_gateway/test/update
+Content-Type: application/json
+
+{
+    "test_id": "4466d187-682c-4727-8f45-c405763dc0d0",
+    "mcq_id": ["mcq_id-2","mcq_id-5"],
+    "coding_test_id": ["coding_id-5","coding_id-6"]
+}
+
+### Delete Test
+DELETE http://localhost:4000/test_gateway/test/delete
+Content-Type: application/json
+
+{
+    "test_id": "e2231823-e386-4e63-adf6-52795b74d382"
+}
+
+

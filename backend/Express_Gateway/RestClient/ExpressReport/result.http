@@ -1,0 +1,30 @@
+### Fetch All Results
+GET http://localhost:9000/results
+Content-Type: application/json
+
+### Add a New Result
+POST http://localhost:9000/results
+Content-Type: application/json
+
+{
+  "result_user_id": "user752",
+  "result_test_id": "test456",
+  "result_score": 97,
+  "result_poc_id": "poc789"
+}
+
+### Update a Result
+PUT http://localhost:9000/results/ae61a25e-8a3f-423e-8417-1688a0494651
+Content-Type: application/json
+
+{
+   "result_user_id": "user752",
+  "result_test_id": "test27",
+  "result_score": 97,
+  "result_poc_id": "poc789"
+}
+
+
+### Delete a Result
+DELETE http://localhost:9000/results/9221453f-3be2-4a2d-8ec4-452ba4fe01b8
+Content-Type: application/json

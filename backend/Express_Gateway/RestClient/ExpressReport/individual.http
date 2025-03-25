@@ -1,0 +1,44 @@
+### Create a new report
+POST http://localhost:9000/reports
+Content-Type: application/json
+
+{
+    "reportId": "abcdefg",
+    "reportModule": "Data Structures in Python",
+    "reportPOC": "Moulee",
+    "studentId": "STU007",
+    "studentName": "Alex Johnson",
+    "day":3,
+    "mcqScore": 6,
+    "testCase1Score": 6,
+    "testCase2Score": 6,
+    "totalScore": 18,
+    "percentageScore": 80
+}
+
+### Get all reports
+GET http://localhost:9000/reports
+
+### Get a single report by ID (Replace {id} with an actual ID from MongoDB)
+GET http://localhost:9000/api/reports/{id}
+
+### Update a report (Replace {id} with an actual ID from MongoDB)
+PUT http://localhost:9000/api/reports/67d6f4f74ba37eb895394949
+Content-Type: application/json
+
+{
+    "mcqScore": 9,
+    "testCase1Score": 7,
+    "testCase2Score": 5,
+    "totalScore": 21,
+    "percentageScore": 80
+}
+
+### Delete a report (Replace {id} with an actual ID from MongoDB)
+DELETE http://localhost:9000/reports/{id}
+
+
+
+
+### Get Analytics Data
+GET http://localhost:9000/reports/analytics

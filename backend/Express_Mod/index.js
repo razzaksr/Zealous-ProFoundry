@@ -3,6 +3,8 @@ const express = require("express");
 const mongoose = require("./config/db");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const consul = require("./interservices/consul");
+
 
 const modules = require("./controllers/moduleController");
 const organization = require("./controllers/organizationController");
