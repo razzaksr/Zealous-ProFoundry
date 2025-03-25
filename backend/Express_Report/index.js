@@ -9,6 +9,7 @@ const attendanceRoutes = require("./controllers/attendanceController");
 const certificateRoutes = require("./controllers/certificateController");
 const resultRoutes = require("./controllers/resultsController");
 const reportRoutes = require("./controllers/individualController");
+const overallRoutes = require("./controllers/overallController");
 
 // ✅ Initialize Express App
 const app = express();
@@ -22,6 +23,7 @@ app.use("/attendance", attendanceRoutes);
 app.use("/certificates", certificateRoutes);
 app.use("/reports", reportRoutes);
 app.use("/results", resultRoutes);
+app.use("/overall", overallRoutes);
 
 // ✅ Start Server & Register Service in Consul
 const PORT = process.env.PORT || 5000;
