@@ -11,140 +11,74 @@ import {
   CircularProgress,
   Grid,
   Alert,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
 } from "@mui/material";
 import { Clock, Award } from "lucide-react";
 
 const API_BASE_URL = "http://localhost:4000";
 
-const TestComponent = () => {
+const TestModule = () => {
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [mcqData, setMcqData] = useState(null);
-  const [selectedOption, setSelectedOption] = useState("");
   const navigate = useNavigate();
 
-  // Fetch module & test IDs by user ID
-  const fetchModuleAndTests = useCallback(async (userId) => {
+  // Fetch tests assigned to user
+  const fetchTests = useCallback(async (userId) => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/poc_gateway/poc/mod_and_poc/${userId}`);
-      if (response.data && response.data.test_ids) {
-        const testIds = response.data.test_ids;
-
-        // Fetch details for each test ID
+      if (response.data?.test_ids?.length) {
         const testDetails = await Promise.all(
-          testIds.map(async (testId) => {
+          response.data.test_ids.map(async (testId) => {
             const testRes = await axios.get(`${API_BASE_URL}/test_gateway/test/get_by_test_id/${testId}`);
             return testRes.data;
           })
         );
-
         setTests(testDetails);
       } else {
         setTests([]);
-        setError("No tests available for this user.");
+        setError("No tests available.");
       }
     } catch (err) {
-      console.error("Error fetching module & test data:", err);
-      setError("Failed to load tests. Please try again later.");
+      console.error("Error fetching tests:", err);
+      setError("Failed to load tests.");
     }
     setLoading(false);
   }, []);
 
-  // Fetch user from session storage
   useEffect(() => {
     const storedUser = sessionStorage.getItem("true");
-
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
         if (user?.user?.user_id) {
-          fetchModuleAndTests(user.user.user_id);
-        } else {
-          console.warn("User ID not found in session storage");
+          fetchTests(user.user.user_id);
         }
       } catch (error) {
-        console.error("Error parsing user from session storage:", error);
+        console.error("Error parsing user:", error);
       }
-    } else {
-      console.warn("No user found in session storage");
     }
-  }, [fetchModuleAndTests]);
-
-  // Fetch MCQ question
-  const fetchMcqQuestion = async (mcqId) => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API_BASE_URL}/mcq_gateway/mcq/get_mcq/${mcqId}`);
-      setMcqData(response.data);
-      setSelectedOption(""); // Reset selected option
-    } catch (error) {
-      console.error("Error fetching MCQ:", error);
-      setError("Failed to load MCQ. Please try again later.");
-    }
-    setLoading(false);
-  };
+  }, [fetchTests]);
 
   return (
     <Container maxWidth="md" sx={{ py: 5 }}>
-      <Typography variant="h4" fontWeight="bold" color="#1e1e1e" textAlign="start" gutterBottom>
+      <Typography variant="h4" fontWeight="bold" gutterBottom>
         Test Modules
       </Typography>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-          <CircularProgress size={50} />
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+          <CircularProgress />
         </Box>
       ) : error ? (
-        <Alert severity="error" sx={{ mb: 3, textAlign: "center" }}>
-          {error}
-        </Alert>
-      ) : mcqData ? (
-        // Display MCQ question
-        <Card sx={{ p: 3, bgcolor: "#F5F5F5", borderRadius: 2, boxShadow: 3 }}>
-          <CardContent>
-            <Typography variant="h5" fontWeight="bold" color="primary">
-              {mcqData.mcq_question}
-            </Typography>
-
-            <RadioGroup value={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}>
-              {mcqData.mcq_options.map((option, index) => (
-                <FormControlLabel key={index} value={option} control={<Radio />} label={option} />
-              ))}
-            </RadioGroup>
-
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{ mt: 2 }}
-              disabled={!selectedOption}
-              onClick={() => alert(selectedOption === mcqData.mcq_answer ? "✅ Correct!" : "❌ Incorrect")}
-            >
-              Submit Answer
-            </Button>
-          </CardContent>
-        </Card>
+        <Alert severity="error">{error}</Alert>
       ) : (
-        <Grid container spacing={5} justifyContent="center">
+        <Grid container spacing={3}>
           {tests.map((test) => (
-            <Grid item xs={12} key={test.test_id}>
-              <Card
-                sx={{
-                  p: 2,
-                  bgcolor: "#F5F5F5",
-                  borderRadius: 2,
-                  boxShadow: 3,
-                  height: "100%",
-                  transition: "transform 0.2s ease-in-out",
-                  "&:hover": { transform: "scale(1.02)" },
-                }}
-              >
+            <Grid item xs={12} md={6} key={test.test_id}>
+              <Card sx={{ p: 2, boxShadow: 3 }}>
                 <CardContent>
-                  <Typography variant="h6" fontWeight="bold" color="primary">
+                  <Typography variant="h6" fontWeight="bold">
                     {test.test_name}
                   </Typography>
 
@@ -161,20 +95,10 @@ const TestComponent = () => {
 
                 <Button
                   variant="contained"
-                  fullWidth
-                  sx={{
-                    mt: 2,
-                    bgcolor: test.test_mcq_id?.length > 0 ? "primary.main" : "gray",
-                    color: "white",
-                    "&:hover": { bgcolor: test.test_mcq_id?.length > 0 ? "primary.dark" : "gray" },
-                  }}
-                  onClick={() => {
-                    if (test.test_mcq_id?.length > 0) {
-                      fetchMcqQuestion(test.test_mcq_id[0]);
-                    } else {
-                      alert("⚠️ Test is not available at the moment!");
-                    }
-                  }}
+                  sx={{ mt: 2 }}
+                  onClick={() =>
+                    navigate(`/mcq-test/${test.test_id}`, { state: { testMcqIds: test.test_mcq_id } })
+                  }
                   disabled={!test.test_mcq_id?.length}
                 >
                   Start Test
@@ -188,4 +112,4 @@ const TestComponent = () => {
   );
 };
 
-export default TestComponent;
+export default TestModule;

@@ -207,7 +207,10 @@ router.get("/mod_and_poc/:user_id", async (req, res) => {
     const { user_id } = req.params;
 
     // Find the module where `mod_users` contains `user_id`
-    const module = await Poc.findOne({ mod_users: user_id }, "mod_id mod_poc_name mod_tests");
+    const module = await Poc.findOne(
+      { mod_users: user_id },
+      "mod_id mod_poc_id mod_poc_name mod_tests"
+    );
 
     if (!module) {
       return res.status(404).json({ error: `No module found for user with ID ${user_id}` });
@@ -218,14 +221,16 @@ router.get("/mod_and_poc/:user_id", async (req, res) => {
 
     res.status(200).json({
       mod_id: module.mod_id,
+      mod_poc_id: module.mod_poc_id, // Added mod_poc_id
       mod_poc_name: module.mod_poc_name,
       test_ids, // Returning an array of test IDs
     });
   } catch (err) {
-    console.error("Error fetching module data:", err);
+    console.error(" Error fetching module data:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 

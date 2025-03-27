@@ -43,3 +43,16 @@ Content-Type: application/json
 {
 "test_mcq_id": "1742980566517"
 }
+
+
+### Submit Result to External Service via Consul
+POST http://localhost:4000/mcq_gateway/mcq/submit_result
+Content-Type: application/json
+
+{
+  "result_user_id": "user_123",
+  "result_test_id": "test_456",
+  "result_score": 85,
+  "result_poc_id": "poc_789",
+  "result_id": "result_001"
+}

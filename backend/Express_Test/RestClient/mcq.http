@@ -30,4 +30,14 @@ Content-Type: application/json
 ### Delete MCQ
 DELETE http://localhost:8000/mcq/remove_mcq/8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0
 
-    
+### Submit Result to External Service via Consul
+POST http://localhost:8000/mcq/submit_result
+Content-Type: application/json
+
+{
+  "result_user_id": "",
+  "result_test_id": "",
+  "result_score": 85,
+  "result_poc_id": "",
+  "result_id": ""
+}

@@ -11,8 +11,9 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { Clock, CheckCircle, Book, Code } from "lucide-react";
-import TestModules from "./TestModules";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import Dash from "../components/dash";
+import TestModule from "../pages/TestModules";
 
 const LandingPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -20,7 +21,10 @@ const LandingPage = () => {
   const [modId, setModId] = useState(null);
   const [expertName, setExpertName] = useState("Loading...");
   const [moduleName, setModuleName] = useState("Loading...");
-  const [orgName, setOrgName] = useState("Loading..."); // New state for Organisation Name
+  const [orgName, setOrgName] = useState("Loading...");
+  const [testIds, setTestIds] = useState([]);
+  
+  const navigate = useNavigate(); // Initialize useNavigate hook
 
   const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
 
@@ -51,6 +55,8 @@ const LandingPage = () => {
       );
       setCoordinatorName(response.data.mod_poc_name || "Not Found");
       setModId(response.data.mod_id);
+      setTestIds(response.data.test_ids || []); // Set test_ids
+
       console.log("Fetched Data:", response.data);
 
       if (response.data.mod_id) {
@@ -101,11 +107,23 @@ const LandingPage = () => {
   };
 
   const stats = [
-    { icon: <Clock size={28} />, label: "ORGANISATION", value: orgName, color: "#D6E4FF" }, // Updated Organisation Name
+    { icon: <Clock size={28} />, label: "ORGANISATION", value: orgName, color: "#D6E4FF" },
     { icon: <CheckCircle size={28} />, label: "MODULE", value: moduleName, color: "#DFFFD6" },
     { icon: <Book size={28} />, label: "EXPERT", value: expertName, color: "#F5E6FF" },
     { icon: <Code size={28} />, label: "CO-ORDINATOR", value: coordinatorName, color: "#FFE4D6" },
   ];
+
+  const handleTestModuleClick = () => {
+    // Pass the necessary data to the TestModules component using navigate
+    navigate(`/testmodule/${modId}`, {
+      state: {
+        modId,
+        modPocId: "3fcfeeae-653a-410c-b54c-4030210b0c15", // Example POC ID
+        modPocName: coordinatorName,
+        testIds,
+      },
+    });
+  };
 
   return (
     <>
@@ -154,7 +172,7 @@ const LandingPage = () => {
           </Grid>
 
           <Box sx={{ mt: 4, ml: { xs: 0, sm: 1 }, transition: "margin-left 0.3s ease-in-out" }}>
-            <TestModules />
+            <TestModule onClick={handleTestModuleClick} />
           </Box>
         </Box>
       </Box>
