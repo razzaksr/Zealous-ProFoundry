@@ -7,7 +7,7 @@ const MCQ = require("./controllers/mcqController");
 const Test = require("./controllers/testController");
 const TestCase = require("./controllers/testcaseController");
 const Coding = require("./controllers/codeController");
-const consul = require("./interservices/consul");
+const consul = require("./middleware/consul");
 
 const app = express();
 const port = process.env.PORT;
@@ -22,6 +22,7 @@ app.use("/mcq", MCQ);
 app.use("/test", Test);
 app.use("/testcase", TestCase);
 app.use("/coding", Coding);
+
 
 // Start Server
 app.listen(port, () => {

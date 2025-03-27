@@ -6,7 +6,7 @@ const cors = require("cors");
 
 const poc = require("./controllers/pocController");
 const expert = require("./controllers/expertController");
-const consul = require("./interservices/consul");
+const consul = require("./middleware/consul");
 
 const app = express();
 const PORT = process.env.PORT ;

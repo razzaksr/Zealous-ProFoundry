@@ -2,27 +2,38 @@
 POST http://localhost:4000/mcq_gateway/mcq/add_mcq
 Content-Type: application/json
 
-{
-    "mcq_question": "What is JavaScript?",
-    "mcq_options": ["Language", "Library", "Framework", "Database"],
-    "mcq_answer": "Language",
-    "mcq_tag": ["Programming", "Frontend"]
-}
+[
+    {
+        "mcq_question": "What is Express.js?",
+        "mcq_options": ["Framework", "Library", "Runtime", "Database"],
+        "mcq_answer": "Framework",
+        "mcq_tag": ["Backend", "Node.js"]
+    },
+    {
+        "mcq_question": "What is React?",
+        "mcq_options": ["Framework", "Library", "Language", "Database"],
+        "mcq_answer": "Library",
+        "mcq_tag": ["Frontend", "JavaScript"]
+    }
+]
 
 ### Get All MCQs
 GET http://localhost:4000/mcq_gateway/mcq/get_all_mcqs
 
+### Get All MCQs
+GET http://localhost:4000/mcq_gateway/mcq/get_mcq/78b70d32-9839-457d-870c-6c36fe2fad5d
 
-### Update MCQ
+
+### Update MCQ  
 PUT http://localhost:4000/mcq_gateway/mcq/update_mcq
 Content-Type: application/json
 
 {
-    "test_mcq_id": "8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0",
-    "mcq_question": "What is JavaScript?",
-    "mcq_options": ["Option A", "Option B", "Option C", "Option D"],
-    "mcq_answer": "Option A",
-    "mcq_tag": ["Updated"]
+    "mcq_id": "49e38dce-e39f-4a59-9d8c-f44b3ce4985b",
+        "mcq_question": "What is React?",
+        "mcq_options": ["Framework", "Library", "Language", "Database"],
+        "mcq_answer": "Library",
+        "mcq_tag": ["Frontend", "JavaScript"]
 }
 
 ### Delete MCQ
@@ -30,5 +41,5 @@ DELETE http://localhost:4000/mcq_gateway/mcq/remove_mcq
 Content-Type: application/json
 
 {
-"test_mcq_id": "8ffd4d6b-9de0-4b18-b4bc-3bde05ced2b0"
+"test_mcq_id": "1742980566517"
 }

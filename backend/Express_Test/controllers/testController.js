@@ -75,4 +75,31 @@ router.delete('/delete', async (req, res) => {
     }
 });
 
+// Remove MCQ from Test using test_id and mcq_id
+router.put('/remove_mcq_from_test', async (req, res) => {
+    try {
+        const { test_id, mcq_id } = req.body; // Extract test_id and mcq_id from the request body
+
+        if (!test_id || !mcq_id) {
+            return res.status(400).json({ error: "test_id and mcq_id are required" });
+        }
+
+        const updatedTest = await Test.findOneAndUpdate(
+            { test_id }, // Find the test by test_id
+            { $pull: { test_mcq_id: mcq_id } }, // Remove the specified mcq_id from the array
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedTest) {
+            return res.status(404).json({ message: "Test not found" });
+        }
+
+        res.status(200).json({ message: "MCQ removed successfully", test: updatedTest });
+    } catch (error) {
+        console.error("Error removing MCQ:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 module.exports = router;

@@ -15,7 +15,7 @@ router.post('/add_expert', async (req, res) => {
         const expert = new Expert(req.body);
         await expert.save();
         res.status(201).json(expert);
-    } catch (error) {
+    } catch (error) {   
         res.status(400).json({ error: error.message });
     }
 });
@@ -114,6 +114,19 @@ router.delete('/delete_expert/:mod_expert_id', async (req, res) => {
         if (!deletedExpert) return res.status(404).json({ error: 'Expert not found' });
 
         res.json({ message: 'Deleted Successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get Expert Name by mod_id
+router.get('/get_expert_name/:mod_id', async (req, res) => {
+    try {
+        const expert = await Expert.findOne({ mod_id: req.params.mod_id });
+
+        if (!expert) return res.status(404).json({ error: 'Expert not found' });
+
+        res.json({mod_expert_name:expert.mod_expert_name});
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

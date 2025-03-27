@@ -1,8 +1,52 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
+
+
+// Login User and generate JWT token
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+        // Find the user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Compare the entered password with the hashed password stored in the database
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: 'Invalid credentials' });
+        }
+
+        // If the password matches, create a JWT token
+        const token = jwt.sign(
+            {
+                userId: user.user_id,  // Use `user_id` from DB
+                full_name: user.full_name
+            },
+            process.env.JWT_SECRET, // Use the secret key from the .env file
+            { expiresIn: '10h' }  // Token expiration time (10 hours)
+        );
+
+        // Return the JWT token and user information
+        res.status(200).json    ({
+            msg: 'Login successful',
+            token,  // The JWT token
+            user: { 
+                user_id: user.user_id,  // Include user_id in response
+                full_name: user.full_name,
+            }
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Create a new User
 router.post("/add_user", async (req, res) => {

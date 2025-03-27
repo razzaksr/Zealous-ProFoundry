@@ -52,3 +52,9 @@ DELETE http://localhost:4000/poc_gateway/poc/delete_test/f4e816ef-f669-405c-be8c
 
 ### Delete POC by mod_poc_id
 DELETE http://localhost:4000/poc_gateway/poc/delete_poc/f4e816ef-f669-405c-be8c-eb5338c6ef67
+
+###  GET POC BY USER
+GET http://localhost:4000/poc_gateway/poc/mod_by_user/1343fa0e-8b57-4b08-be4d-4ab750ec2806
+
+### GET MOD AND POC AND TEST ID BY USER ID 
+GET http://localhost:4000/poc_gateway/poc/mod_and_poc/1343fa0e-8b57-4b08-be4d-4ab750ec2806

@@ -21,8 +21,8 @@ PUT http://localhost:8000/test/update
 Content-Type: application/json
 
 {
-    "test_id": "4466d187-682c-4727-8f45-c405763dc0d0",
-    "mcq_id": ["mcq_id-2","mcq_id-5"],
+    "test_id": "9eb93e29-0857-46e3-8ffd-7fe50249eab6",
+    "mcq_id": ["5822a799-2a0e-4c14-90df-f25f72ef5d0e"],
     "coding_test_id": ["coding_id-5","coding_id-6"]
 }
 
@@ -32,6 +32,14 @@ Content-Type: application/json
 
 {
     "test_id": "e2231823-e386-4e63-adf6-52795b74d382"
+}
+### Remove MCQ from Test Using Test ID & MCQ ID
+PUT http://localhost:8000/test/remove_mcq_from_test
+Content-Type: application/json
+
+{
+    "test_id": "9eb93e29-0857-46e3-8ffd-7fe50249eab6",
+    "mcq_id": "d3d88451-7419-4bcd-ae0c-d04e515b2546"
 }
 
 

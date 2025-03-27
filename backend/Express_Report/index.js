@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const mongoose = require("./config/db");
-const consul = require("./interservices/consul");
+const consul = require("./middleware/consul");
 
 // ✅ Import Controllers
 const attendanceRoutes = require("./controllers/attendanceController");

@@ -3,7 +3,7 @@ const router = express.Router();
 const Organization = require("../models/Oraganization");
 
 // Create Organization
-router.post("/", async (req, res) => {
+router.post("/create_org", async (req, res) => {
   try {
     const organization = new Organization(req.body);
     await organization.save();
@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
 });
 
 // Get All Organizations
-router.get("/", async (req, res) => {
+router.get("/get_all_org", async (req, res) => {
   try {
     const organizations = await Organization.find();
     res.json(organizations);
@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
 });
 
 // Get Organization by ID
-router.get("/:id", async (req, res) => {
+router.get("/get_org_by_id/:id", async (req, res) => {
   try {
     const organization = await Organization.findOne({ org_id: req.params.id });
     if (!organization) return res.status(404).json({ message: "Not Found" });
@@ -35,7 +35,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Update Organization
-router.put("/:id", async (req, res) => {
+router.put("/update_org_by_id/:id", async (req, res) => {
   try {
     const organization = await Organization.findOneAndUpdate(
       { org_id: req.params.id },
@@ -50,7 +50,7 @@ router.put("/:id", async (req, res) => {
 
 // Delete Organization
 
-router.delete("/:id", async (req, res) => {
+router.delete("/delete_org_by_id/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -73,6 +73,18 @@ router.delete("/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting organization:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+// Get Organization name by mod_id
+router.get("/get_org_name_by_id/:mod_id", async (req, res) => {
+  try {
+    const organization = await Organization.findOne({ mod_id: req.params.mod_id });
+    if (!organization) return res.status(404).json({ message: "Not Found" });
+    res.json({org_name: organization.org_name});
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

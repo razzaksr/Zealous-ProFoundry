@@ -1,5 +1,5 @@
 ### Fetch All Results
-GET http://localhost:4000/results_gateway/results/get-result
+GET  http://localhost:4000/results_gateway/results/get-result
 Content-Type: application/json
 
 ### Add a New Result

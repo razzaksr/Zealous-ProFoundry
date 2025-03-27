@@ -45,3 +45,6 @@ Content-Type: application/json
 
 ### Delete an Expert by mod_expert_id
 DELETE http://localhost:4000/expert_gateway/expert/delete_expert/2325893a-8c70-4906-b489-fef85843960c
+
+### GET EXPERT NAME BY MOD_ID
+GET http://localhost:4000/expert_gateway/expert/get_expert_name/6503caf1-fb75-4640-99f2-d6a529b71205

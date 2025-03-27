@@ -13,6 +13,16 @@ Content-Type: application/json
   "user_last_login": "2025-03-16T10:00:00Z"
 }
 
+### Login User
+POST http://localhost:4000/user_gateway/user/login
+Content-Type: application/json
+
+{
+  "email": "dharun@gmail.com",
+  "password": "0000"
+}
+
+
 ### Get All Users
 GET http://localhost:4000/user_gateway/user/read_all_users
 

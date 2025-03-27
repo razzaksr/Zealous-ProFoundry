@@ -4,7 +4,7 @@ const mongoose = require("./config/db");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const user = require("./controllers/userController");
-const consul = require("./interservices/consul");
+const consul = require("./middleware/consul");
 
 const app = express();
 const PORT = process.env.PORT ;

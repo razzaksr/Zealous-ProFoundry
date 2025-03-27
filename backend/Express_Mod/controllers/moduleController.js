@@ -63,4 +63,15 @@ router.delete("/delete_module/:id", async (req, res) => {
   }
 });
 
+// Get Module name by mod_ID
+router.get("/get_module_name_by_id/:id", async (req, res) => {
+  try {
+    const module = await Module.findOne({ mod_id: req.params.id });
+    if (!module) return res.status(404).json({ message: "Not Found" });
+    res.json({mod_name: module.mod_name});
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
