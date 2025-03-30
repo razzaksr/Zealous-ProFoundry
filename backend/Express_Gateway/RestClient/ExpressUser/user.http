@@ -1,0 +1,57 @@
+### Create User
+POST http://localhost:4000/user_gateway/user/add_user
+Content-Type: application/json
+
+{
+  "full_name": "Dharun",
+  "department": "Computer Science",
+  "college": "mec",
+  "rollno": "22ad063",
+  "email": "dharun@gmail.com",
+  "password": "0000",
+  "status": "active",
+  "user_last_login": "2025-03-16T10:00:00Z"
+}
+
+### Login User
+POST http://localhost:4000/user_gateway/user/login
+Content-Type: application/json
+
+{
+  "email": "dharun@gmail.com",
+  "password": "0000"
+}
+
+
+### Get All Users
+GET http://localhost:4000/user_gateway/user/read_all_users
+
+### Get User by ID
+GET http://localhost:4000/user_gateway/user/get_user_by_id/717150b2-2a19-45e8-9c24-69d93b4751c2
+
+
+### Update User
+PUT http://localhost:4000/user_gateway/user/update_user/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+Content-Type: application/json
+
+{
+  "full_name": "Updated John Doe",
+  "email": "updated@example.com",
+  "password": "newpassword123"
+}
+
+### Update User Last Login
+PUT http://localhost:4000/user_gateway/user/update_last_login/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+Content-Type: application/json
+
+{
+  "user_last_login": "2025-03-16T12:30:00Z"
+}
+
+### Delete User
+DELETE http://localhost:4000/user_gateway/user/delete_user/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+
+
+###############
+GET http://localhost:4000/health
+

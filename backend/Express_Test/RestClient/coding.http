@@ -1,0 +1,30 @@
+### Create a Coding data
+POST http://localhost:8000/coding/code
+Content-Type: application/json
+
+{
+  "code_problem_statement": "Write a function to check if a number is prime.",
+  "code_test_cases_id": ["test1", "test2"],
+  "code_tags": ["maths", "prime numbers", "loops"]
+}
+
+### Get All Codes
+GET http://localhost:8000/coding/get_allCodes
+
+### Get code details by id 
+GET http://localhost:8000/coding/get_code_by_id/a5395dbd-52f8-4061-a6ee-0292a237b020
+
+
+### Update the Code
+PUT http://localhost:8000/coding/update_code
+Content-Type: application/json
+
+{
+  "code_id": "2021bea1-2ab1-4d70-b997-623ca8935ffb",
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["test1", "test2"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+### Delete a code
+DELETE http://localhost:8000/coding/delete_code/2021bea1-2ab1-4d70-b997-623ca8935ffb

@@ -1,0 +1,92 @@
+### Create Test
+POST http://localhost:4000/test_gateway/test/create
+Content-Type: application/json
+
+{
+    "test_name": "Sample Test",
+    "test_language": "Css",
+    "test_total_score": 100,
+    "test_mcq_id": [],
+    "test_coding_id": []
+}
+
+### Get All Tests
+GET http://localhost:4000/test_gateway/test/all
+
+### Get Test by ID
+GET http://localhost:4000/test_gateway/test/get_by_test_id/c972f593-757f-40f1-9228-4ba6a26dead2
+
+### Update Test (Add MCQ & Coding Test ID)
+PUT http://localhost:4000/test_gateway/test/update
+Content-Type: application/json
+
+{
+    "test_id": "c972f593-757f-40f1-9228-4ba6a26dead2",
+    "mcq_id":[
+  "0453498a-cae3-4646-984a-098a9a0746de",
+  "36d74197-1ee9-4f2b-98fe-58a45dde858a",
+  "2c5b57c2-94b5-4a4c-be7c-f2d33addc616",
+  "f78bca45-30e9-4d23-8997-506d940556be",
+  "575933a4-edb3-4933-997d-08df21dbc85d",
+  "aaae6f5d-41a3-478c-91c8-cc56253ceb31",
+  "1573b9d5-6a75-4775-bad0-9574ea9b7eb5",
+  "c6a1dbe9-920c-4c9a-a0f2-998871455619",
+  "d53ed848-8e11-4e97-80bd-38bb067252dd",
+  "633fe7f3-d73c-4969-b48a-701e38925afa",
+  "b30fc659-0db8-49df-b506-6eab7b6e7a7b",
+  "91562c6e-0ceb-4c4e-8e1c-79740df953c3",
+  "928daa83-db92-44fe-9989-8a174a3fe344",
+  "42fd8464-a914-4195-addf-85bd79d40952",
+  "9223ae3c-6881-463b-a1e3-0a17fad34879",
+  "88ee8a37-0eb0-4f6d-92df-fded8d13226c",
+  "dc121d23-a9c7-4118-acda-909002475b83",
+  "9b977687-9154-4942-9e34-182802d4d5e3",
+  "5346fc83-7ba8-445e-bf59-14374f49c25b",
+  "a37cce77-88e8-425b-b26b-4aeebc47bb30",
+  "1a9ef2ac-f8a0-4161-a8e9-d0e97a95cee3",
+  "420230de-fbb5-4700-9805-a94842e22126",
+  "4f45a7b1-47dd-4acc-8d69-c7af0710af82",
+  "c4fe98d5-322e-4e19-997d-6cfd97403ede",
+  "3cb91a9d-fbd5-45f1-a889-7babed9f921f",
+  "06c94602-925d-44c7-b116-05308cfeaa22",
+  "adf3c120-05f6-4bf0-abca-51101b49d76c",
+  "12155140-24c8-4432-bac5-1b21699ca494",
+  "6d4dd258-d456-4dce-a031-9c263365b7a6",
+  "16a8f1d3-b6a9-487f-be34-6ef7c5228ce4",
+  "f7859f4c-56bb-45ac-848f-a036ae89a914",
+  "3c388be6-9398-4edb-84ed-6781837cfec7",
+  "22392324-ef47-43d5-a568-89c452ae2715",
+  "e7580100-5187-4470-8a4d-ee77974657d7",
+  "4bfd463e-51bc-482d-ac0b-ed9309356e42",
+  "8ac9c6f9-2e16-429c-95ef-b0278b640d0c",
+  "8611ed57-c24a-4c9a-864a-7a8a91a66812",
+  "c83c32e9-e6d3-4a48-b5d2-3dd26fe6553a",
+  "35159aca-ad64-4349-86a4-8f5f70946b1c",
+  "20333baf-a0c0-45ad-8100-27f20fb01b6a",
+  "64f58aae-8e5f-41ff-9d05-43b5f5e1a983",
+  "2ce88587-001f-445d-b656-29c0a61f31ce",
+  "64766dd6-724b-4624-bb14-05a13d69b642",
+  "6f995ca8-c939-415d-9bcb-097f76953ddd",
+  "ef01c9bc-52a3-494a-8025-18a4154e9ecb",
+  "4240160f-ca42-4a67-92f5-5710e6548ba2",
+  "828168cd-9726-4507-9b6a-0f9ff88839da",
+  "06408744-a74f-404f-b994-ba9de2dc9629",
+  "4383fc27-557c-4e9b-81e3-ffacff69fa04",
+  "85de61ee-e92a-471b-bb5b-a783dcc55da4"
+]
+}
+
+### Delete Test
+DELETE http://localhost:4000/test_gateway/test/delete/c972f593-757f-40f1-9228-4ba6a26dead2
+Content-Type: application/json
+
+### Remove MCQ from Test Using Test ID & MCQ ID
+PUT http://localhost:4000/test_gateway/test/remove_mcq_from_test
+Content-Type: application/json
+
+{
+    "test_id": "c972f593-757f-40f1-9228-4ba6a26dead2",
+    "mcq_id": "85de61ee-e92a-471b-bb5b-a783dcc55da4"
+}
+
+

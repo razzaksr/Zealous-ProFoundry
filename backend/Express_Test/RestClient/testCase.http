@@ -1,0 +1,29 @@
+### Create a Test Id and Post the testCase
+POST http://localhost:8000/testcase/create_testCase
+Content-Type: application/json
+
+{
+  "testcase_input": ["input1", "input2"],
+  "testcase_output": ["output1", "output2"],
+  "testcase_tags": ["tag1", "tag2"]
+}
+
+### Read all the testCase 
+GET http://localhost:8000/testcase/get_all_testCases
+
+### Read the testCase by ID
+GET http://localhost:8000/testcase/get_testCase_id/e0054397-f9bc-4694-b6ec-55a6e2ab51e6
+
+### update the TestCase Using 
+PUT http://localhost:8000/testcase/update_testCase
+Content-Type: application/json
+
+{
+    "testcase_id": "8fdd98c0-6746-4c88-8419-b92cc8c61ecd",
+    "testcase_input": "5 3",
+    "testcase_output": "8",
+    "testcase_tags": ["math", "addition"]
+}
+
+#### Delete the TestCase 
+DELETE http://localhost:8000/testcase/delete_testCase/8fdd98c0-6746-4c88-8419-b92cc8c61ecd

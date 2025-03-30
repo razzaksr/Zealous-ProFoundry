@@ -1,0 +1,64 @@
+### Create a new POC
+POST http://localhost:4000/poc_gateway/poc/add_poc
+Content-Type: application/json
+
+{
+    "mod_poc_name": "dhacddcdcdvdvdruwwdn",
+    "mod_poc_role": "AP",
+    "mod_poc_email": "dharwdddvvdvdcddccwdun@gmail.com",
+    "mod_poc_mobile": "9871121121521143410"
+}
+
+### Get all POCs
+GET http://localhost:4000/poc_gateway/poc/read_all_poc
+
+### Get POC by mod_poc_id
+GET http://localhost:4000/poc_gateway/poc/get_poc_by_poc_id/d6e75618-09b7-40a6-a669-c5f3dfba4d05
+
+### Update POC details
+PUT http://localhost:4000/poc_gateway/poc/update_poc
+Content-Type: application/json
+
+{
+    "mod_poc_id": "f4e816ef-f669-405c-be8c-eb5338c6ef67",
+    "mod_poc_name": "Vetro",
+    "mod_poc_role": "T",
+    "mod_poc_email": "dharusdsdn@gmail.com",
+    "mod_poc_mobile": "99981241887776",
+    "mod_users": ["717150b2-2a19-45e8-9c24-69d93b4751c2"]
+}
+
+### Update only mod_tests and mod_users
+PUT http://localhost:4000/poc_gateway/poc/update_mod_field
+Content-Type: application/json
+
+{
+    "mod_poc_id": "8ddcfe54-c282-4ce1-80d2-21cab5ec7819",
+    "mod_tests": [],
+    "mod_users": ["717150b2-2a19-45e8-9c24-69d93b4751c2"]
+}
+
+### Update Test ID for a POC
+PUT http://localhost:4000/poc_gateway/poc/update_test
+Content-Type: application/json
+
+{
+    "mod_poc_id": "f4e816ef-f669-405c-be8c-eb5338c6ef67",
+    "test_id": "new_test_999821221"
+}
+
+### Delete Test by mod_poc_id
+DELETE http://localhost:4000/poc_gateway/poc/delete_test/f4e816ef-f669-405c-be8c-eb5338c6ef67
+
+### Delete POC by mod_poc_id
+DELETE http://localhost:4000/poc_gateway/poc/delete_poc/f4e816ef-f669-405c-be8c-eb5338c6ef67
+
+###  GET POC BY USER
+GET http://localhost:4000/poc_gateway/poc/mod_by_user/1343fa0e-8b57-4b08-be4d-4ab750ec2806
+
+### GET MOD AND POC AND TEST ID BY USER ID 
+GET http://localhost:4000/poc_gateway/poc/mod_and_poc/
+
+
+### GET MOD AND POC AND TEST ID BY USER ID 
+GET http://localhost:4000/poc_gateway/poc/get_poc_certificate_by_mod_id/6503caf1-fb75-4640-99f2-d6a529b71205

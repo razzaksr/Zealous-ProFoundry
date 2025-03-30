@@ -1,0 +1,55 @@
+### Create MCQ
+POST http://localhost:4000/mcq_gateway/mcq/add_mcq
+Content-Type: application/json
+
+[
+    {
+        "mcq_question": "What is Express.js?",
+        "mcq_options": ["Framework", "Library", "Runtime", "Database"],
+        "mcq_answer": "Framework",
+        "mcq_tag": ["Backend", "Node.js"]
+    },
+    {
+        "mcq_question": "What is React?",
+        "mcq_options": ["Framework", "Library", "Language", "Database"],
+        "mcq_answer": "Library",
+        "mcq_tag": ["Frontend", "JavaScript"]
+    }
+]
+
+### Get All MCQs
+GET http://localhost:4000/mcq_gateway/mcq/get_all_mcqs
+
+### Get  MCQ  by id
+GET http://localhost:4000/mcq_gateway/mcq/get_mcq/0453498a-cae3-4646-984a-098a9a0746de
+
+### Update MCQ  
+PUT http://localhost:4000/mcq_gateway/mcq/update_mcq
+Content-Type: application/json
+
+{
+    "mcq_id": "dcedaa95-7985-476e-9252-8a043efc343a",
+    "mcq_question": "What is JavaScript?",
+    "mcq_options": ["Runtime", "Library", "Framework", "Language"],
+    "mcq_answer": "Language",
+    "mcq_tag": ["Programming", "Frontend"]
+}
+
+### Delete MCQ
+DELETE http://localhost:4000/mcq_gateway/mcq/delete_mcq/dcedaa95-7985-476e-9252-8a043efc343a
+
+
+### Submit Result to External Service via Consul
+POST http://localhost:4000/mcq_gateway/mcq/submit_result
+Content-Type: application/json
+
+{
+  "result_user_id": "user_123",
+  "result_test_id": "test_456",
+  "result_score": 85,
+  "result_poc_id": "poc_789",
+  "result_id": "result_001"
+}
+
+#### GET MCQ ID ONLY
+GET http://localhost:4000/mcq_gateway/mcq/mcq/ids

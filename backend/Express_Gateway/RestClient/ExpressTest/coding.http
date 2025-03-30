@@ -1,0 +1,31 @@
+### Create a coding_gateway/Coding data
+POST http://localhost:4000/coding_gateway/coding/code
+Content-Type: application/json
+
+{
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+### Get All Codes
+GET http://localhost:4000/coding_gateway/coding/get_allCodes
+
+
+### Get code details by id
+GET http://localhost:4000/coding_gateway/coding/get_code_by_id/a5395dbd-52f8-4061-a6ee-0292a237b020
+
+
+### Update the Code
+PUT http://localhost:4000/coding_gateway/coding/update_code
+Content-Type: application/json
+
+{
+  "code_id": "f3f7b614-c4f9-423d-8562-c7ad6d58b6d4",
+  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
+  "code_tags": ["math", "recursion", "factorial"]
+}
+
+### Delete a code
+DELETE http://localhost:4000/coding_gateway/coding/delete_code/47f8f519-d7ca-4bbc-ac06-191b5611e445

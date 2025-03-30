@@ -1,0 +1,65 @@
+### Create MCQ
+POST http://localhost:8000/mcq/add_mcq
+Content-Type: application/json
+
+{
+    "mcq_question": "What is JavaScript?",
+    "mcq_options": ["Language", "Library", "Framework", "Database"],
+    "mcq_answer": "Language",
+    "mcq_tag": ["Programming", "Frontend"]
+}
+
+### Get All MCQs
+GET http://localhost:8000/mcq/get_all_mcqs
+
+### Get a Single MCQ by ID
+GET http://localhost:8000/mcq/get_mcq/dcedaa95-7985-476e-9252-8a043efc343a
+
+### Update MCQ
+PUT http://localhost:8000/mcq/update_mcq
+Content-Type: application/json
+
+{
+    "mcq_id": "dcedaa95-7985-476e-9252-8a043efc343a",
+    "mcq_question": "What is JavaScript?",
+    "mcq_options": ["Runtime", "Library", "Framework", "Language"],
+    "mcq_answer": "Language",
+    "mcq_tag": ["Programming", "Frontend"]
+}
+
+### Delete MCQ
+DELETE http://localhost:8000/mcq/delete_mcq/dcedaa95-7985-476e-9252-8a043efc343a
+
+### Submit Result to External Service via Consul
+POST http://localhost:8000/mcq/submit_result
+Content-Type: application/json
+
+{
+  "result_user_id": "",
+  "result_test_id": "",
+  "result_score": 85,
+  "result_poc_id": "",
+  "result_id": ""
+}
+
+
+
+######################
+POST  http://localhost:8000/mcq/submit_result
+Content-Type: application/json
+
+{
+  "result_user_id": "user2321",
+  "result_test_id": "test434",
+  "result_score": 85,
+  "result_total_score": 100,
+  "result_poc_id": "poc674",
+  "result_id": "custom_id64"
+}
+
+
+#### GET MCQ ID ONLY
+GET http://localhost:8000/mcq/mcq/ids
+
+
+
