@@ -1,0 +1,50 @@
+### Create User
+POST http://localhost:7000/user/add_user
+Content-Type: application/json
+
+{
+  "full_name": "vetri",
+  "department": "Computer Science",
+  "college": "mec",
+  "rollno": "22ad105",
+  "email": "vetri@gmail.com",
+  "password": "0000",
+  "status": "active",
+  "user_last_login": "2025-03-16T10:00:00Z"
+}
+
+### Login User
+POST http://localhost:7000/user/login
+Content-Type: application/json
+
+{
+  "email": "vetri@gmail.com",
+  "password": "0000"
+}
+
+### Get All Users
+GET http://localhost:7000/user/read_all_users
+
+### Get User by ID
+GET http://localhost:7000/user/get_user_by_id/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
+
+### Update User
+PUT http://localhost:7000/user/update_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
+Content-Type: application/json
+
+{
+  "full_name": "vetree",
+  "email": "vetree@example.com",
+  "password": "1234"
+}
+
+### Update User Last Login
+PUT http://localhost:7000/user/update_last_login/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+Content-Type: application/json
+
+{
+  "user_last_login": "2025-03-16T12:30:00Z"
+}
+
+### Delete User
+DELETE http://localhost:7000/user/delete_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c

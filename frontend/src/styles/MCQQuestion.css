@@ -1,0 +1,75 @@
+.mcq-container {
+  padding: 20px;
+  margin-top: 60px;
+}
+
+.mcq-header {
+  margin-bottom: 20px;
+}
+
+.mcq-title {
+  font-weight: bold;
+}
+
+.mcq-timer {
+  display: flex;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.mcq-question-box {
+  margin: 15px 0;
+  padding: 15px;
+  border-left: 5px solid #3f51b5;
+}
+
+.question-number {
+  font-weight: bold;
+  color: #555;
+}
+
+.question-text {
+  margin-bottom: 10px;
+}
+
+.mcq-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.mcq-option {
+  padding: 5px;
+  transition: background 0.3s ease-in-out;
+}
+
+.mcq-option:hover {
+  background: #f0f0f0;
+}
+
+.correct {
+  background: #c8e6c9 !important;
+}
+
+.wrong {
+  background: #ffcdd2 !important;
+}
+
+.progress-bar {
+  margin-bottom: 15px;
+}
+
+.answer-alert {
+  margin-top: 10px;
+}
+
+.score-alert {
+  margin-top: 20px;
+  font-size: 1.2rem;
+}
+.mcq-title .test-name {
+  font-weight: bold;
+  font-style: italic;
+  color: #ff5722; /* You can change this to any color */
+}

@@ -1,0 +1,58 @@
+### Create a new POC
+POST http://localhost:6000/poc/add_poc
+Content-Type: application/json
+
+{
+    "mod_poc_name": "vetri",
+    "mod_poc_role": "AP",
+    "mod_poc_email": "vetri@gmail.com",
+    "mod_poc_mobile": "26283847784"
+}
+
+### Get all POCs
+GET http://localhost:6000/poc/read_all_poc
+
+### Get POC by mod_poc_id
+GET http://localhost:6000/poc/get_poc_by_poc_id/90fa404e-b09d-42e1-a7c5-1cd0f90b4299
+
+### Update POC details
+PUT http://localhost:6000/poc/update_poc
+Content-Type: application/json
+
+{
+    "mod_id":"6503caf1-fb75-4640-99f2-d6a529b71205",
+    "mod_poc_id": "3fcfeeae-653a-410c-b54c-4030210b0c15"
+}
+
+### Update only mod_tests and mod_users
+PUT http://localhost:6000/poc/update_mod_field 
+Content-Type: application/json
+
+{
+    "mod_poc_id": "90fa404e-b09d-42e1-a7c5-1cd0f90b4299",
+    "mod_tests": ["57b7bb55-a49e-4065-b38d-fbd13c396d2b","57b7bb55-a49e-4065-b38d-fbd13c396d2b"],
+    "mod_users": ["1343fa0e-8b57-4b08-be4d-4ab750ec2806","717150b2-2a19-45e8-9c24-69d93b4751c2"]
+}
+
+### ADD TEST BY POC ID
+
+PUT http://localhost:6000/poc/update_test
+Content-Type: application/json
+
+{
+    "mod_poc_id": "90fa404e-b09d-42e1-a7c5-1cd0f90b4299",
+    "test_id": ["9eb93e29-0857-46e3-8ffd-7fe50249eab6"]
+}
+
+### Delete Test by mod_poc_id
+DELETE http://localhost:6000/poc/delete_test/57b7bb55-a49e-4065-b38d-fbd13c396d2b
+
+### Delete POC by mod_poc_id
+DELETE http://localhost:6000/poc/delete_poc/8ddcfe54-c282-4ce1-80d2-21cab5ec7819
+
+###  GET POC BY USER
+GET http://localhost:6000/poc/mod_by_user/717150b2-2a19-45e8-9c24-69d93b4751c2
+
+
+### GET MOD AND POC AND TEST ID BY USER ID 
+GET http://localhost:6000/poc/mod_and_poc/717150b2-2a19-45e8-9c24-69d93b4751c2
