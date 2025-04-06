@@ -151,4 +151,22 @@ router.get("/get-result-by-user/:result_user_id", async (req, res) => {
 });
 
 
+router.get('/results/check', async (req, res) => {
+  try {
+    const { user_id, test_id } = req.query;
+
+    // Query your database to see if the result already exists
+    const existingResult = await Result.findOne({
+      result_user_id: user_id,
+      result_test_id: test_id,
+    });
+
+    res.json({ exists: !!existingResult }); // true or false
+  } catch (err) {
+    console.error("Error checking for existing result:", err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
 module.exports = router;

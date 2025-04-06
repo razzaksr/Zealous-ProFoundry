@@ -3,23 +3,20 @@ GET http://localhost:9000/attendance/get-all-attendance
 
 ### GET - Fetch Attendance by mod_id, class_name, poc_id
 GET http://localhost:9000/attendance/get-by-mod-id-and-class-name?mod_id=M2&class_name=Class B
-### ✅ POST - Create a New Attendance Record
+### POST - Create a New Attendance Record
 POST http://localhost:9000/attendance/post-attendance
 Content-Type: application/json
 
 {
-  
-  "mod_id": "M3",
-  "class_name": "Class C",
-  "poc_id": "12345",
-  "date": "2025-08-14",
-  "present_count": 29,
-  "total_students": 40
+  "mod_name": "AI clasics",
+  "class_name": "AI-2025",
+  "poc_name": "Dr. Vishal",
+  "date": "2025-04-08",
+  "present_count": 28,
+  "total_students": 30
 }
 
-
-
-###
+### PUT - Update an Existing Attendance Record
 PUT http://localhost:9000/attendance/update-attendance
 Content-Type: application/json
 

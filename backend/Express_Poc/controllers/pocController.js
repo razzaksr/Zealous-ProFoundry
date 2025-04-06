@@ -65,63 +65,29 @@ router.put("/update_test", async (req, res) => {
   try {
     const { mod_poc_id, test_id } = req.body;
 
-    if (!mod_poc_id || !test_id || (Array.isArray(test_id) && test_id.length === 0)) {
-      return res.status(400).json({ message: "mod_poc_id and at least one test_id are required" });
+    // Validation: Check required fields
+    if (!mod_poc_id || !Array.isArray(test_id) || test_id.length === 0) {
+      return res.status(400).json({ message: "mod_poc_id and test_id (non-empty array) are required." });
     }
 
-    // Convert test_id to an array if it's a single string
-    const testIds = Array.isArray(test_id) ? test_id : [test_id];
+    // Find the POC
+    const existingPoc = await Poc.findOne({ mod_poc_id });
 
-    // Fetch the POC
-    const poc = await Poc.findOne({ mod_poc_id });
-
-    if (!poc) {
-      return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
+    if (!existingPoc) {
+      return res.status(404).json({ message: "POC not found with the provided mod_poc_id." });
     }
 
-    // Ensure mod_tests is an object
-    if (!poc.mod_tests || typeof poc.mod_tests !== 'object' || Array.isArray(poc.mod_tests)) {
-      poc.mod_tests = {};
-    }
+    // Update mod_tests
+    existingPoc.mod_tests = test_id;
+    await existingPoc.save();
 
-    // Get existing test IDs
-    const existingTestIds = new Set(Object.values(poc.mod_tests));
-
-    // Filter out duplicates
-    const newTestIds = testIds.filter(id => !existingTestIds.has(id));
-
-    if (newTestIds.length === 0) {
-      return res.status(400).json({ message: "All provided test IDs already exist in mod_tests" });
-    }
-
-    // Determine the next available day numbers
-    const dayNumbers = Object.keys(poc.mod_tests)
-      .map(day => parseInt(day.replace("Day ", ""), 10))
-      .filter(num => !isNaN(num))
-      .sort((a, b) => a - b);
-
-    let nextDayNumber = (dayNumbers.length > 0 ? Math.max(...dayNumbers) : 0) + 1;
-
-    // Assign new test IDs to available "Day X" keys
-    const updates = {};
-    newTestIds.forEach(id => {
-      updates[`mod_tests.Day ${nextDayNumber}`] = id;
-      nextDayNumber++;
-    });
-
-    // Update the document
-    const updatedPoc = await Poc.findOneAndUpdate(
-      { mod_poc_id },
-      { $set: updates },
-      { new: true, runValidators: true }
-    );
-
-    res.status(200).json({ message: "Test(s) added successfully", updatedPoc });
+    res.status(200).json({ message: "POC test_id(s) updated successfully.", updated_tests: existingPoc.mod_tests });
   } catch (error) {
-    console.error("Error updating mod_tests:", error);
-    res.status(500).json({ message: "Error updating mod_tests", error: error.message });
+    console.error("Error updating test_id for POC:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
+
 
 
 // Delete a test from a POC

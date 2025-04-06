@@ -125,35 +125,45 @@ router.delete("/delete_mcq/:mcq_id", async (req, res) => {
 // Submit result to external service using consul
 
 router.post("/submit_result", async (req, res) => {
-  try {
-    let { result_user_id, result_test_id, result_score, result_total_score, result_poc_id, result_id } = req.body;
-
-    // Fetch service details from Consul
-    const serviceName = "Express_Report";
-    const services = await consul.catalog.service.nodes(serviceName);
-    
-    console.log("🔍 Retrieved services from Consul:", services); // Log Consul services
-
-    if (!services || services.length === 0) {
-      console.error("❌ No available service instances found in Consul");
-      return res.status(500).json({ message: "No available service instances found in Consul" });
-    }
-
-    // Use the first available service instance
-    const { ServiceAddress, ServicePort } = services[0];
-
-    console.log(`📡 Target Service: ${ServiceAddress}:${ServicePort}`); // Log target URL
-
-    if (!ServiceAddress || !ServicePort) {
-      console.error("❌ Invalid service details from Consul:", services[0]);
-      return res.status(500).json({ message: "Invalid service details from Consul" });
-    }
-
-    const targetUrl = `http://${ServiceAddress}:${ServicePort}/results/post-result`;
-    console.log(`🚀 Sending request to: ${targetUrl}`); // Log the exact request URL
-
-    // Send the result data to the external service
-   const response = await axios.post(targetUrl, {
+    try {
+      let {
+        result_user_id,
+        result_test_id,
+        result_score,
+        result_total_score,
+        result_poc_id,
+        result_id,
+      } = req.body;
+  
+      // Generate unique result_id if not provided
+      if (!result_id) {
+        result_id = uuidv4();
+        // console.log("🆕 Generated result_id:", result_id);
+      }
+  
+      // Fetch service details from Consul
+      const serviceName = "Express_Report";
+      const services = await consul.catalog.service.nodes(serviceName);
+      
+    //   console.log("🔍 Retrieved services from Consul:", services);
+  
+      if (!services || services.length === 0) {
+        // console.error("❌ No available service instances found in Consul");
+        return res.status(500).json({ message: "No available service instances found in Consul" });
+      }
+  
+      const { ServiceAddress, ServicePort } = services[0];
+    //   console.log(`📡 Target Service: ${ServiceAddress}:${ServicePort}`);
+  
+      if (!ServiceAddress || !ServicePort) {
+        // console.error("❌ Invalid service details from Consul:", services[0]);
+        return res.status(500).json({ message: "Invalid service details from Consul" });
+      }
+  
+      const targetUrl = `http://${ServiceAddress}:${ServicePort}/results/post-result`;
+    //   console.log(`🚀 Sending request to: ${targetUrl}`);
+  
+      const response = await axios.post(targetUrl, {
         result_id,
         result_user_id,
         result_test_id,
@@ -161,28 +171,29 @@ router.post("/submit_result", async (req, res) => {
         result_total_score,
         result_poc_id,
       });
-
-    console.log("✅ Response from external service:", response.data); // Log response
-
-    res.status(200).json({
-      message: "✅ Result sent successfully to external service",
-      response: response.data,
-    });
-
-  } catch (error) {
-    console.error("❌ Error sending result to external service:", error.message);
-
-    if (error.response) {
-      console.error("⚠️ Response Data:", error.response.data);
-      console.error("⚠️ Response Status:", error.response.status);
+  
+      console.log("✅ Response from external service:", response.data);
+  
+      res.status(200).json({
+        message: "✅ Result sent successfully to external service",
+        response: response.data,
+      });
+  
+    } catch (error) {
+      console.error("❌ Error sending result to external service:", error.message);
+  
+      if (error.response) {
+        console.error("⚠️ Response Data:", error.response.data);
+        console.error("⚠️ Response Status:", error.response.status);
+      }
+  
+      res.status(500).json({
+        message: "Error sending result",
+        error: error.message,
+      });
     }
-
-    res.status(500).json({ 
-      message: "Error sending result", 
-      error: error.message 
-    });
-  }
-});
+  });
+  
 
 
 // GET /mcq/ids - Fetch only mcq_id values
@@ -195,6 +206,82 @@ router.get('/mcq/ids', async (req, res) => {
         console.error("Error fetching MCQ IDs:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
+});
+
+
+router.post("/post_data_analytics", async (req, res) => {
+  try {
+    let {
+      user_id,
+      module_poc_name,
+      module_poc_id,
+      module_name,
+      module_id,
+      result_mcq_score,
+      result_coding_score,
+      result_test_id,
+      date
+    } = req.body;
+
+    // Convert scores to numbers to avoid string issues
+    result_mcq_score = Number(result_mcq_score);
+    result_coding_score = Number(result_coding_score);
+
+    const scored_mark = result_mcq_score + result_coding_score;
+    const total_mark = 100;
+
+    // 🧭 Find the service from Consul
+    const serviceName = "Express_Report";
+    const services = await consul.catalog.service.nodes(serviceName);
+
+    if (!services || services.length === 0) {
+      return res.status(500).json({ message: "No available service instances found in Consul" });
+    }
+
+    const { ServiceAddress, ServicePort } = services[0];
+
+    if (!ServiceAddress || !ServicePort) {
+      return res.status(500).json({ message: "Invalid service details from Consul" });
+    }
+
+    const targetUrl = `http://${ServiceAddress}:${ServicePort}/individual/post-individual`;
+
+    // 🧨 THIS IS THE FIX: send FLAT body, not an array
+    const payload = {
+      user_id,
+      module_poc_name,
+      module_poc_id,
+      module_name,
+      module_id,
+      result_test_id,
+      date,
+      result_mcq_score,
+      result_coding_score,
+      scored_mark,
+      total_mark
+    };
+
+    const response = await axios.post(targetUrl, payload);
+
+    res.status(200).json({
+      message: "✅ Result sent successfully to Express_Report",
+      response: response.data
+    });
+
+  } catch (error) {
+    console.error("❌ Error sending result to Express_Report:", error.message);
+
+    if (error.response) {
+      console.error("⚠️ Response Data:", error.response.data);
+      console.error("⚠️ Response Status:", error.response.status);
+    }
+
+    res.status(500).json({
+      message: "Error sending result",
+      error: error.message,
+      details: error.response?.data || {}
+    });
+  }
 });
   
   

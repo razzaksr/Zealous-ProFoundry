@@ -34,7 +34,7 @@ const pocSchema = new mongoose.Schema({
     default: [],
   },
   mod_tests: {
-    type: Object, // Change from array to object
+    type: Array,
     default: {},
   },  
   mod_users: {

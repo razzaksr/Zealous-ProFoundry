@@ -14,7 +14,7 @@ Content-Type: application/json
 GET http://localhost:4000/test_gateway/test/all
 
 ### Get Test by ID
-GET http://localhost:4000/test_gateway/test/get_by_test_id/c972f593-757f-40f1-9228-4ba6a26dead2
+GET http://localhost:4000/test_gateway/test/get_by_test_id/b2b727d1-f034-4636-9a28-b6cd84d07043
 
 ### Update Test (Add MCQ & Coding Test ID)
 PUT http://localhost:4000/test_gateway/test/update

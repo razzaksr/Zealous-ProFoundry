@@ -41,3 +41,15 @@ export const fetchOrgName = async (modId) => {
     throw error;
   }
 };
+
+// FETCH POC BY ID 
+
+export const fetchPocById = async (mod_poc_id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_by_poc_id/${mod_poc_id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching POC by ID:", error);
+    throw error;
+  }
+};

@@ -2,9 +2,13 @@ import React, { useState, useEffect } from "react";
 import { BookOpen, FileText } from "lucide-react";
 import AssessmentScores from "../components/AssessmentScores";
 import UpcomingDeadlines from "../components/UpcomingDeadlines";
-import { fetchModuleAndPoc, fetchExpertName, fetchModuleName, fetchOrgName } from "../axios";
-import CourseInfoCards from "../components/CourseInfoCards"; // Adjust path as needed
+import { fetchModuleAndPoc, fetchExpertName, fetchModuleName, fetchOrgName,fetchPocById  } from "../axios";
+import CourseInfoCards from "../components/CourseInfoCards";
 import Dash from "../components/dash";
+import { useNavigate } from "react-router-dom";
+
+
+
 
 export default function StudentDashboard() {
   const [assessmentData] = useState([
@@ -17,14 +21,17 @@ export default function StudentDashboard() {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [studentName,setStudentName] = useState("Loading...");
+  const [studentName, setStudentName] = useState("Loading...");
   const [coordinatorName, setCoordinatorName] = useState("Loading...");
   const [modId, setModId] = useState(null);
+  const [pocId, setPocId] = useState(null);
   const [expertName, setExpertName] = useState("Loading...");
   const [moduleName, setModuleName] = useState("Loading...");
   const [orgName, setOrgName] = useState("Loading...");
   const [testIds, setTestIds] = useState([]);
+  const [lastTestId, setLastTestId] = useState(null);
   const courseProgress = 68;
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem("true");
@@ -49,27 +56,41 @@ export default function StudentDashboard() {
     }
   }, []);
 
+  
   const fetchModuleAndPocData = async (userId) => {
     try {
       const data = await fetchModuleAndPoc(userId);
-      setCoordinatorName(data.mod_poc_name );
+      setCoordinatorName(data.mod_poc_name);
       setModId(data.mod_id);
-      setTestIds(data.test_ids || []);
-
+      setPocId(data.mod_poc_id);
+  
       if (data.mod_id) {
         const expertData = await fetchExpertName(data.mod_id);
         setExpertName(expertData.mod_expert_name);
-
+        console.log("Expert Data:", expertData);
+  
         const moduleData = await fetchModuleName(data.mod_id);
-        setModuleName(moduleData.mod_name );
-
+        setModuleName(moduleData.mod_name);
+  
         const orgData = await fetchOrgName(data.mod_id);
-        setOrgName(orgData.org_name );
+        setOrgName(orgData.org_name);
+      }
+  
+      // 🔥 Fix: Use the pocId from the response, not expertData
+      if (data.mod_poc_id) {
+        const pocData = await fetchPocById(data.mod_poc_id);
+        console.log("POC Data:", pocData);
+        console.log("POC ID used for fetch:", data.mod_poc_id);
+        const tests = pocData?.mod_tests || [];
+        if (tests.length > 0) {
+          setLastTestId(tests[tests.length - 1]); // last test ID
+        }
       }
     } catch (error) {
       console.error("Error in fetchModuleAndPocData:", error);
     }
   };
+  
 
   const upcomingDeadlines = [
     { id: 1, title: "Assignment 3: Data Structures", due: "Tomorrow, 11:59 PM", type: "assignment" },
@@ -79,17 +100,14 @@ export default function StudentDashboard() {
 
   const styles = {
     container: {
-      display: "flex",
+      display: "grid",
+      gridTemplateRows: "auto 1fr",
       minHeight: "100vh",
       fontFamily: "'Inter', sans-serif",
     },
     mainContent: {
-      flexGrow: 1,
-      display: "flex",
-      flexDirection: "column",
-    },
-    contentContainer: {
-      flexGrow: 1,
+      display: "grid",
+      gridTemplateColumns: "1fr",
       padding: "24px",
       maxWidth: "1400px",
       margin: "0 auto",
@@ -199,140 +217,128 @@ export default function StudentDashboard() {
   };
 
   const handleTestModuleClick = () => {
-    console.log("Navigate to test module");
+    if (lastTestId) {
+      navigate(`/test-intro/${lastTestId}`);
+    } else {
+      console.warn("No test ID available");
+    }
   };
+  
 
   return (
-    <div>
-      <Dash  />
     <div style={styles.container}>
-      {isDrawerOpen && (
-        <div style={{ width: "240px", backgroundColor: "#fff", boxShadow: "2px 0 10px rgba(0,0,0,0.1)" }}>
-          {/* Sidebar content */}
-        </div>
-      )}
-
+      <Dash />
       <div style={styles.mainContent}>
-        <div style={styles.contentContainer}>
-          {/* Welcome Header */}
-          <div style={{ ...styles.header, ...styles.sectionSpacing }}>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                gap: "16px",
-                alignItems: isMobile ? "flex-start" : "center",
-              }}
-            >
-              <div style={{ flex: isMobile ? "none" : "7", width: isMobile ? "100%" : "auto" }}>
-                <h1 style={styles.headerTitle}>Welcome back, {studentName}!</h1>
-                <p style={styles.headerSubtitle}>Continue your learning journey with {moduleName}</p>
-                <div style={styles.buttonContainer}>
-                  <button
-                    style={{
-                      backgroundColor: "#0c83c8",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      padding: "10px 20px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                    }}
-                    onClick={handleTestModuleClick}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "#fc7a46";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "#0c83c8";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                  >
-                    <FileText size={18} />
-                    Take Tests
-                  </button>
-                  <button
-                    style={{
-                      backgroundColor: "transparent",
-                      color: "white",
-                      border: "1px solid white",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      padding: "10px 20px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      cursor: "pointer",
-                      transition: "all 0.3s ease",
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.transform = "translateY(0)";
-                    }}
-                  >
-                    <BookOpen size={18} />
-                    View Resources
-                  </button>
-                </div>
-              </div>
-              <div
-                style={{
-                  flex: isMobile ? "none" : "5",
-                  width: isMobile ? "100%" : "auto",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  paddingTop: isMobile ? "16px" : "0",
-                }}
-              >
-                <div style={styles.progressCircle}>
-                  <div style={styles.innerCircle}></div>
-                  <div style={styles.progressText}>
-                    <div style={styles.progressPercentage}>{courseProgress}%</div>
-                    <div style={styles.progressLabel}>Course Progress</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Course Information Cards */}
-          <CourseInfoCards
-            orgName={orgName}
-            moduleName={moduleName}
-            expertName={expertName}
-            coordinatorName={coordinatorName}
-            styles={styles}
-          />
-
-          {/* Main Content Area */}
+        {/* Welcome Header */}
+        <div style={{ ...styles.header, ...styles.sectionSpacing }}>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: 
-                window.innerWidth < 768 ? "1fr" : "8fr 4fr",
-              gap: "20px",
-              marginBottom: "20px",
+              gridTemplateColumns: isMobile ? "1fr" : "7fr 5fr",
+              gap: "16px",
+              alignItems: "center",
             }}
           >
             <div>
-              <AssessmentScores assessmentData={assessmentData} />
+              <h1 style={styles.headerTitle}>Welcome back, {studentName}!</h1>
+              <p style={styles.headerSubtitle}>Continue your learning journey with {moduleName}</p>
+              <div style={styles.buttonContainer}>
+                <button
+                  style={{
+                    backgroundColor: "#0c80c3",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    padding: "10px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                  onClick={handleTestModuleClick}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "#fc7a46";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "#0c83c8";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  <FileText size={18} />
+                  Take Tests
+                </button>
+                <button
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "white",
+                    border: "1px solid white",
+                    borderRadius: "8px",
+                    fontWeight: "600",
+                    padding: "10px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.transform = "translateY(0)";
+                  }}
+                >
+                  <BookOpen size={18} />
+                  View Resources
+                </button>
+              </div>
             </div>
-            <div>
-              <UpcomingDeadlines upcomingDeadlines={upcomingDeadlines} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                paddingTop: isMobile ? "16px" : "0",
+              }}
+            >
+              <div style={styles.progressCircle}>
+                <div style={styles.innerCircle}></div>
+                <div style={styles.progressText}>
+                  <div style={styles.progressPercentage}>{courseProgress}%</div>
+                  <div style={styles.progressLabel}>Course Progress</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Course Information Cards */}
+        <CourseInfoCards
+          orgName={orgName}
+          moduleName={moduleName}
+          expertName={expertName}
+          coordinatorName={coordinatorName}
+          styles={styles}
+        />
+
+        {/* Main Content Area */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr",
+            gap: "20px",
+            marginBottom: "20px",
+          }}
+        >
+          <AssessmentScores assessmentData={assessmentData} />
+          <UpcomingDeadlines upcomingDeadlines={upcomingDeadlines} />
+        </div>
       </div>
-    </div>
     </div>
   );
 }

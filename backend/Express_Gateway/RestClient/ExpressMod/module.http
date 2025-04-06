@@ -12,7 +12,7 @@ Content-Type: application/json
 GET http://localhost:4000/modules_gateway/modules/get_all_module
 
 ### Get Module by ID
-GET http://localhost:4000/modules_gateway/modules/get_module_by_id/ca81469c-0763-48e0-bbdd-bfd919769454
+GET http://localhost:4000/modules_gateway/modules/get_module_by_id/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
 
 ### Update Module
 PUT http://localhost:4000/modules_gateway/modules/update_module

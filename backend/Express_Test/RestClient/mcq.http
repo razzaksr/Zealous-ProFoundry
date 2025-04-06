@@ -44,8 +44,8 @@ Content-Type: application/json
 
 
 
-######################
-POST  http://localhost:8000/mcq/submit_result
+### Submit Test Result
+POST http://localhost:8000/mcq/submit_result
 Content-Type: application/json
 
 {
@@ -53,13 +53,31 @@ Content-Type: application/json
   "result_test_id": "test434",
   "result_score": 85,
   "result_total_score": 100,
-  "result_poc_id": "poc674",
-  "result_id": "custom_id64"
+  "result_poc_id": "poc674"
 }
 
 
 #### GET MCQ ID ONLY
 GET http://localhost:8000/mcq/mcq/ids
+
+
+### Send Test Data to post_data_analytics
+POST http://localhost:8000/mcq/post_data_analytics
+Content-Type: application/json
+
+
+{
+  "module_name": "Node.js",
+  "module_id": "123",
+  "module_poc_name": " Doe",
+  "module_poc_id": "22_007",
+  "user_id": "rkadmmcsl",
+  "result_test_id": "test_001",
+  "date": "2025-03-07",
+  "result_mcq_score": 33,
+  "result_coding_score": 20,
+  "total_mark": 100
+}
 
 
 

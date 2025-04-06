@@ -3,7 +3,7 @@ import Image from "../assests/Zealous.png";
 import { Menu as MenuIcon, AccountCircle, ExitToApp } from "@mui/icons-material";
 import { Avatar, IconButton, Menu, MenuItem, Typography, AppBar, Toolbar, Box } from "@mui/material";
 
-export default function Dash() {
+export default function DashboardHeader() {
   const [userName, setUserName] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
 

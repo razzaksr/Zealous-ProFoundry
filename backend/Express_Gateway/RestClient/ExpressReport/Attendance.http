@@ -8,13 +8,12 @@ POST http://localhost:4000/attendance_gateway/attendance/post-attendance
 Content-Type: application/json
 
 {
-  
-  "mod_id": "M3",
-  "class_name": "Class C",
-  "poc_id": "12345",
-  "date": "2025-08-14",
-  "present_count": 29,
-  "total_students": 40
+  "mod_name": "AI clasics",
+  "class_name": "AI-2025",
+  "poc_name": "Dr. Vishal",
+  "date": "2025-04-08",
+  "present_count": 28,
+  "total_students": 30
 }
 
 
@@ -35,4 +34,4 @@ Content-Type: application/json
 }
 
 ###  DELETE - Remove an Attendance Record (Replace {id} with actual record ID)
-DELETE http://localhost:4000/attendance_gateway/api/attendance/delete-by-id
+DELETE http://localhost:4000/attendance_gateway/attendance/delete-by-id

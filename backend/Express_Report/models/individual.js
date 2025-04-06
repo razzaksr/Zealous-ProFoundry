@@ -1,19 +1,26 @@
 const mongoose = require("mongoose");
+const { v4: uuidv4 } = require("uuid");
+
+const getTodayDate = () => new Date().toISOString().split("T")[0];
+
+const testSchema = new mongoose.Schema({
+  result_test_id: { type: String },
+  date: { type: String, default: getTodayDate },
+  result_mcq_score: { type: String, default: "0" },
+  result_coding_score: { type: String, default: "0" },
+  scored_mark: { type: String, default: "0" },
+  total_mark: { type: String, default: "100" }
+}, { _id: false });
 
 const individualSchema = new mongoose.Schema({
-    report_id :{type: String, required:true},
-    report_module:{type: String, required:true},
-    report_poc:{type: String, required:true},
-    student_id: { type: String, required: true }, // NOT UNIQUE
-    student_name: { type: String, required: true },
-    day: { type: String, required: true }, // Store the date (YYYY-MM-DD)
-    mcq_score: { type: Number, default: 0 },
-    coding_score: { type: Number, default: 0 },
-    total_score: { type: Number, default: 0 }
+  report_id: { type: String, default: uuidv4 },
+  module_name: { type: String },
+  module_id: { type: String },
+  module_poc_name: { type: String },
+  module_poc_id: { type: String },
+  user_id: { type: String, required: true, unique: true },
+  tests: [testSchema]
 });
 
-// Create a unique index on studentId + day
-individualSchema.index({ studentId: 1, day: 1 }, { unique: true });
-
-const individual = mongoose.model("individual", individualSchema);
-module.exports = individual;
+const Individual = mongoose.model("individual", individualSchema);
+module.exports = Individual;

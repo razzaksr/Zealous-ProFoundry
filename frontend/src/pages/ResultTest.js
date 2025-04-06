@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Box, Typography, Paper, Button, CircularProgress, Grid, Divider, Card, CardContent } from "@mui/material"
@@ -90,7 +88,7 @@ const ResultCard = styled(Card)(({ theme, status }) => ({
   },
 }))
 
-const TestResult = () => {
+const ResultTest = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -195,7 +193,7 @@ const TestResult = () => {
         </ResultCard>
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6}>  
+          <Grid item xs={12} sm={6}>
             <Box
               sx={{
                 p: 2,
@@ -262,5 +260,5 @@ const TestResult = () => {
   )
 }
 
-export default TestResult
+export default ResultTest
 

@@ -44,12 +44,31 @@ POST http://localhost:4000/mcq_gateway/mcq/submit_result
 Content-Type: application/json
 
 {
-  "result_user_id": "user_123",
-  "result_test_id": "test_456",
+  "result_user_id": "usersscscc2321",
+  "result_test_id": "test434",
   "result_score": 85,
-  "result_poc_id": "poc_789",
-  "result_id": "result_001"
+  "result_total_score": 100,
+  "result_poc_id": "poc674"
 }
+
 
 #### GET MCQ ID ONLY
 GET http://localhost:4000/mcq_gateway/mcq/mcq/ids
+
+### Send Test Data to post_data_analytics
+POST http://localhost:4000/mcq_gateway/mcq/post_data_analytics
+Content-Type: application/json
+
+
+{
+  "module_name": "Node.js",
+  "module_id": "123",
+  "module_poc_name": " Doe",
+  "module_poc_id": "22_007",
+  "user_id": "rkadmmcsl",
+  "result_test_id": "test_001",
+  "date": "2025-04-07",
+  "result_mcq_score": 33,
+  "result_coding_score": 20,
+  "total_mark": 100
+}

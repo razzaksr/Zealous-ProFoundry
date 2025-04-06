@@ -13,7 +13,7 @@ Content-Type: application/json
 GET http://localhost:4000/poc_gateway/poc/read_all_poc
 
 ### Get POC by mod_poc_id
-GET http://localhost:4000/poc_gateway/poc/get_poc_by_poc_id/d6e75618-09b7-40a6-a669-c5f3dfba4d05
+GET http://localhost:4000/poc_gateway/poc/get_poc_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
 
 ### Update POC details
 PUT http://localhost:4000/poc_gateway/poc/update_poc
@@ -39,8 +39,8 @@ PUT http://localhost:4000/poc_gateway/poc/update_test
 Content-Type: application/json
 
 {
-    "mod_poc_id": "f4e816ef-f669-405c-be8c-eb5338c6ef67",
-    "test_id": "new_test_999821221"
+    "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+    "test_id": ["b2b727d1-f034-4636-9a28-b6cd84d07043"]
 }
 
 ### Delete Test by mod_poc_id
@@ -53,7 +53,8 @@ DELETE http://localhost:4000/poc_gateway/poc/delete_poc/f4e816ef-f669-405c-be8c-
 GET http://localhost:4000/poc_gateway/poc/mod_by_user/1343fa0e-8b57-4b08-be4d-4ab750ec2806
 
 ### GET MOD AND POC AND TEST ID BY USER ID 
-GET http://localhost:4000/poc_gateway/poc/mod_and_poc/
+GET http://localhost:4000/poc_gateway/poc/mod_and_poc/1343fa0e-8b57-4b08-be4d-4ab750ec2806
+
 
 
 ### GET MOD AND POC AND TEST ID BY USER ID 

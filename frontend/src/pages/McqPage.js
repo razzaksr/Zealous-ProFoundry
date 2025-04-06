@@ -22,9 +22,8 @@ const McqTest = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const testMcqIds = location.state?.testMcqIds || [];
-  const testTotalScore = location.state?.testTotalScore || 0; // Receiving test_total_score
+  const testTotalScore = location.state?.testTotalScore || 0;
 
-  const [test_id, setTestId] = useState("");
   const [mcqs, setMcqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -33,23 +32,24 @@ const McqTest = () => {
   const [score, setScore] = useState(0);
   const [userId, setUserId] = useState("");
   const [pocId, setPocId] = useState("");
+  const [test_id, setTestId] = useState("");
 
   useEffect(() => {
-    console.log("Test Total Score:", testTotalScore); // ✅ Logs test total score
+    if (testId) setTestId(testId);
+
     const fetchMcqs = async () => {
       try {
         const mcqResponses = await Promise.all(
           testMcqIds.map(async (mcqId) => {
             try {
-              const res = await axios.get(`${API_BASE_URL}/mcq_gateway/mcq/get_mcq/${mcqId}`);
+              const res = await axios.get(`${API_BASE_URL}/test_gateway/test/get_by_test_id/${mcqId}`);
               return res.data;
             } catch (err) {
               console.error(`MCQ ${mcqId} not found`);
-              return null; // Return null for missing MCQs
+              return null;
             }
           })
         );
-    
         const validMcqs = mcqResponses.filter((mcq) => mcq !== null);
         if (validMcqs.length === 0) {
           setError("No valid MCQs found for this test.");
@@ -61,7 +61,6 @@ const McqTest = () => {
       }
       setLoading(false);
     };
-    
 
     fetchMcqs();
 
@@ -77,14 +76,13 @@ const McqTest = () => {
         console.error("Error parsing user data:", err);
       }
     }
-  }, [testMcqIds]);
+  }, [testId, testMcqIds]);
 
   const fetchModuleAndPoc = async (userId) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/poc_gateway/poc/mod_and_poc/${userId}`);
       if (response.data && response.data.mod_poc_id) {
         setPocId(response.data.mod_poc_id);
-        setTestId(response.data.test_ids[0]);
       }
     } catch (err) {
       console.error("Error fetching module and PoC:", err);
@@ -109,30 +107,25 @@ const McqTest = () => {
   };
 
   const handleSubmit = async () => {
-    if (selectedAnswer === mcqs[currentIndex].mcq_answer) {
-      setScore((prev) => prev + 1);
-    }
-  
     const finalScore = score + (selectedAnswer === mcqs[currentIndex].mcq_answer ? 1 : 0);
-  
+
     const resultData = {
       result_user_id: userId,
       result_test_id: test_id,
       result_score: finalScore,
-      result_total_score: testTotalScore, // Send test total score
+      result_total_score: testTotalScore,
       result_poc_id: pocId,
     };
-  
+
     try {
       await axios.post(`${API_BASE_URL}/mcq_gateway/mcq/submit_result`, resultData);
       alert("Test submitted successfully!");
-       navigate(`/test-result`, { state: { resultData } });
+      navigate(`/test-result`, { state: { resultData } });
     } catch (err) {
       console.error("Error submitting result:", err);
       alert("Failed to submit test.");
     }
   };
-  
 
   if (loading) {
     return (
@@ -226,6 +219,7 @@ const McqTest = () => {
                     "&:hover": { backgroundColor: "#229954" },
                   }}
                   onClick={handleSubmit}
+                  disabled={!selectedAnswer}
                 >
                   Submit Test
                 </Button>
