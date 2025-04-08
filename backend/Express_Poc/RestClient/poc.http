@@ -15,6 +15,9 @@ GET http://localhost:6000/poc/read_all_poc
 ### Get POC by mod_poc_id
 GET http://localhost:6000/poc/get_poc_by_poc_id/90fa404e-b09d-42e1-a7c5-1cd0f90b4299
 
+### Get POC ID AND MOD ID BY USER ID
+GET http://localhost:6000/poc/mod_id_poc_id/528f7cb8-0bfe-4366-a98d-831719ec53e6
+
 ### Update POC details
 PUT http://localhost:6000/poc/update_poc
 Content-Type: application/json
@@ -29,9 +32,8 @@ PUT http://localhost:6000/poc/update_mod_field
 Content-Type: application/json
 
 {
-    "mod_poc_id": "90fa404e-b09d-42e1-a7c5-1cd0f90b4299",
-    "mod_tests": ["57b7bb55-a49e-4065-b38d-fbd13c396d2b","57b7bb55-a49e-4065-b38d-fbd13c396d2b"],
-    "mod_users": ["1343fa0e-8b57-4b08-be4d-4ab750ec2806","717150b2-2a19-45e8-9c24-69d93b4751c2"]
+    "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+    "mod_users": ["717150b2-2a19-45e8-9c24-69d93b4751c2","528f7cb8-0bfe-4366-a98d-831719ec53e6","dc3b072d-1ae6-4da9-bd92-04380fa78d11","41a1404a-2b8c-427c-98a9-3d199d6674fb","95bf4b6a-1665-4561-af9f-5ed41dd8d453","7f37bc0f-da5e-41cc-93bc-cb566ebf1e54","d70123a9-efec-417d-9c58-c98a977acbbc","efe06b56-aaf6-4198-840f-4a2b966b55f0"]
 }
 
 ### ADD TEST BY POC ID

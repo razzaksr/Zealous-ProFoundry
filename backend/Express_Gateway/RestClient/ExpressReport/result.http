@@ -30,6 +30,14 @@ Content-Type: application/json
 DELETE http://localhost:4000/results_gateway/results/delete-by-result-id/abcd
 Content-Type: application/json
 
+### Fetch Result BY user ID
+GET http://localhost:4000/results_gateway/results/get_results_by_user_id/528f7cb8-0bfe-4366-a98d-831719ec53e6
 
-################# get result by user id
-GET http://localhost:4000/results_gateway/results/get-result-by-user/717150b2-2a19-45e8-9c24-69d93b4751c2
+### Fetch Result BY user ID and test ID
+GET http://localhost:4000/results_gateway/results/get_result_by_user_id_test_id?result_user_id=528f7cb8-0bfe-4366-a98d-831719ec53e6&result_test_id=b2b727d1-f034-4636-9a28-b6cd84d07043
+Content-Type: application/json
+
+
+
+###  get result by user id
+GET http://98.81.207.64:4000/results_gateway/results/get-result-by-user/528f7cb8-0bfe-4366-a98d-831719ec53e6

@@ -59,3 +59,6 @@ GET http://localhost:4000/poc_gateway/poc/mod_and_poc/1343fa0e-8b57-4b08-be4d-4a
 
 ### GET MOD AND POC AND TEST ID BY USER ID 
 GET http://localhost:4000/poc_gateway/poc/get_poc_certificate_by_mod_id/6503caf1-fb75-4640-99f2-d6a529b71205
+
+### GET MOD AND POC ID BY USER ID 
+GET http://98.81.207.64:4000/poc_gateway/poc/mod_id_poc_id/528f7cb8-0bfe-4366-a98d-831719ec53e6

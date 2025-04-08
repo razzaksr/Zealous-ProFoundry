@@ -119,34 +119,19 @@ router.delete("/delete-by-result-id/:result_id", async (req, res) => {
 router.get("/get-result-by-user/:result_user_id", async (req, res) => {
   try {
     const { result_user_id } = req.params;
-    const MAX_TOTAL_SCORE = 25; // Define total possible score
 
-    // Find all results where result_user_id matches
-    const results = await Result.find({ result_user_id }, "result_score");
+    // Fetch all results for the user with full data
+    const results = await Result.find({ result_user_id });
 
     if (results.length === 0) {
       return res.status(404).json({ message: "No results found for this user" });
     }
 
-    // Extract scores
-    const scores = results.map((r) => r.result_score);
-
-    // Compute total score
-    const totalScore = scores.reduce((sum, score) => sum + score, 0);
-
-    // Compute percentage
-    const percentage = ((totalScore / MAX_TOTAL_SCORE) * 100).toFixed(2);
-
-    // Return response
-    res.json({
-      result_user_id,
-      scores,
-      total_score: totalScore,
-      percentage: `${percentage}`
-    });
+    // Return just the raw result documents
+    res.json(results);
 
   } catch (error) {
-    res.status(500).json({ message: "Error fetching result scores", error });
+    res.status(500).json({ message: "Error fetching results", error });
   }
 });
 
@@ -165,6 +150,65 @@ router.get('/results/check', async (req, res) => {
   } catch (err) {
     console.error("Error checking for existing result:", err.message);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET - Fetch Results by result_user_id and result_test_id
+router.get("/get_result_by_user_id_test_id", async (req, res) => {
+  const { result_user_id, result_test_id } = req.query;
+
+  // Validate query parameters
+  if (!result_user_id || !result_test_id) {
+    return res.status(400).json({
+      message: "Missing required query parameters: result_user_id and result_test_id",
+    });
+  }
+
+  try {
+    const results = await Result.find({
+      result_user_id,
+      result_test_id,
+    });
+
+    console.log("Fetched Results:", results);
+    res.status(200).json(results); // Return the results (array)
+  } catch (error) {
+    console.error("Error fetching results:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// GET route to fetch results by user ID
+router.get('/get_results_by_user_id/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find all results for the specified user ID
+    const results = await Result.find({ result_user_id: userId });
+
+    // If no results found
+    if (!results || results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No results found for user ID: ${userId}`
+      });
+    }
+
+    // Return successful response with results
+    res.status(200).json({
+      success: true,
+      count: results.length,
+      data: results
+    });
+
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching results:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching results',
+      error: error.message
+    });
   }
 });
 

@@ -3,51 +3,124 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const consul = require('../middleware/consul');
+const axios = require("axios");
 
 const router = express.Router();
  // Add this at the top of your file
 
 
 // Login User and generate JWT token
-router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+// router.post('/login', async (req, res) => {
+//     const { email, password } = req.body;
   
-    try {
-        // Find the user by email
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found' });
-        }
+//     try {
+//         // Find the user by email
+//         const user = await User.findOne({ email });
+//         if (!user) {
+//             return res.status(404).json({ msg: 'User not found' });
+//         }
 
-        // Compare the entered password with the hashed password stored in the database
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ msg: 'Invalid credentials' });
-        }
+//         // Compare the entered password with the hashed password stored in the database
+//         const isMatch = await bcrypt.compare(password, user.password);
+//         if (!isMatch) {
+//             return res.status(400).json({ msg: 'Invalid credentials' });
+//         }
 
-        // If the password matches, create a JWT token
-        const token = jwt.sign(
-            {
-                userId: user.user_id,  // Use `user_id` from DB
-                full_name: user.full_name
-            },
-            process.env.JWT_SECRET, // Use the secret key from the .env file
-            { expiresIn: '10h' , algorithm: "HS256"}  // Token expiration time (10 hours)
-        );
+//         // If the password matches, create a JWT token
+//         const token = jwt.sign(
+//             {
+//                 userId: user.user_id,  // Use `user_id` from DB
+//                 full_name: user.full_name
+//             },
+//             process.env.JWT_SECRET, // Use the secret key from the .env file
+//             { expiresIn: '10h' , algorithm: "HS256"}  // Token expiration time (10 hours)
+//         );
 
-        // Return the JWT token and user information
-        res.status(200).json    ({
-            msg: 'Login successful',
-            token,  // The JWT token
-            user: { 
-                user_id: user.user_id,  // Include user_id in response
-                full_name: user.full_name,
-            }
-        });
-    } catch (error) {
-        console.error('Error:', error);
-        res.status(500).json({ error: error.message });
+//         // Return the JWT token and user information
+//         res.status(200).json    ({
+//             msg: 'Login successful',
+//             token,  // The JWT token
+//             user: { 
+//                 user_id: user.user_id,  // Include user_id in response
+//                 full_name: user.full_name,
+//             }
+//         });
+//     } catch (error) {
+//         console.error('Error:', error);
+//         res.status(500).json({ error: error.message });
+//     }
+// });
+
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // 🔐 Authenticate user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Invalid credentials' });
+    }
+
+    // 🎟️ Create JWT
+    const token = jwt.sign(
+      {
+        userId: user.user_id,
+        full_name: user.full_name
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '10h', algorithm: "HS256" }
+    );
+
+    // 🧭 Find the Express_Poc service via Consul
+    const serviceName = "Express_Poc"; // make sure this matches the name registered in Consul
+    const services = await consul.catalog.service.nodes(serviceName);
+
+    if (!services || services.length === 0) {
+      return res.status(500).json({ msg: "Express_Poc service not found in Consul" });
+    }
+
+    const { ServiceAddress, ServicePort } = services[0];
+
+    if (!ServiceAddress || !ServicePort) {
+      return res.status(500).json({ msg: "Invalid service address from Consul" });
+    }
+
+    // 🔗 Make request to /mod_and_poc/:user_id
+    const modAndPocUrl = `http://${ServiceAddress}:${ServicePort}/poc/mod_id_poc_id/${user.user_id}`;
+    const modAndPocRes = await axios.get(modAndPocUrl);
+
+    const mod_poc_id = modAndPocRes.data;
+
+    // ✅ Respond with token + user + POC info
+    res.status(200).json({
+      msg: 'Login successful',
+      token,
+      user: {
+        user_id: user.user_id,
+        full_name: user.full_name,
+        mod_poc_id
+      }
+    });
+
+  } catch (error) {
+    console.error("Login Error:", error.message);
+
+    if (error.response) {
+      console.error("POC Service Response Error:", error.response.data);
+    }
+
+    res.status(500).json({
+      msg: "Login failed",
+      error: error.message,
+      poc_error: error.response?.data || null
+    });
+  }
 });
 
 // Create a new User

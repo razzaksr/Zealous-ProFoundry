@@ -14,7 +14,7 @@ Content-Type: application/json
 }
 
 ### Login User
-POST http://localhost:4000/user_gateway/user/login
+POST http://98.81.207.64:4000/user_gateway/user/login
 Content-Type: application/json
 
 {

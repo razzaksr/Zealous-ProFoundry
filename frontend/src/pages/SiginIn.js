@@ -18,7 +18,7 @@ import {
 } from "@mui/material"
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Logo from "../assests/Zealous.png";
-import axios from "axios";
+import { signIn } from "../axios";
 
 export default function ZealousSignIn() {
   const [showPassword, setShowPassword] = useState(false)
@@ -55,25 +55,27 @@ export default function ZealousSignIn() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     if (!validateForm()) {
-      return; // Prevent submission if validation fails
+      return;
     }
-    alert(`Email: ${email}\nPassword: ${password}`);
+    
+    setIsLoading(true); // Show loading state
     const userData = {
       email,
       password,
     };
+    
     try {
-      const response = await axios.post("http://localhost:4000/user_gateway/user/login", userData);
-      console.log(response);
-      console.log(response.data);
-      if (response && response.data) {
-        sessionStorage.setItem("true", JSON.stringify(response.data));
-        window.location.assign("/landing");
+      const data = await signIn(userData);
+      if (data) {
+        sessionStorage.setItem("true", JSON.stringify(data));
+        window.location.assign("/");
       }
     } catch (error) {
       console.error("Login error:", error);
+    } finally {
+      setIsLoading(false); // Reset loading state
     }
   };
 

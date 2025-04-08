@@ -197,6 +197,33 @@ router.get("/mod_and_poc/:user_id", async (req, res) => {
   }
 });
 
+// GET POC ID AND MOD ID BY USER ID
+
+router.get("/mod_id_poc_id/:user_id", async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    // Find the module where `mod_users` contains `user_id`
+    const module = await Poc.findOne(
+      { mod_users: user_id },
+      "mod_id mod_poc_id" // Only fetch mod_id and mod_poc_id
+    );
+
+    if (!module) {
+      return res.status(404).json({ error: `No module found for user with ID ${user_id}` });
+    }
+
+    // Return only mod_id and mod_poc_id
+    res.status(200).json({
+      mod_id: module.mod_id,
+      mod_poc_id: module.mod_poc_id
+    });
+  } catch (err) {
+    console.error("Error fetching module data:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Get poc_certificate by mod_id
 router.get('/get_poc_certificate_by_mod_id/:mod_id', async (req, res) => {

@@ -3,11 +3,11 @@ POST http://localhost:7000/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "vetri",
-  "department": "Computer Science",
-  "college": "mec",
-  "rollno": "22ad105",
-  "email": "vetri@gmail.com",
+  "full_name": "selva",
+  "department": "AI&DS",
+  "college": "Muthayammal Engineering College",
+  "rollno": "22ad093",
+  "email": "selva@gmail.com",
   "password": "0000",
   "status": "active",
   "user_last_login": "2025-03-16T10:00:00Z"
@@ -18,7 +18,7 @@ POST http://localhost:7000/user/login
 Content-Type: application/json
 
 {
-  "email": "vetri@gmail.com",
+  "email": "dp@gmail.com",
   "password": "0000"
 }
 
@@ -26,7 +26,7 @@ Content-Type: application/json
 GET http://localhost:7000/user/read_all_users
 
 ### Get User by ID
-GET http://localhost:7000/user/get_user_by_id/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
+GET http://localhost:7000/user/get_user_by_id/528f7cb8-0bfe-4366-a98d-831719ec53e6
 
 ### Update User
 PUT http://localhost:7000/user/update_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c

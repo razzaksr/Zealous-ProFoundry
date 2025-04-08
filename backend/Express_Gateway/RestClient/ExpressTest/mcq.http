@@ -70,5 +70,5 @@ Content-Type: application/json
   "date": "2025-04-07",
   "result_mcq_score": 33,
   "result_coding_score": 20,
-  "total_mark": 100
+  "total_mark": 430
 }

@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import axios from "axios"
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -17,8 +16,8 @@ import {
   ThemeProvider,
   createTheme,
   CssBaseline,
-} from "@mui/material"
-import { alpha, styled } from "@mui/material/styles"
+} from "@mui/material";
+import { alpha, styled } from "@mui/material/styles";
 import {
   Language as LanguageIcon,
   EmojiEvents as ScoreIcon,
@@ -27,7 +26,8 @@ import {
   Quiz as QuizIcon,
   Code as CodeIcon,
   CheckCircleOutline as CheckIcon,
-} from "@mui/icons-material"
+} from "@mui/icons-material";
+import { getTestById } from "../axios"; // Import from apiService
 
 // Create a custom theme with improved typography
 const theme = createTheme({
@@ -102,7 +102,7 @@ const theme = createTheme({
       },
     },
   },
-})
+});
 
 // Custom styled components
 const AnimatedCard = styled(Card)(({ theme }) => ({
@@ -113,12 +113,12 @@ const AnimatedCard = styled(Card)(({ theme }) => ({
     transform: "translateY(-4px)",
     boxShadow: "0 16px 70px rgba(0, 0, 0, 0.12)",
   },
-}))
+}));
 
 const ColorBar = styled(Box)(({ theme }) => ({
   height: 6,
   background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-}))
+}));
 
 const AnimatedButton = styled(Button)(({ theme }) => ({
   position: "relative",
@@ -151,7 +151,7 @@ const AnimatedButton = styled(Button)(({ theme }) => ({
     transition: "transform 1s ease",
     transform: "translateX(100%)",
   },
-}))
+}));
 
 const InfoCard = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -167,7 +167,7 @@ const InfoCard = styled(Paper)(({ theme }) => ({
     transform: "translateY(-2px)",
     boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
   },
-}))
+}));
 
 const IconWrapper = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -178,7 +178,7 @@ const IconWrapper = styled(Box)(({ theme }) => ({
   borderRadius: "50%",
   backgroundColor: alpha(theme.palette.primary.main, 0.1),
   color: theme.palette.primary.main,
-}))
+}));
 
 const SecondaryIconWrapper = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -189,7 +189,7 @@ const SecondaryIconWrapper = styled(Box)(({ theme }) => ({
   borderRadius: "50%",
   backgroundColor: alpha(theme.palette.secondary.main, 0.1),
   color: theme.palette.secondary.main,
-}))
+}));
 
 const LoadingContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -198,42 +198,41 @@ const LoadingContainer = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   minHeight: "100vh",
   gap: theme.spacing(2),
-}))
+}));
 
 const TestDetails = () => {
-  const { testId } = useParams()
-  const navigate = useNavigate()
-  const [testData, setTestData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const API_BASE_URL = "http://localhost:4000"
+  const { testId } = useParams();
+  const navigate = useNavigate();
+  const [testData, setTestData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Responsive breakpoints
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"))
-  const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"))
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     const fetchTestData = async () => {
       try {
-        setLoading(true)
-        const response = await axios.get(`${API_BASE_URL}/test_gateway/test/get_by_test_id/${testId}`)
-        setTestData(response.data)
+        setLoading(true);
+        const data = await getTestById(testId);
+        setTestData(data);
       } catch (err) {
-        console.error("Failed to fetch test data:", err)
+        console.error("Failed to fetch test data:", err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchTestData()
-  }, [testId])
+    fetchTestData();
+  }, [testId]);
 
   const handleProceed = () => {
-    navigate(`/mcq/${testId}`)
-  }
+    navigate(`/mcq/${testId}`);
+  };
 
   const handleBack = () => {
-    navigate(-1)
-  }
+    navigate(-1);
+  };
 
   const renderLoading = () => (
     <LoadingContainer>
@@ -260,7 +259,7 @@ const TestDetails = () => {
         Loading test details...
       </Typography>
     </LoadingContainer>
-  )
+  );
 
   if (loading) {
     return (
@@ -268,7 +267,7 @@ const TestDetails = () => {
         <CssBaseline />
         {renderLoading()}
       </ThemeProvider>
-    )
+    );
   }
 
   if (!testData) {
@@ -298,7 +297,7 @@ const TestDetails = () => {
           </Paper>
         </Box>
       </ThemeProvider>
-    )
+    );
   }
 
   return (
@@ -341,7 +340,7 @@ const TestDetails = () => {
                 </Typography>
               </Box>
             </Box>
-  
+
             <CardContent sx={{ p: 0 }}>
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={6}>
@@ -375,7 +374,7 @@ const TestDetails = () => {
                   </InfoCard>
                 </Grid>
               </Grid>
-  
+
               <Typography
                 variant="h6"
                 gutterBottom
@@ -386,7 +385,7 @@ const TestDetails = () => {
               >
                 Test Components
               </Typography>
-  
+
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <InfoCard elevation={0}>
@@ -447,7 +446,7 @@ const TestDetails = () => {
                   </InfoCard>
                 </Grid>
               </Grid>
-  
+
               <Box sx={{ mt: 2 }}>
                 <Typography
                   variant="h6"
@@ -507,8 +506,7 @@ const TestDetails = () => {
         </AnimatedCard>
       </Box>
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default TestDetails
-
+export default TestDetails;
