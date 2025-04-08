@@ -12,6 +12,7 @@ import CodingPage from "./pages/CodingTest";
 import McqTest from "./pages/McqTest";
 import InstructionsPage from "./pages/Info";
 
+
 const App = () => {
   const isLoggedIn = sessionStorage.getItem("true");
 
