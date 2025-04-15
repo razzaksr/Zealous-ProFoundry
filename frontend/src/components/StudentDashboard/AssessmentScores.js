@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { fetchResultsByUserId } from "../axios";
+import { fetchResultsByUserId } from "../../axios";
 
 const AssessmentScores = () => {
   const [assessmentData, setAssessmentData] = useState([]);
@@ -61,7 +61,7 @@ const AssessmentScores = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const storedUser = sessionStorage.getItem("true");
+        const storedUser = localStorage.getItem("true");
         if (!storedUser) {
           console.warn("No user found in session storage");
           return;

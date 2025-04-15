@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'inactive'],  // Only allow 'active' or 'inactive'
         default: 'active',
-        required:true
+        required:true   
     },
     user_last_login: {
         type: String  // Store as a string in ISO forma

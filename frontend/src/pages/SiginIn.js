@@ -19,6 +19,8 @@ import {
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
 import Logo from "../assests/Zealous.png";
 import { signIn } from "../axios";
+import { useNavigate } from "react-router-dom";
+
 
 export default function ZealousSignIn() {
   const [showPassword, setShowPassword] = useState(false)
@@ -31,6 +33,8 @@ export default function ZealousSignIn() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
+
+  const navigate = useNavigate();
 
   // Animation on mount - with a slight delay to ensure DOM is ready
   useEffect(() => {
@@ -69,8 +73,10 @@ export default function ZealousSignIn() {
     try {
       const data = await signIn(userData);
       if (data) {
-        sessionStorage.setItem("true", JSON.stringify(data));
-        window.location.assign("/");
+        localStorage.setItem("isLoggedIn","true");
+        localStorage.setItem("true", JSON.stringify(data));
+        window.location.assign("/landing");
+
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -558,4 +564,3 @@ export default function ZealousSignIn() {
     </Box>
   )
 }
-

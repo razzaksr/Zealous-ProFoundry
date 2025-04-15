@@ -780,7 +780,7 @@ const McqTest = () => {
   const timerRef = useRef(null)
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("true")
+    const storedUser = localStorage.getItem("true")
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser)

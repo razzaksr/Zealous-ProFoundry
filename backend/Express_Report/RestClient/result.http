@@ -39,5 +39,9 @@ Content-Type: application/json
 ### Fetch Result BY user ID
 GET http://localhost:9000/results/get_results_by_user_id/528f7cb8-0bfe-4366-a98d-831719ec53e6
 
+### GET PERCEMTAGE OF TEST
+GET http://localhost:9000/results/aggregate_scores/9ccefe74-f80c-4427-804e-827a61d7619a/528f7cb8-0bfe-4366-a98d-831719ec53e6
+
+
 ###########
 GET https://consul-jz12.onrender.com/v1/catalog/service/Express_User

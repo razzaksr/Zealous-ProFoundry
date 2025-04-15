@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const Result = require("../models/results");
 const { v4: uuidv4 } = require("uuid");
+const consul = require('../middleware/consul');
+const axios = require("axios");
+
 
 // **GET - Fetch All Results**
 router.get("/get-result", async (req, res) => {
@@ -48,26 +51,7 @@ router.post("/post-result", async (req, res) => {
 });
 
 
-// ✅ Helper function to fetch service URL from Consul
-const getServiceUrl = async (serviceName) => {
-  try {
-    console.log(`🔍 Fetching service URL for: ${serviceName}`);
 
-    const services = await consul.agent.service.list();
-    if (!services[serviceName]) {
-      console.error(`❌ Service ${serviceName} not found`);
-      return null;
-    }
-
-    const { Address, Port } = services[serviceName];
-    const serviceUrl = `http://${Address}:${Port}`;
-    console.log(`✅ Found ${serviceName} at ${serviceUrl}`);
-    return serviceUrl;
-  } catch (err) {
-    console.error(`❌ Error fetching ${serviceName} service URL:`, err.message);
-    return null;
-  }
-};
 
 
 // ✅ PUT - Update an existing result
@@ -170,7 +154,6 @@ router.get("/get_result_by_user_id_test_id", async (req, res) => {
       result_test_id,
     });
 
-    console.log("Fetched Results:", results);
     res.status(200).json(results); // Return the results (array)
   } catch (error) {
     console.error("Error fetching results:", error);
@@ -212,5 +195,107 @@ router.get('/get_results_by_user_id/:userId', async (req, res) => {
   }
 });
 
+// GET PERCENTAGE TILL DATE 
+
+async function getServiceAddress(serviceName) {
+  try {
+    const services = await consul.catalog.service.nodes(serviceName);
+    if (!services || services.length === 0) {
+      console.error(`❌ No available service instances found for ${serviceName}`);
+      throw new Error(`No available service instances found for ${serviceName}`);
+    }
+    const { ServiceAddress, ServicePort } = services[0];
+    if (!ServiceAddress || !ServicePort) {
+      console.error(`❌ Invalid service details for ${serviceName}:`, services[0]);
+      throw new Error(`Invalid service details for ${serviceName}`);
+    }
+    return `http://${ServiceAddress}:${ServicePort}`;
+  } catch (error) {
+    console.error(`❌ Error fetching service ${serviceName}:`, error.message);
+    throw error;
+  }
+}
+
+router.get('/aggregate_scores/:poc_id/:user_id', async (req, res) => {
+  try {
+    const { poc_id, user_id } = req.params;
+    console.log(`🚀 Processing aggregate_scores for poc_id: ${poc_id}, user_id: ${user_id}`);
+
+    // Fetch Express_Poc service address
+    const pocGatewayUrl = await getServiceAddress('Express_Poc');
+    console.log(`📡 Express_Poc URL: ${pocGatewayUrl}`);
+
+    const testsResponse = await axios.get(`${pocGatewayUrl}/poc/tests_till_today/${poc_id}`);
+    const testIds = testsResponse.data.tests_till_today.map(test => test.test_id);
+    console.log(`✅ Fetched ${testIds.length} test IDs:`, testIds);
+
+    if (!testIds.length) {
+      console.log(`ℹ️ No tests found for poc_id: ${poc_id}`);
+      return res.status(200).json({
+        message: '✅ No tests found for this POC',
+        response: { tests: [], total_result_score: 0, total_test_score: 0, average_percentage: 0 }
+      });
+    }
+
+    // Fetch Express_Test service address
+    const testGatewayUrl = await getServiceAddress('Express_Test');
+    console.log(`📡 Express_Test URL: ${testGatewayUrl}`);
+
+    // Fetch Express_Report'); service address (self)
+    const resultGatewayUrl = await getServiceAddress('Express_Report');
+
+    const results = await Promise.all(
+      testIds.map(async (test_id) => {
+        let test_total_score = 0;
+        try {
+          const testResponse = await axios.get(`${testGatewayUrl}/test/get_by_test_id/${test_id}`);
+          test_total_score = testResponse.data.test_total_score || 0;
+        } catch (error) {
+          console.error(`⚠️ Error fetching test ${test_id}:`, error.message);
+          if (error.response) {
+            console.error(`⚠️ Response Data:`, error.response.data);
+            console.error(`⚠️ Response Status:`, error.response.status);
+          }
+          test_total_score = 0;
+        }
+
+        let result_score = 0;
+        try {
+          const resultResponse = await axios.get(
+            `${resultGatewayUrl}/results/get_result_by_user_id_test_id?result_user_id=${user_id}&result_test_id=${test_id}`
+          );
+          result_score = resultResponse.data[0]?.result_score || 0;
+        } catch (error) {
+          console.log(`ℹ️ No result found for test_id ${test_id}, user_id ${user_id}`);
+          if (error.response) {
+            console.error(`⚠️ Error fetching result for test ${test_id}:`, error.response.data);
+            console.error(`⚠️ Response Status:`, error.response.status);
+          }
+          result_score = 0;
+        }
+
+        const percentage = test_total_score > 0 ? (result_score / test_total_score) * 100 : 0;
+
+        return { test_id, test_total_score, result_score, percentage };
+      })
+    );
+
+    const total_result_score = results.reduce((sum, r) => sum + r.result_score, 0);
+    const total_test_score = results.reduce((sum, r) => sum + r.test_total_score, 0);
+    const average_percentage = total_test_score > 0 ? (total_result_score / total_test_score) * 100 : 0;
+
+    res.status(200).json({
+      message: '✅ Scores aggregated successfully',
+      response: { tests: results, total_result_score, total_test_score, average_percentage }
+    });
+  } catch (error) {
+    console.error('❌ Error in aggregate_scores:', error.message);
+    if (error.response) {
+      console.error('⚠️ Response Data:', error.response.data);
+      console.error('⚠️ Response Status:', error.response.status);
+    }
+    res.status(500).json({ message: 'Error aggregating scores', error: error.message });
+  }
+});
 
 module.exports = router;

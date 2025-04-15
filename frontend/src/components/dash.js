@@ -7,9 +7,8 @@ import {
   AppBar,
   Toolbar,
   Box,
-  CircularProgress,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "../assests/Zealous.png";
 import {
   Menu as MenuIcon,
@@ -17,18 +16,18 @@ import {
   ExitToApp,
   Download,
 } from "@mui/icons-material";
-import { generateCertificate } from "./CertificateGenerator";
-import { getResultsByUserId } from "../axios"; // adjust import path
+import CertificateGenerator from "./certificate";
+import { getResultsByUserId } from "../axios";
 
 export default function DashboardHeader() {
   const [userName, setUserName] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState("");
   const [hasResults, setHasResults] = useState(false);
+  const certificateRef = useRef(null);
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("true");
+    const storedUser = localStorage.getItem("true");
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
@@ -74,10 +73,16 @@ export default function DashboardHeader() {
   };
 
   const handleDownloadCertificate = async () => {
-    setLoading(true);
-    const success = await generateCertificate();
-    setLoading(false);
-    if (!success) alert("Failed to generate certificate.");
+    try {
+      if (certificateRef.current) {
+        await certificateRef.current.handleDownloadCertificate();
+      } else {
+        throw new Error("Certificate generator not initialized");
+      }
+    } catch (error) {
+      console.error("Certificate generation failed:", error);
+      alert("Failed to generate certificate.");
+    }
   };
 
   return (
@@ -116,25 +121,7 @@ export default function DashboardHeader() {
         </Toolbar>
       </AppBar>
 
-      {loading && (
-        <Box
-          sx={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(255, 255, 255, 0.6)",
-            backdropFilter: "blur(5px)",
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <CircularProgress size={60} sx={{ color: "#0c83c8" }} />
-        </Box>
-      )}
+      <CertificateGenerator ref={certificateRef} />
     </>
   );
 }

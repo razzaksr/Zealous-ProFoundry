@@ -1,7 +1,7 @@
-// UpcomingDeadlines.jsx
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
-import { getTestById, checkIfTestTaken, fetchModuleAndPoc } from "../axios";
+import { getTestById, checkIfTestTaken, fetchModuleAndPoc } from "../../axios";
+import { CircularProgress } from "@mui/material";
 
 const UpcomingDeadlines = ({ testIds: propTestIds }) => {
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
@@ -90,10 +90,12 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
       flexDirection: "column",
       justifyContent: "space-between",
     },
-    loadingText: {
-      textAlign: "center",
-      color: "#6b7280",
-      padding: "20px",
+    loadingContainer: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100%",
+      minHeight: "400px",
     },
     errorText: {
       textAlign: "center",
@@ -101,16 +103,16 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
       padding: "20px",
     },
     completedBadge: {
-      backgroundColor: "rgba(76, 175, 80, 0.1)", // Green background for completed
-      color: "#4caf50", // Green text
+      backgroundColor: "rgba(76, 175, 80, 0.1)",
+      color: "#4caf50",
       padding: "2px 8px",
       borderRadius: "12px",
       fontSize: "12px",
       fontWeight: "500",
     },
     notCompletedBadge: {
-      backgroundColor: "rgba(244, 67, 54, 0.1)", // Red background for not completed
-      color: "#f44336", // Red text
+      backgroundColor: "rgba(244, 67, 54, 0.1)",
+      color: "#f44336",
       padding: "2px 8px",
       borderRadius: "12px",
       fontSize: "12px",
@@ -119,7 +121,7 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
   };
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("true");
+    const storedUser = localStorage.getItem("true");
 
     if (storedUser) {
       try {
@@ -149,10 +151,13 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
     try {
       const response = await fetchModuleAndPoc(userId);
       console.log("Raw fetchModuleAndPoc response:", response);
-      const tests = response.test_ids || response.mod_tests || [];
-      console.log("Fetched test IDs:", tests);
+      
+      // Extract test IDs and full test objects from response.tests
+      const tests = response.tests || [];
+      console.log("Fetched tests:", tests);
+      
+      // Map to just test_ids if needed, but we'll keep full objects
       setTestIds(tests);
-      sessionStorage.setItem("testIds", JSON.stringify(tests));
     } catch (error) {
       console.error("Error fetching test IDs from API:", error);
       setError("Failed to fetch test IDs");
@@ -171,31 +176,29 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
 
       try {
         setLoading(true);
-        const testPromises = testIds.map((testId) => getTestById(testId));
+        
+        // Fetch test details using test_id from each test object
+        const testPromises = testIds.map((test) => getTestById(test.test_id));
         const testResults = await Promise.all(testPromises);
 
-        const completionPromises = testIds.map((testId) =>
-          checkIfTestTaken(userId, testId)
+        const completionPromises = testIds.map((test) =>
+          checkIfTestTaken(userId, test.test_id)
         );
         const completionResults = await Promise.all(completionPromises);
 
         const transformedDeadlines = testResults.map((test, index) => {
-          const availableDate = test.test_available_date
-            ? new Date(test.test_available_date)
-            : new Date();
-          const availableYear = availableDate.getFullYear();
+          const assignedDate = testIds[index].assigned_date;
 
           return {
             id: test._id || test.test_id,
             title: test.test_name || "Unnamed Test",
             language: test.test_language || "Unknown",
             score: test.test_total_score || 0,
-            availableYear: availableYear,
+            assignedDate: assignedDate,
             hasTaken: completionResults[index].length > 0,
           };
         });
 
-        console.log("Transformed deadlines:", transformedDeadlines);
         setUpcomingDeadlines(transformedDeadlines);
       } catch (err) {
         console.error("Error fetching test details:", err);
@@ -213,7 +216,9 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
   if (loading) {
     return (
       <div style={styles.card}>
-        <div style={styles.loadingText}>Loading deadlines...</div>
+        <div style={styles.loadingContainer}>
+          <CircularProgress color="primary" />
+        </div>
       </div>
     );
   }
@@ -254,7 +259,6 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
                   <div style={styles.deadlineHeader}>
                     <div style={styles.deadlineTitle}>{deadline.title}</div>
                     <div style={styles.deadlineType}>
-
                       <span
                         style={
                           deadline.hasTaken
@@ -267,9 +271,8 @@ const UpcomingDeadlines = ({ testIds: propTestIds }) => {
                     </div>
                   </div>
                   <div style={styles.deadlineTime}>
-                    {/* <span style={{ marginLeft: "8px" }}>
-                      Available Year: {deadline.availableYear}
-                    </span> */}
+                    <Clock size={14} />
+                    <span>{deadline.assignedDate}</span>
                     <span style={{ marginLeft: "8px" }}>
                       Language: {deadline.language}
                     </span>

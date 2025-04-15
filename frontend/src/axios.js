@@ -117,12 +117,35 @@ export const fetchModuleAndPoc = async (userId) => {
   }
 };
 
+export const fetchTestsToday = async (pocId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/tests_today/${pocId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching today's tests:", error);
+    return { tests_today: [] }; // Changed key to match new endpoint
+  }
+};
+
 export const fetchExpertName = async (modId) => {
   try {
     const response = await axios.get(`${BASE_URL}/expert_gateway/expert/get_expert_name/${modId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching expert name:", error);
+    throw error;
+  }
+};
+
+// Fetch course progress (aggregate scores) by POC ID and User ID
+export const fetchAggregateScores = async (pocId, userId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/results_gateway/results/aggregate_scores/${pocId}/${userId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching course progress:", error);
     throw error;
   }
 };
@@ -146,6 +169,8 @@ export const fetchOrgName = async (modId) => {
     throw error;
   }
 };
+
+
 
 // FETCH POC BY ID 
 

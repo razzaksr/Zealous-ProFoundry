@@ -4,11 +4,11 @@ const { v4: uuidv4 } = require("uuid");
 const pocSchema = new mongoose.Schema({
   mod_id: {
     type: String,
-    default: null, 
+    default: null,
   },
   mod_poc_id: {
     type: String,
-    default: uuidv4, 
+    default: uuidv4,
     unique: true,
   },
   mod_poc_name: {
@@ -22,7 +22,7 @@ const pocSchema = new mongoose.Schema({
   mod_poc_email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   mod_poc_mobile: {
     type: String,
@@ -34,22 +34,26 @@ const pocSchema = new mongoose.Schema({
     default: [],
   },
   mod_tests: {
-    type: Array,
-    default: {},
-  },  
+    type: [
+      {
+        test_id: { type: String, required: true },
+        assigned_date: { type: String, required: true } 
+      }
+    ],
+    default: [],
+  },
   mod_users: {
     type: [String],
     default: [],
   },
   attendance: {
-    type: [Object], 
+    type: [Object],
     default: [],
   },
   poc_certificate: {
     type: Boolean,
-    default: false, // Default as false (0)
-    required: false, // Not required while posting
+    default: false,
   },
-}, );
+});
 
 module.exports = mongoose.model("Poc", pocSchema);

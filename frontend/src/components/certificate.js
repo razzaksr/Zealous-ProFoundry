@@ -1,11 +1,11 @@
+import { forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import React, { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import dayjs from "dayjs";
-import BackgroundImg from "../assests/cert_bg.jpg.jpg";
-import DigiSign from "../assests/DigiSign.png";
-import { getUserById, getResultsByUserId, getModuleById } from "../axios";
+import { createRoot } from "react-dom/client";
+import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Adjust path
+import DigiSign from "../assests/DigiSign.png"; // Adjust path
+import { getUserById, getResultsByUserId, getModuleById ,fetchAggregateScores } from "../axios";
 import {
   Dialog,
   DialogContent,
@@ -13,50 +13,66 @@ import {
   LinearProgress,
   Box,
   Typography,
-  Button,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 
+// Certificate template
 const CertificateTemplate = ({ forwardedRef }) => {
   const [userDetails, setUserDetails] = useState(null);
   const [moduleDetails, setModuleDetails] = useState(null);
   const [userResults, setUserResults] = useState(null);
+  const [aggregateScore, setAggregateScore] = useState(null);
+
 
   useEffect(() => {
     const fetchData = async () => {
-      const storedUser = sessionStorage.getItem("true");
+      const storedUser = localStorage.getItem("true");
       if (!storedUser) return;
-
+  
       try {
         const user = JSON.parse(storedUser);
         const userId = user?.user?.user_id;
         const modId = user?.user?.mod_poc_id?.mod_id;
-
+        const pocId = user?.user?.mod_poc_id?.mod_poc_id;
+  
         if (userId) {
           const userData = await getUserById(userId);
           setUserDetails(userData);
+  
           const resultsData = await getResultsByUserId(userId);
           setUserResults(resultsData);
         }
-
+  
         if (modId) {
           const moduleData = await getModuleById(modId);
           setModuleDetails(moduleData);
+        }
+  
+        if (userId && pocId) {
+          const scoreData = await fetchAggregateScores(pocId, userId);
+          setAggregateScore(scoreData.response);
         }
       } catch (error) {
         console.error("Error fetching certificate data:", error);
       }
     };
-
+  
     fetchData();
   }, []);
+  
 
-  if (!userDetails || !moduleDetails || !userResults) return null;
-
+  if (!userDetails || !moduleDetails || !userResults || userResults.length === 0 || !aggregateScore)
+    return null;
+  
   const formatCertificateId = (id) => {
     const idStr = String(id);
     return idStr.length > 10 ? idStr.slice(-10) : idStr.padStart(10, "0");
   };
+
+  const percentage = aggregateScore?.average_percentage?.toFixed(2) || "0.00";
+
+
+  const issueDate = dayjs(userResults[userResults.length - 1]?.created_at).format("DD-MM-YYYY");
 
   return (
     <div
@@ -73,9 +89,7 @@ const CertificateTemplate = ({ forwardedRef }) => {
         textAlign: "center",
       }}
     >
-      <h2 style={{ fontSize: "46px", margin: "20px 0 10px", marginTop: '130px' }}>
-        CERTIFICATE OF COMPLETION
-      </h2>
+      <h2 style={{ fontSize: "46px", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
       <p style={{ fontSize: "16px", fontStyle: "italic" }}>
         Certificate ID : CET/WP/{formatCertificateId(userResults[0]?.result_id)}
       </p>
@@ -83,48 +97,21 @@ const CertificateTemplate = ({ forwardedRef }) => {
       <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>
         WE ARE PROUDLY PRESENT THIS SKILL WORKSHOP
       </p>
-      <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>
-        CERTIFICATE TO
-      </p>
+      <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>CERTIFICATE TO</p>
 
-      <div style={{ display: "inline-block", textAlign: "center" }}>
-        <h3
-          style={{
-            fontSize: "26px",
-            color: "#35b5ff",
-            marginBottom: "5px",
-          }}
-        >
+      <div style={{ display: "inline-block", textAlign: "center", marginTop: "-50px" }}>
+        <h3 style={{ fontSize: "26px", color: "#35b5ff", marginBottom: "5px" }}>
           {userDetails.full_name?.toUpperCase()} ({userDetails.rollno})
         </h3>
-        <div
-          style={{
-            height: "2px",
-            backgroundColor: "#35b5ff",
-            width: "100%",
-          }}
-        />
+        <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "100%" }} />
       </div>
 
-
       <p style={{ fontSize: "18px", margin: "30px auto", width: "80%" }}>
-        Department of <strong>{userDetails.department}</strong> from{" "}
-        <strong>{userDetails.college}</strong> on
-        <strong> Web Development </strong> in the technology of{" "}
-        <strong>{moduleDetails.mod_tech}</strong>. Obtained a mark of{" "}
-        <strong>
-          {(
-            (userResults[0]?.result_score /
-              userResults[0]?.result_total_score) *
-            100
-          ).toFixed(2)}
-          %
-        </strong>
-        .<br />
-        Duration: {dayjs(moduleDetails.mod_start_date).format("DD/MM/YYYY")} -{" "}
-        {dayjs(moduleDetails.mod_end_date).format("DD/MM/YYYY")}.
+        Department of <strong>{userDetails.department}</strong> from <strong>{userDetails.college}</strong> on
+        <strong> {moduleDetails.mod_name}</strong>. Obtained a mark of <strong>{percentage}%</strong>.<br />
+        Duration: {moduleDetails.mod_duration}.
       </p>
-      {/* Left Side - Date of Issue */}
+
       <div
         style={{
           position: "absolute",
@@ -133,24 +120,13 @@ const CertificateTemplate = ({ forwardedRef }) => {
           textAlign: "center",
           fontSize: "1.3rem",
           marginLeft: "200px",
-          marginTop: "-50px",
         }}
       >
-        <strong>{dayjs(userResults[0]?.created_at).format("DD-MM-YYYY")}</strong>
-        <br />
-        <div
-          style={{
-            height: "2px",
-            backgroundColor: "#35b5ff", // blue line
-            width: "140px",
-            margin: "5px auto 0",
-          }}
-        />
+        <strong>{issueDate}</strong>
+        <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "140px", margin: "5px auto 0" }} />
         <span style={{ fontWeight: "bold" }}>Date of Issue</span>
-
       </div>
 
-      {/* Right Side - Signature */}
       <div
         style={{
           position: "absolute",
@@ -158,35 +134,23 @@ const CertificateTemplate = ({ forwardedRef }) => {
           right: "60px",
           textAlign: "center",
           fontSize: "1.3rem",
-          marginTop: "-50px",
         }}
       >
         <img
-          src={DigiSign}
+          src={DigiSign || "/placeholder.svg"}
           alt="stamp"
           style={{ height: "90px", width: "90px", marginBottom: "5px" }}
         />
-        <br />
-        <div
-          style={{
-            height: "2px",
-            backgroundColor: "#35b5ff", // blue line
-            width: "200px",
-            margin: "5px auto 0",
-          }}
-        />
+        <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "200px", margin: "5px auto 0" }} />
         <span style={{ fontWeight: "bold" }}>Head - Technology & Training</span>
-
       </div>
-
-
-
     </div>
   );
 };
 
+// Generate PDF
 const generateCertificate = async (setProgress) => {
-  let certificateRef = { current: null };
+  const certificateRef = { current: null };
   const container = document.createElement("div");
   container.style.position = "absolute";
   container.style.left = "-9999px";
@@ -194,16 +158,13 @@ const generateCertificate = async (setProgress) => {
 
   try {
     const root = createRoot(container);
-    root.render(
-      <CertificateTemplate forwardedRef={(el) => (certificateRef.current = el)} />
-    );
+    root.render(<CertificateTemplate forwardedRef={(el) => (certificateRef.current = el)} />);
 
     setProgress(20);
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     if (!certificateRef.current) throw new Error("Certificate rendering failed");
 
-    // Load the background image
     const background = new Image();
     background.src = BackgroundImg;
     await new Promise((resolve, reject) => {
@@ -214,7 +175,7 @@ const generateCertificate = async (setProgress) => {
     setProgress(40);
     const canvas = await html2canvas(certificateRef.current, {
       useCORS: true,
-      backgroundColor: "transparent", // key line to make overlay transparent
+      backgroundColor: "transparent",
       scale: 3,
     });
 
@@ -222,17 +183,12 @@ const generateCertificate = async (setProgress) => {
     const imgData = canvas.toDataURL("image/png", 1.0);
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-    // Draw the background first
     pdf.addImage(background, "JPEG", 0, 0, 297, 210);
-
-    // Overlay the rendered content
     pdf.addImage(imgData, "PNG", 0, 0, 297, 210);
 
-    const storedUser = sessionStorage.getItem("true");
+    const storedUser = localStorage.getItem("true");
     const user = storedUser ? JSON.parse(storedUser) : null;
-    const filename = user?.user?.full_name
-      ? `${user.user.full_name}_Certificate.pdf`
-      : "Certificate.pdf";
+    const filename = user?.user?.full_name ? `${user.user.full_name}_Certificate.pdf` : "Certificate.pdf";
 
     pdf.save(filename);
 
@@ -251,7 +207,8 @@ const generateCertificate = async (setProgress) => {
   }
 };
 
-const StyledButton = styled(Button)(({ theme }) => ({
+// Styled Components
+const StyledButton = styled("div")(({ theme }) => ({
   transition: "all 0.3s ease",
   margin: theme.spacing(1),
   "&:hover": {
@@ -260,18 +217,48 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const PrimaryButton = styled(StyledButton)({
-  backgroundColor: "#0c83c8",
-  color: "#fff",
-  "&:hover": {
-    backgroundColor: "#0a6eaa",
+const AnimatedLinearProgress = styled(LinearProgress)(({ theme }) => ({
+  height: 10,
+  borderRadius: 5,
+  transition: "all 0.3s ease",
+  position: "relative",
+  overflow: "hidden",
+  "& .MuiLinearProgress-bar": {
+    backgroundColor: "#fc7a46",
   },
-});
+  "&:hover": {
+    transform: "scale(1.01)",
+    boxShadow: "0 2px 8px rgba(252, 122, 70, 0.4)",
+    "&::after": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+      animation: "shimmer 1.5s infinite",
+    },
+  },
+  "@keyframes shimmer": {
+    "0%": {
+      transform: "translateX(-100%)",
+    },
+    "100%": {
+      transform: "translateX(100%)",
+    },
+  },
+}));
 
-const CertificateGenerator = () => {
+// Exported Certificate Generator component
+const CertificateGenerator = forwardRef((props, ref) => {
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
+
+  useImperativeHandle(ref, () => ({
+    handleDownloadCertificate,
+  }));
 
   const handleDownloadCertificate = async () => {
     setOpen(true);
@@ -291,59 +278,44 @@ const CertificateGenerator = () => {
   };
 
   return (
-    <>
-      <PrimaryButton variant="contained" onClick={handleDownloadCertificate}>
-        Download Certificate
-      </PrimaryButton>
-
-      <Dialog
-        open={open}
-        onClose={progress === 100 || error ? handleClose : undefined}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ backgroundColor: "#0c83c8", color: "white" }}>
-          Certificate Generation
-        </DialogTitle>
-
-        <DialogContent sx={{ p: 3 }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 2,
-              mt: 2,
-            }}
-          >
-            {error ? (
-              <Typography color="error">{error}</Typography>
-            ) : (
-              <>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{
-                    width: "100%",
-                    height: 10,
-                    borderRadius: 5,
-                    "& .MuiLinearProgress-bar": {
-                      backgroundColor: "#fc7a46",
-                    },
-                  }}
-                />
-                <Typography sx={{ color: "#0c83c8" }}>
-                  {progress === 100
-                    ? "Certificate generated successfully!"
-                    : `Generating certificate: ${progress}%`}
-                </Typography>
-              </>
-            )}
-          </Box>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Dialog open={open} onClose={progress === 100 || error ? handleClose : undefined} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ backgroundColor: "#0c83c8", color: "white" }}>Certificate Generation</DialogTitle>
+      <DialogContent sx={{ p: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+            mt: 2,
+          }}
+        >
+          {error ? (
+            <Typography color="error">{error}</Typography>
+          ) : (
+            <>
+              <AnimatedLinearProgress variant="determinate" value={progress} sx={{ width: "100%" }} />
+              <Typography
+                sx={{
+                  color: "#0c83c8",
+                  fontWeight: 500,
+                  transition: "all 0.3s ease",
+                  animation: progress === 100 ? "pulse 1.5s infinite" : "none",
+                  "@keyframes pulse": {
+                    "0%": { opacity: 0.8 },
+                    "50%": { opacity: 1 },
+                    "100%": { opacity: 0.8 },
+                  },
+                }}
+              >
+                {progress === 100 ? "Certificate generated successfully!" : `Generating certificate: ${progress}%`}
+              </Typography>
+            </>
+          )}
+        </Box>
+      </DialogContent>
+    </Dialog>
   );
-};
+});
 
 export default CertificateGenerator;

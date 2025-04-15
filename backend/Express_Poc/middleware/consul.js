@@ -24,7 +24,7 @@ consul.agent.service.register({
 // Gracefully deregister service when shutting down
 process.on('SIGINT', async () => {
     try {
-        await consul.agent.service.deregister('Express_Poc');
+        await consul.agent.service.deregister(CONSUL_SERVICE_NAME);
         console.log('Beneficiary Service deregistered from Consul');
         process.exit();
     } catch (err) {

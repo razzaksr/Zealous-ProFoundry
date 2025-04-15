@@ -1,11 +1,25 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Box, Typography, Paper, Button, CircularProgress, Grid, Divider, Card, CardContent } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  CircularProgress,
+  Grid,
+  Divider,
+  Card,
+  CardContent,
+} from "@mui/material";
+import {
+  CheckCircle as CheckCircleIcon,
+  Home as HomeIcon,
+  Download as DownloadIcon,
+} from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
-import { CheckCircle as CheckCircleIcon, Home as HomeIcon } from "@mui/icons-material";
-import CertificateGenerator from "../components/certificate"; // Adjust path as needed
+import CertificateGenerator from "../components/certificate";
 
-// Styled components (unchanged)
+// Styled components
 const ResultContainer = styled(Paper)(({ theme }) => ({
   maxWidth: 800,
   margin: "0 auto",
@@ -16,7 +30,7 @@ const ResultContainer = styled(Paper)(({ theme }) => ({
   overflow: "hidden",
 }));
 
-const ScoreCircle = styled(Box)(({ theme, percentage }) => ({
+const ScoreCircle = styled(Box)(({ percentage }) => ({
   position: "relative",
   width: 200,
   height: 200,
@@ -42,7 +56,7 @@ const ScoreCircle = styled(Box)(({ theme, percentage }) => ({
   },
 }));
 
-const InnerCircle = styled(Box)(({ theme }) => ({
+const InnerCircle = styled(Box)(() => ({
   position: "relative",
   width: "80%",
   height: "80%",
@@ -66,6 +80,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const PrimaryButton = styled(StyledButton)({
   backgroundColor: "#0c83c8",
+  color: "#fff",
   "&:hover": {
     backgroundColor: "#0a6eaa",
   },
@@ -74,16 +89,17 @@ const PrimaryButton = styled(StyledButton)({
 const SecondaryButton = styled(StyledButton)({
   color: "#0c83c8",
   borderColor: "#0c83c8",
+  border: "1px solid",
   "&:hover": {
     borderColor: "#0a6eaa",
   },
 });
 
-const ResultCard = styled(Card)(({ theme, status }) => ({
+const ResultCard = styled(Card)(({ status }) => ({
   transition: "all 0.3s ease",
   backgroundColor: status === "pass" ? "rgba(76, 175, 80, 0.05)" : "rgba(244, 67, 54, 0.05)",
   borderLeft: status === "pass" ? "4px solid #4caf50" : "4px solid #f44336",
-  marginBottom: theme.spacing(2),
+  marginBottom: "16px",
   "&:hover": {
     transform: "translateY(-2px)",
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -99,36 +115,53 @@ const ResultTest = () => {
 
   useEffect(() => {
     window.history.pushState(null, null, window.location.pathname);
-    
     const handleBackButton = (event) => {
       event.preventDefault();
       window.history.pushState(null, null, window.location.pathname);
     };
-
-    window.addEventListener('popstate', handleBackButton);
+    window.addEventListener("popstate", handleBackButton);
 
     const timer = setTimeout(() => {
       if (location.state?.resultData) {
         setResult(location.state.resultData);
       } else {
-        navigate("/", { replace: true });
+        navigate("/landing", { replace: true });
       }
       setLoading(false);
     }, 1000);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('popstate', handleBackButton);
+      window.removeEventListener("popstate", handleBackButton);
     };
   }, [location, navigate]);
 
-  const handleGoHome = () => {
-    navigate("/", { replace: true });
+  const handleDownloadCertificate = async () => {
+    try {
+      if (certificateRef.current) {
+        await certificateRef.current.handleDownloadCertificate();
+      } else {
+        throw new Error("Certificate generator not ready");
+      }
+    } catch (err) {
+      console.error("Error downloading certificate:", err);
+      alert("Failed to generate certificate.");
+    }
   };
+
+  const handleGoHome = () => navigate("/landing", { replace: true });
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: "#f8f9fa" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#f8f9fa",
+        }}
+      >
         <CircularProgress sx={{ color: "#0c83c8" }} />
       </Box>
     );
@@ -170,11 +203,9 @@ const ResultTest = () => {
         <ResultCard status={isPassed ? "pass" : "fail"}>
           <CardContent>
             <Box display="flex" alignItems="center" mb={1}>
-              {isPassed ? (
-                <CheckCircleIcon sx={{ color: "#4caf50", mr: 1, fontSize: "2rem" }} />
-              ) : (
-                <CheckCircleIcon sx={{ color: "#f44336", mr: 1, fontSize: "2rem" }} />
-              )}
+              <CheckCircleIcon
+                sx={{ color: isPassed ? "#4caf50" : "#f44336", mr: 1, fontSize: "2rem" }}
+              />
               <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                 {`You scored ${percentage}% in ${displayTestName}`}
               </Typography>
@@ -184,7 +215,13 @@ const ResultTest = () => {
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6}>
-            <Box sx={{ p: 2, borderRadius: 2, backgroundColor: "rgba(12, 131, 200, 0.05)" }}>
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: "rgba(12, 131, 200, 0.05)",
+              }}
+            >
               <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                 Score Details
               </Typography>
@@ -207,8 +244,19 @@ const ResultTest = () => {
               </Box>
             </Box>
           </Grid>
+
           <Grid item xs={12} sm={6}>
-            <Box sx={{ p: 2, borderRadius: 2, backgroundColor: "rgba(252, 122, 70, 0.05)", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                backgroundColor: "rgba(252, 122, 70, 0.05)",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
                 Test Information
               </Typography>
@@ -225,14 +273,18 @@ const ResultTest = () => {
           </Grid>
         </Grid>
 
-        <Box display="flex" justifyContent="center" mt={4}>
-          <SecondaryButton variant="outlined" startIcon={<HomeIcon />} onClick={handleGoHome}>
-            Go to Home
+        <Box display="flex" justifyContent="center" mt={2}>
+          <PrimaryButton startIcon={<DownloadIcon />} onClick={handleDownloadCertificate}>
+            Download Certificate
+          </PrimaryButton>
+          <SecondaryButton startIcon={<HomeIcon />} onClick={handleGoHome}>
+            Go Home
           </SecondaryButton>
-          {/* Render CertificateGenerator as a component instead of calling it as a function */}
-          <CertificateGenerator />
         </Box>
       </ResultContainer>
+
+      {/* Certificate generator hidden but accessible */}
+      <CertificateGenerator ref={certificateRef} />
     </Box>
   );
 };

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   Box,
   Container,
@@ -13,8 +12,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Clock, Award } from "lucide-react";
-
-const API_BASE_URL = "http://localhost:4000";
+import { fetchModuleAndPoc, getTestById } from "../axios"; // <-- Axios functions
 
 const TestModule = () => {
   const [tests, setTests] = useState([]);
@@ -22,23 +20,19 @@ const TestModule = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Fetch tests assigned to user
   const fetchTests = useCallback(async (userId) => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/poc_gateway/poc/mod_and_poc/${userId}`);
-      console.log("Fetched tests:", response.data.test_ids); // Log the raw test data
-      if (response.data?.mod_id) {
-        // Store mod_id in sessionStorage
-        sessionStorage.setItem("mod_id", response.data.mod_id);
+      const response = await fetchModuleAndPoc(userId);
+      console.log("Fetched tests:", response.test_ids);
+
+      if (response?.mod_id) {
+        sessionStorage.setItem("mod_id", response.mod_id);
       }
-      if (response.data?.test_ids?.length) {
+
+      if (response?.test_ids?.length) {
         const testDetails = await Promise.all(
-          response.data.test_ids.map(async (testId) => {
-            const testRes = await axios.get(`${API_BASE_URL}/test_gateway/test/get_by_test_id/${testId}`);
-            console.log(`Test Data for ${testRes.data.test_id}:`, testRes.data);
-            return testRes.data;
-          })
+          response.test_ids.map((testId) => getTestById(testId))
         );
         setTests(testDetails);
       } else {
@@ -86,10 +80,7 @@ const TestModule = () => {
       ) : (
         <Grid container spacing={3} justifyContent="center">
           {tests.map((test) => {
-            // Log test mcq_id to ensure it's being set properly
-            console.log(`Test ${test.test_name} MCQ IDs:`, test.test_mcq_id);
             const hasMCQs = Array.isArray(test.test_mcq_id) && test.test_mcq_id.length > 0;
-            console.log(`Has MCQs for ${test.test_name}:`, hasMCQs);
 
             return (
               <Grid item xs={12} sm={6} md={4} key={test.test_id}>
@@ -140,7 +131,7 @@ const TestModule = () => {
                       if (hasMCQs) {
                         navigate(`/mcq-test/${test.test_id}`, {
                           state: {
-                            testMcqIds: test.test_mcq_id, // Full MCQ ID array
+                            testMcqIds: test.test_mcq_id,
                             testTotalScore: test.test_total_score,
                           },
                         });
@@ -148,7 +139,7 @@ const TestModule = () => {
                         console.error("No MCQs for this test");
                       }
                     }}
-                    disabled={!hasMCQs} // Disable button if no MCQs
+                    disabled={!hasMCQs}
                   >
                     Start Test
                   </Button>

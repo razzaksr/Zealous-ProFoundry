@@ -3,11 +3,11 @@ POST http://localhost:4000/user_gateway/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "DHARUN PRAKASH J A",
+  "full_name": "Selvarasan",
   "department": "Artificial Intelligence and Data Science",
-  "college": "mec",
-  "rollno": "22ad065",
-  "email": "dp@gmail.com",
+  "college": "Muthayammal Engineering College",
+  "rollno": "22AD085",
+  "email": "selva@gmail.com",
   "password": "0000",
   "status": "active",
   "user_last_login": "2025-03-16T10:00:00Z"

@@ -1,12 +1,20 @@
-// StudentDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { BookOpen, FileText } from "lucide-react";
-import AssessmentScores from "../components/AssessmentScores";
-import UpcomingDeadlines from "../components/UpcomingDeadlines";
-import { fetchModuleAndPoc, fetchExpertName, fetchModuleName, fetchOrgName, fetchPocById, fetchResultsByUserId, checkIfTestTaken } from "../axios";
-import CourseInfoCards from "../components/CourseInfoCards";
+import AssessmentScores from "../components/StudentDashboard/AssessmentScores";
+import UpcomingDeadlines from "../components/StudentDashboard/UpcomingDeadlines";
+import {
+  fetchAggregateScores,
+  fetchModuleAndPoc,
+  fetchExpertName,
+  fetchModuleName,
+  fetchOrgName,
+  checkIfTestTaken,
+  fetchTestsToday,
+} from "../axios";
+import CourseInfoCards from "../components/StudentDashboard/CourseInfoCards";
 import Dash from "../components/dash";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function StudentDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -18,68 +26,111 @@ export default function StudentDashboard() {
   const [expertName, setExpertName] = useState("Loading...");
   const [moduleName, setModuleName] = useState("Loading...");
   const [orgName, setOrgName] = useState("Loading...");
-  const [lastTestId, setLastTestId] = useState(null);
+  const [todayTestId, setTodayTestId] = useState(null);
   const [userId, setUserId] = useState(null);
   const [hasTakenTest, setHasTakenTest] = useState(false);
-  const [testPercentage, setTestPercentage] = useState(0);
+  const [courseProgress, setCourseProgress] = useState(0);
   const [testIds, setTestIds] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("true");
+    const storedUser = localStorage.getItem("true");
 
     if (storedUser) {
       try {
-        const user = JSON.parse(storedUser);
-        console.log("User from session:", user);
-        setStudentName(user.user.full_name);
-        setUserId(user.user.user_id);
-        if (user && user.user && user.user.user_id) {
-          fetchModuleAndPocData(user.user.user_id);
-          fetchTestResults(user.user.user_id);
+        const userData = JSON.parse(storedUser);
+        console.log("User data from localStorage:", userData);
+
+        setStudentName(userData.user.full_name || "Student");
+        setUserId(userData.user.user_id);
+        setModId(userData.user.mod_poc_id.mod_id);
+        setPocId(userData.user.mod_poc_id.mod_poc_id);
+
+        if (userData?.user?.user_id && userData?.user?.mod_poc_id?.mod_poc_id) {
+          fetchDashboardData(
+            userData.user.user_id,
+            userData.user.mod_poc_id.mod_id,
+            userData.user.mod_poc_id.mod_poc_id
+          );
         } else {
-          console.warn("User ID not found in session storage");
+          console.warn("Incomplete user data in localStorage:", userData);
+          setError("User session invalid");
+          setIsLoading(false);
         }
       } catch (error) {
-        console.error("Error parsing user from session storage:", error);
+        console.error("Error parsing user from localStorage:", error);
+        setError("Failed to load user data");
+        setIsLoading(false);
       }
     } else {
-      console.warn("No user found in session storage");
+      console.warn("No user found in localStorage");
+      setError("Please log in");
+      setIsLoading(false);
     }
   }, []);
 
-  const fetchModuleAndPocData = async (userId) => {
+  const fetchDashboardData = async (userId) => {
     try {
-      const data = await fetchModuleAndPoc(userId);
-      setCoordinatorName(data.mod_poc_name);
-      setModId(data.mod_id);
-      setPocId(data.mod_poc_id);
+      setIsLoading(true);
 
-      if (data.mod_id) {
-        const expertData = await fetchExpertName(data.mod_id);
-        setExpertName(expertData.mod_expert_name);
-        const moduleData = await fetchModuleName(data.mod_id);
-        setModuleName(moduleData.mod_name);
-        const orgData = await fetchOrgName(data.mod_id);
-        setOrgName(orgData.org_name);
+      // Fetch module and POC data using fetchModuleAndPoc
+      const modulePocData = await fetchModuleAndPoc(userId);
+      console.log("Module and POC data:", modulePocData);
+
+      setModId(modulePocData.mod_id || null);
+      setPocId(modulePocData.mod_poc_id || null);
+      setCoordinatorName(modulePocData.mod_poc_name || "Not assigned");
+
+      // Fetch additional data if mod_id is available
+      if (modulePocData.mod_id) {
+        const [expertData, moduleData, orgData] = await Promise.all([
+          fetchExpertName(modulePocData.mod_id),
+          fetchModuleName(modulePocData.mod_id),
+          fetchOrgName(modulePocData.mod_id),
+        ]);
+
+        setExpertName(expertData.mod_expert_name || "Not assigned");
+        setModuleName(moduleData.mod_name || "Unknown module");
+        setOrgName(orgData.org_name || "Unknown organization");
       }
 
-      if (data.mod_poc_id) {
-        const pocData = await fetchPocById(data.mod_poc_id);
-        console.log("POC Data:", pocData);
-        const tests = pocData?.mod_tests || [];
-        if (tests.length > 0) {
-          setTestIds(tests);
-          const latestTestId = tests[tests.length - 1];
-          setLastTestId(latestTestId);
-          checkTestTaken(userId, latestTestId);
-        } else {
-          console.warn("No tests found for this POC");
-        }
+      // Fetch course progress if userId and pocId are available
+      if (userId && modulePocData.mod_poc_id) {
+        await fetchCourseProgress(userId, modulePocData.mod_poc_id);
       }
     } catch (error) {
-      console.error("Error in fetchModuleAndPocData:", error);
+      console.error("Error in fetchDashboardData:", error);
+      setError("Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTodayTests = async (pocId, userId) => {
+    try {
+      const testsData = await fetchTestsToday(pocId);
+      console.log("Today's tests data:", testsData);
+
+      const tests = testsData.test_ids || [];
+      if (tests.length > 0) {
+        const testIdsArray = tests;
+        console.log("Test IDs for today:", testIdsArray);
+
+        setTestIds(testIdsArray);
+        const firstTestId = testIdsArray[0];
+        setTodayTestId(firstTestId);
+        await checkTestTaken(userId, firstTestId);
+      } else {
+        console.warn("No tests available for today");
+        setTodayTestId(null);
+      }
+    } catch (testError) {
+      console.error("Failed to fetch today's tests:", testError);
+      setError("Failed to load today's tests");
+      setTodayTestId(null);
     }
   };
 
@@ -95,25 +146,34 @@ export default function StudentDashboard() {
       console.log("Check Test Response:", result);
       setHasTakenTest(result.length > 0);
     } catch (error) {
+      console.error("Error checking test status:", error);
       setHasTakenTest(false);
     }
   };
 
-  const fetchTestResults = async (userId) => {
+  const fetchCourseProgress = async (userId, modPocId) => {
     try {
-      const resultData = await fetchResultsByUserId(userId);
-      if (resultData.success && resultData.data.length > 0) {
-        const latestResult = resultData.data[0];
-        const percentage = (latestResult.result_score / latestResult.result_total_score) * 100;
-        setTestPercentage(Math.round(percentage));
+      const response = await fetchAggregateScores(modPocId, userId);
+      console.log("Course progress data:", response);
+
+      if (response.response && response.response.average_percentage) {
+        const averagePercentage = response.response.average_percentage;
+        setCourseProgress(Math.floor(averagePercentage));
       } else {
-        setTestPercentage(0);
+        setCourseProgress(0);
       }
     } catch (error) {
-      console.error("Error fetching test results:", error);
-      setTestPercentage(0);
+      console.error("Error fetching course progress:", error);
+      setCourseProgress(0);
     }
   };
+
+  useEffect(() => {
+    if (pocId && userId) {
+      console.log("Fetching tests for pocId:", pocId);
+      fetchTodayTests(pocId, userId);
+    }
+  }, [pocId, userId]);
 
   const styles = {
     container: {
@@ -158,7 +218,7 @@ export default function StudentDashboard() {
       width: "200px",
       height: "200px",
       borderRadius: "50%",
-      background: `conic-gradient(#fc7a46 ${testPercentage}%, rgba(255,255,255,0.2) 0)`,
+      background: `conic-gradient(#fc7a46 ${courseProgress}%, rgba(255,255,255,0.2) 0)`,
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
@@ -214,6 +274,11 @@ export default function StudentDashboard() {
     sectionSpacing: {
       marginBottom: "24px",
     },
+    errorMessage: {
+      color: "#ff4444",
+      textAlign: "center",
+      padding: "20px",
+    },
   };
 
   useEffect(() => {
@@ -234,18 +299,31 @@ export default function StudentDashboard() {
   };
 
   const handleTestModuleClick = () => {
-    if (!lastTestId) {
+    if (!todayTestId) {
       console.warn("No test ID available");
-      alert("No test available at the moment.");
+      alert("No tests are scheduled for today. Please check back tomorrow or contact your coordinator.");
       return;
     }
 
     if (hasTakenTest) {
-      alert("You have already taken this test.");
+      alert("You have already taken today's test.");
     } else {
-      navigate(`/test-intro/${lastTestId}`);
+      console.log("Navigating to test:", todayTestId);
+      navigate(`/test-intro/${todayTestId}`);
     }
   };
+
+  if (isLoading) {
+    return <div style={styles.container}>Loading dashboard...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.errorMessage}>{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -262,11 +340,13 @@ export default function StudentDashboard() {
           >
             <div>
               <h1 style={styles.headerTitle}>Welcome back, {studentName}!</h1>
-              <p style={styles.headerSubtitle}>Continue your learning journey with {moduleName}</p>
+              <p style={styles.headerSubtitle}>
+                Continue your learning journey with {moduleName}
+              </p>
               <div style={styles.buttonContainer}>
                 <button
                   style={{
-                    backgroundColor: hasTakenTest ? "#cccccc" : "#0c80c3",
+                    backgroundColor: !todayTestId || hasTakenTest ? "#cccccc" : "#0c80c3",
                     color: "white",
                     border: "none",
                     borderRadius: "8px",
@@ -275,19 +355,19 @@ export default function StudentDashboard() {
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    cursor: hasTakenTest ? "not-allowed" : "pointer",
+                    cursor: !todayTestId || hasTakenTest ? "not-allowed" : "pointer",
                     transition: "all 0.3s ease",
                   }}
                   onClick={handleTestModuleClick}
-                  disabled={hasTakenTest}
+                  disabled={!todayTestId || hasTakenTest}
                   onMouseOver={(e) => {
-                    if (!hasTakenTest) {
+                    if (todayTestId && !hasTakenTest) {
                       e.currentTarget.style.backgroundColor = "#fc7a46";
                       e.currentTarget.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (!hasTakenTest) {
+                    if (todayTestId && !hasTakenTest) {
                       e.currentTarget.style.backgroundColor = "#0c83c8";
                       e.currentTarget.style.transform = "translateY(0)";
                     }
@@ -311,7 +391,8 @@ export default function StudentDashboard() {
                     transition: "all 0.3s ease",
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(255, 255, 255, 0.1)";
                     e.currentTarget.style.transform = "translateY(-2px)";
                   }}
                   onMouseOut={(e) => {
@@ -335,8 +416,8 @@ export default function StudentDashboard() {
               <div style={styles.progressCircle}>
                 <div style={styles.innerCircle}></div>
                 <div style={styles.progressText}>
-                  <div style={styles.progressPercentage}>{testPercentage}%</div>
-                  <div style={styles.progressLabel}>Test Percentage</div>
+                  <div style={styles.progressPercentage}>{courseProgress}%</div>
+                  <div style={styles.progressLabel}>Course Progress</div>
                 </div>
               </div>
             </div>
