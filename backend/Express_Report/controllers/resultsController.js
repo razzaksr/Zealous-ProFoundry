@@ -19,17 +19,15 @@ router.get("/get-result", async (req, res) => {
 // **POST - Add a New Result**
 router.post("/post-result", async (req, res) => {
   try {
-    const { result_id, result_user_id, result_test_id, result_score, result_total_score, result_poc_id } = req.body;
+    const { result_user_id, result_test_id, result_score, result_total_score, result_poc_id } = req.body;
 
-    if (!result_id || !result_user_id || !result_test_id || result_score == null || result_total_score == null || !result_poc_id) {
+    // Validate required fields
+    if (!result_user_id || !result_test_id || result_score == null || result_total_score == null || !result_poc_id) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check if result_id already exists to prevent duplication
-    const existingResult = await Result.findOne({ result_id });
-    if (existingResult) {
-      return res.status(400).json({ message: "Result ID already exists" });
-    }
+    // Generate UUID for result_id
+    const result_id = uuidv4();
 
     // Store in database
     const newResult = new Result({
@@ -43,10 +41,55 @@ router.post("/post-result", async (req, res) => {
 
     await newResult.save();
 
-    res.status(201).json({ message: "✅ Result stored successfully", result: newResult });
+    res.status(201).json({ message: " Result stored successfully", result: newResult });
   } catch (error) {
-    console.error("❌ Error saving result:", error.message);
+    console.error(" Error saving result:", error.message);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+});
+
+module.exports = router;
+
+// BULK RESULT POST
+
+router.post("/post-bulk-results", async (req, res) => {
+  try {
+    const results = req.body; // Expecting an array of result objects
+
+    // Validate input
+    if (!Array.isArray(results) || results.length === 0) {
+      return res.status(400).json({ message: "Request body must be a non-empty array of results" });
+    }
+
+    // Validate each result object and add result_id
+    const validatedResults = results.map((result) => {
+      const { result_user_id, result_test_id, result_score, result_total_score, result_poc_id } = result;
+
+      if (!result_user_id || !result_test_id || result_score == null || result_total_score == null || !result_poc_id) {
+        throw new Error(`Missing required fields in result: ${JSON.stringify(result)}`);
+      }
+
+      return {
+        result_id: uuidv4(),
+        result_user_id,
+        result_test_id,
+        result_score,
+        result_total_score,
+        result_poc_id,
+      };
+    });
+
+    // Insert all results into the database
+    const savedResults = await Result.insertMany(validatedResults);
+
+    res.status(201).json({
+      message: " Bulk results stored successfully",
+      count: savedResults.length,
+      results: savedResults,
+    });
+  } catch (error) {
+    console.error(" Error saving bulk results:", error.message);
+    res.status(400).json({ message: "Error processing bulk results", error: error.message });
   }
 });
 
@@ -54,7 +97,7 @@ router.post("/post-result", async (req, res) => {
 
 
 
-// ✅ PUT - Update an existing result
+//  PUT - Update an existing result
 router.put("/update-result", async (req, res) => {
   try {
     const { result_id, ...updateData } = req.body;
@@ -73,7 +116,7 @@ router.put("/update-result", async (req, res) => {
       return res.status(404).json({ message: "Result not found" });
     }
 
-    res.json({ message: "✅ Result updated successfully", result: updatedResult });
+    res.json({ message: " Result updated successfully", result: updatedResult });
   } catch (error) {
     res.status(500).json({ message: "Error updating result", error });
   }
@@ -92,7 +135,7 @@ router.delete("/delete-by-result-id/:result_id", async (req, res) => {
       return res.status(404).json({ message: "Result not found" });
     }
 
-    res.json({ message: "✅ Result deleted successfully", result: deletedResult });
+    res.json({ message: " Result deleted successfully", result: deletedResult });
   } catch (error) {
     res.status(500).json({ message: "Error deleting result", error });
   }
@@ -201,17 +244,17 @@ async function getServiceAddress(serviceName) {
   try {
     const services = await consul.catalog.service.nodes(serviceName);
     if (!services || services.length === 0) {
-      console.error(`❌ No available service instances found for ${serviceName}`);
+      console.error(` No available service instances found for ${serviceName}`);
       throw new Error(`No available service instances found for ${serviceName}`);
     }
     const { ServiceAddress, ServicePort } = services[0];
     if (!ServiceAddress || !ServicePort) {
-      console.error(`❌ Invalid service details for ${serviceName}:`, services[0]);
+      console.error(` Invalid service details for ${serviceName}:`, services[0]);
       throw new Error(`Invalid service details for ${serviceName}`);
     }
     return `http://${ServiceAddress}:${ServicePort}`;
   } catch (error) {
-    console.error(`❌ Error fetching service ${serviceName}:`, error.message);
+    console.error(` Error fetching service ${serviceName}:`, error.message);
     throw error;
   }
 }
@@ -219,27 +262,27 @@ async function getServiceAddress(serviceName) {
 router.get('/aggregate_scores/:poc_id/:user_id', async (req, res) => {
   try {
     const { poc_id, user_id } = req.params;
-    console.log(`🚀 Processing aggregate_scores for poc_id: ${poc_id}, user_id: ${user_id}`);
+    console.log(` Processing aggregate_scores for poc_id: ${poc_id}, user_id: ${user_id}`);
 
     // Fetch Express_Poc service address
     const pocGatewayUrl = await getServiceAddress('Express_Poc');
-    console.log(`📡 Express_Poc URL: ${pocGatewayUrl}`);
+    console.log(` Express_Poc URL: ${pocGatewayUrl}`);
 
     const testsResponse = await axios.get(`${pocGatewayUrl}/poc/tests_till_today/${poc_id}`);
     const testIds = testsResponse.data.tests_till_today.map(test => test.test_id);
-    console.log(`✅ Fetched ${testIds.length} test IDs:`, testIds);
+    console.log(` Fetched ${testIds.length} test IDs:`, testIds);
 
     if (!testIds.length) {
-      console.log(`ℹ️ No tests found for poc_id: ${poc_id}`);
+      console.log(` No tests found for poc_id: ${poc_id}`);
       return res.status(200).json({
-        message: '✅ No tests found for this POC',
+        message: ' No tests found for this POC',
         response: { tests: [], total_result_score: 0, total_test_score: 0, average_percentage: 0 }
       });
     }
 
     // Fetch Express_Test service address
     const testGatewayUrl = await getServiceAddress('Express_Test');
-    console.log(`📡 Express_Test URL: ${testGatewayUrl}`);
+    console.log(` Express_Test URL: ${testGatewayUrl}`);
 
     // Fetch Express_Report'); service address (self)
     const resultGatewayUrl = await getServiceAddress('Express_Report');
@@ -251,10 +294,10 @@ router.get('/aggregate_scores/:poc_id/:user_id', async (req, res) => {
           const testResponse = await axios.get(`${testGatewayUrl}/test/get_by_test_id/${test_id}`);
           test_total_score = testResponse.data.test_total_score || 0;
         } catch (error) {
-          console.error(`⚠️ Error fetching test ${test_id}:`, error.message);
+          console.error(` Error fetching test ${test_id}:`, error.message);
           if (error.response) {
-            console.error(`⚠️ Response Data:`, error.response.data);
-            console.error(`⚠️ Response Status:`, error.response.status);
+            console.error(` Response Data:`, error.response.data);
+            console.error(` Response Status:`, error.response.status);
           }
           test_total_score = 0;
         }
@@ -266,10 +309,10 @@ router.get('/aggregate_scores/:poc_id/:user_id', async (req, res) => {
           );
           result_score = resultResponse.data[0]?.result_score || 0;
         } catch (error) {
-          console.log(`ℹ️ No result found for test_id ${test_id}, user_id ${user_id}`);
+          console.log(` No result found for test_id ${test_id}, user_id ${user_id}`);
           if (error.response) {
-            console.error(`⚠️ Error fetching result for test ${test_id}:`, error.response.data);
-            console.error(`⚠️ Response Status:`, error.response.status);
+            console.error(` Error fetching result for test ${test_id}:`, error.response.data);
+            console.error(` Response Status:`, error.response.status);
           }
           result_score = 0;
         }
@@ -285,14 +328,14 @@ router.get('/aggregate_scores/:poc_id/:user_id', async (req, res) => {
     const average_percentage = total_test_score > 0 ? (total_result_score / total_test_score) * 100 : 0;
 
     res.status(200).json({
-      message: '✅ Scores aggregated successfully',
+      message: ' Scores aggregated successfully',
       response: { tests: results, total_result_score, total_test_score, average_percentage }
     });
   } catch (error) {
-    console.error('❌ Error in aggregate_scores:', error.message);
+    console.error(' Error in aggregate_scores:', error.message);
     if (error.response) {
-      console.error('⚠️ Response Data:', error.response.data);
-      console.error('⚠️ Response Status:', error.response.status);
+      console.error(' Response Data:', error.response.data);
+      console.error(' Response Status:', error.response.status);
     }
     res.status(500).json({ message: 'Error aggregating scores', error: error.message });
   }

@@ -3,18 +3,26 @@ POST http://localhost:4000/user_gateway/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "Selvarasan",
-  "department": "Artificial Intelligence and Data Science",
+  "full_name": "janj",
+  "department": "AI&DS",
   "college": "Muthayammal Engineering College",
-  "rollno": "22AD085",
-  "email": "selva@gmail.com",
-  "password": "0000",
-  "status": "active",
-  "user_last_login": "2025-03-16T10:00:00Z"
+  "rollno": "22ad0821",
+  "email": "janj@gmail.com",
+  "password": "0000"
 }
 
+### Create Admin
+POST http://localhost:4000/user_gateway/user/add_user
+Content-Type: application/json
+
+{
+  "full_name": "selva",
+  "email": "selva12@gmail.com",
+  "password": "0000",
+  "admin": true
+}
 ### Login User
-POST http://98.81.207.64:4000/user_gateway/user/login
+POST http://localhost:4000/user_gateway/user/login
 Content-Type: application/json
 
 {

@@ -21,7 +21,7 @@ Content-Type: application/json
 
 {
     "mod_expert_id": "ab6f9187-8b0c-400d-bfe5-72dc0679f444",
-    "poc_id": ["9ccefe74-f80c-4427-804e-827a61d7619a"],
+    "poc_id": ["9ccefe74-f80c-4427-804e-827a61d7619a","f996f10f-e271-4dd8-85e3-ae76a3e16640"],
     "mod_id": ["863662d6-7565-4ba7-aaa5-5ecc9d6cae9e"]
 }
 

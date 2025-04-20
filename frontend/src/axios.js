@@ -183,3 +183,128 @@ export const fetchPocById = async (mod_poc_id) => {
     throw error;
   }
 };
+
+// FETCH ALL POC
+
+export const fetchAllPocs = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/read_all_poc`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch POCs');
+  }
+};
+
+// FETCH ALL USER 
+export const fetchAllUsers = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/user_gateway/user/read_all_users`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch users');
+  }
+};
+
+// FETCH ALL MODULES
+export const fetchAllModules = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/modules_gateway/modules/get_all_module`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch modules');
+  }
+};
+
+// FETCH ALL ORGANISATIONS
+export const fetchAllOrganizations = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/organization_gateway/organization/get_all_org`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch organizations');
+  }
+};
+
+// FETCH ALL EXPERTS
+export const fetchAllExperts = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/expert_gateway/expert/read_all_experts`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch experts');
+  }
+};
+
+// FETCH ALL MCQ
+export const fetchAllMcqs = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/mcq_gateway/mcq/get_all_mcqs`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch MCQs');
+  }
+};
+
+// FETCH ALL TESTS
+export const fetchAllTests = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/test_gateway/test/all`);
+    return response;
+  } catch (error) {
+    throw new Error('Failed to fetch tests');
+  }
+};
+
+// FETCH CODE BY CODE ID 
+export const fetchCodeById = async (id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/coding_gateway/coding/get_code_by_id/${id}`);
+    if (!response.data.success) {
+      throw new Error(response.data.msg || "Failed to fetch code");
+    }
+    return response.data.data;
+  } catch (error) {
+    throw new Error(`Error fetching code: ${error.message}`);
+  }
+};
+
+export const fetchTestCaseById = async (testcase_id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/testcase_gateway/testcase/get_testCase_id/${testcase_id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(`Error fetching test case: ${error.message}`);
+  }
+};
+
+export const compileCode = async (payload) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/coding_gateway/coding/compiler`, payload);
+    return response.data;
+  } catch (error) {
+    throw new Error(`Error compiling code: ${error.message}`);
+  }
+};
+
+export const generateCertificate = async (mod_poc_id, newUserId) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/poc_gateway/poc/add-certificate`, {
+      mod_poc_id,
+      newUserId,
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};
+
+export const getCertificate = async (mod_poc_id, userId) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/poc_gateway/poc/get-certificate/${mod_poc_id}/${userId}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : error;
+  }
+};

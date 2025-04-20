@@ -29,5 +29,5 @@ app.use("/overall", overallRoutes);
 // ✅ Start Server & Register Service in Consul
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

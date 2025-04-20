@@ -192,7 +192,7 @@ router.post("/submit_result", async (req, res) => {
         error: error.message,
       });
     }
-  });
+});
   
 
 

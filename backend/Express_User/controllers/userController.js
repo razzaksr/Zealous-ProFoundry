@@ -7,51 +7,8 @@ const consul = require('../middleware/consul');
 const axios = require("axios");
 
 const router = express.Router();
- // Add this at the top of your file
-
 
 // Login User and generate JWT token
-// router.post('/login', async (req, res) => {
-//     const { email, password } = req.body;
-  
-//     try {
-//         // Find the user by email
-//         const user = await User.findOne({ email });
-//         if (!user) {
-//             return res.status(404).json({ msg: 'User not found' });
-//         }
-
-//         // Compare the entered password with the hashed password stored in the database
-//         const isMatch = await bcrypt.compare(password, user.password);
-//         if (!isMatch) {
-//             return res.status(400).json({ msg: 'Invalid credentials' });
-//         }
-
-//         // If the password matches, create a JWT token
-//         const token = jwt.sign(
-//             {
-//                 userId: user.user_id,  // Use `user_id` from DB
-//                 full_name: user.full_name
-//             },
-//             process.env.JWT_SECRET, // Use the secret key from the .env file
-//             { expiresIn: '10h' , algorithm: "HS256"}  // Token expiration time (10 hours)
-//         );
-
-//         // Return the JWT token and user information
-//         res.status(200).json    ({
-//             msg: 'Login successful',
-//             token,  // The JWT token
-//             user: { 
-//                 user_id: user.user_id,  // Include user_id in response
-//                 full_name: user.full_name,
-//             }
-//         });
-//     } catch (error) {
-//         console.error('Error:', error);
-//         res.status(500).json({ error: error.message });
-//     }
-// });
-
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -77,8 +34,21 @@ router.post('/login', async (req, res) => {
       { expiresIn: '10h', algorithm: "HS256" }
     );
 
+    // ✅ If admin, skip Consul and return basic info
+    if (user.admin === true) {
+      return res.status(200).json({
+        msg: 'Login successful (admin)',
+        token,
+        user: {
+          user_id: user.user_id,
+          full_name: user.full_name,
+          admin: true
+        }
+      });
+    }
+
     // 🧭 Find the Express_Poc service via Consul
-    const serviceName = "Express_Poc"; // make sure this matches the name registered in Consul
+    const serviceName = "Express_Poc";
     const services = await consul.catalog.service.nodes(serviceName);
 
     if (!services || services.length === 0) {
@@ -91,19 +61,19 @@ router.post('/login', async (req, res) => {
       return res.status(500).json({ msg: "Invalid service address from Consul" });
     }
 
-    // 🔗 Make request to /mod_and_poc/:user_id
+    // 🔗 Make request to get mod_poc_id
     const modAndPocUrl = `http://${ServiceAddress}:${ServicePort}/poc/mod_id_poc_id/${user.user_id}`;
     const modAndPocRes = await axios.get(modAndPocUrl);
-
     const mod_poc_id = modAndPocRes.data;
 
-    // ✅ Respond with token + user + POC info
+    // ✅ Return full info for non-admins
     res.status(200).json({
       msg: 'Login successful',
       token,
       user: {
         user_id: user.user_id,
         full_name: user.full_name,
+        admin: false,
         mod_poc_id
       }
     });
@@ -125,41 +95,61 @@ router.post('/login', async (req, res) => {
 
 // Create a new User
 router.post("/add_user", async (req, res) => {
-  const { full_name, department, college, rollno, email, password, status, user_last_login } = req.body;
+  const {
+    full_name,
+    department,
+    college,
+    rollno,
+    email,
+    password,
+    status,
+    admin
+  } = req.body;
 
-  // Validate required fields
-  if (!full_name || !email || !password || !department || !college || !rollno) {
-    return res.status(400).json({ msg: "All fields are required" });
+  // Validate required fields for admin vs normal user
+  if (!full_name || !email || !password) {
+    return res.status(400).json({ msg: "Full name, email, and password are required" });
+  }
+
+  // If it's not admin, validate department, college, rollno
+  if (!admin) {
+    if (!department || !college || !rollno) {
+      return res.status(400).json({ msg: "Department, college, and roll number are required for non-admin users" });
+    }
   }
 
   try {
-    // Check if email or roll number already exists
-    const existingUser = await User.findOne({ $or: [{ email }, { rollno }] });
+    // Build query for uniqueness check
+    const query = [{ email }];
+    if (rollno) query.push({ rollno });
+
+    const existingUser = await User.findOne({ $or: query });
     if (existingUser) {
       return res.status(400).json({ msg: "Email or Roll Number already exists" });
     }
 
-    // Hash the password before saving
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({
       full_name,
-      department,
-      college,
-      rollno,
       email,
-      password: hashedPassword, // Store the hashed password
-      status: status || "active",
-      user_last_login: user_last_login || new Date().toISOString(),
+      password: hashedPassword,
+      department: department || "",
+      college: college || "",
+      rollno: rollno || null,  // <-- Fix here
+      status: status !== undefined ? status : true,
+      admin: admin === true,
     });
 
-    const user = await newUser.save();
-    res.status(201).json(user);
+    const savedUser = await newUser.save();
+    res.status(201).json(savedUser);
   } catch (error) {
     res.status(500).json({ msg: "Server Error", error });
   }
 });
+
 
 // Get all Users
 router.get("/read_all_users", async (req, res) => {
@@ -250,5 +240,100 @@ router.delete("/delete_user/:user_id", async (req, res) => {
     res.status(500).json({ msg: "Server Error", error });
   }
 });
+
+// Update User status by user_id
+router.put("/update_user_status/:user_id", async (req, res) => {
+  const { status } = req.body;
+
+  // Validate that the status is a boolean
+  if (typeof status !== "boolean") {
+    return res.status(400).json({ msg: "Status must be a boolean value" });
+  }
+
+  try {
+    // Find the user by user_id
+    const user = await User.findOne({ user_id: req.params.user_id });
+
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    // Update the user's status
+    user.status = status;
+    await user.save();
+
+    res.json({
+      msg: `User status updated successfully to ${status ? 'active' : 'inactive'}`,
+      user: {
+        user_id: user.user_id,
+        full_name: user.full_name,
+        status: user.status
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ msg: "Server Error", error });
+  }
+});
+
+// GET all user IDs only
+router.get("/user-ids", async (req, res) => {
+  try {
+    const users = await User.find({}, "user_id"); // Select only the 'user_id' field
+    const userIds = users.map(user => user.user_id); // Extract just the ID values
+    res.status(200).json({ user_ids: userIds });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch user IDs", error });
+  }
+});
+
+// Route to get user_id by rollno
+router.get('/get_user_id_by_rollno/:rollno', async (req, res) => {
+  try {
+      const { rollno } = req.params;
+      
+      // Find user by rollno
+      const user = await User.findOne({ rollno }).select('user_id');
+      
+      if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+      }
+      
+      res.status(200).json({ user_id: user.user_id });
+  } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Route to get user_ids for multiple rollnos
+router.post('/users/bulk', async (req, res) => {
+  try {
+      const { rollnos } = req.body;
+
+      // Validate input
+      if (!Array.isArray(rollnos) || rollnos.length === 0) {
+          return res.status(400).json({ message: 'Roll numbers must be provided as a non-empty array' });
+      }
+
+      // Find users by rollnos
+      const users = await User.find({ rollno: { $in: rollnos } }).select('rollno user_id');
+
+      // Create response mapping rollno to user_id
+      const result = rollnos.map(rollno => {
+          const user = users.find(u => u.rollno === rollno);
+          return {
+              rollno,
+              user_id: user ? user.user_id : null,
+
+          };
+      });
+
+      res.status(200).json(result);
+  } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Server error' });
+  }
+});
+
 
 module.exports = router;

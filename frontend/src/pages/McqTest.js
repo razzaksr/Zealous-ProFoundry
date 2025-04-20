@@ -251,29 +251,6 @@ const ProgressBarFill = styled(Box)(({ theme, value }) => ({
   },
 }))
 
-const ProgressBarLabel = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#fff",
-  fontSize: "0.7rem",
-  fontWeight: "bold",
-  textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-  zIndex: 1,
-}))
-
-// Add a new hover animation keyframe
-const hoverAnimation = keyframes`
-  0% { transform: translateY(0); opacity: 0; }
-  50% { transform: translateY(-20px); opacity: 1; }
-  100% { transform: translateY(-40px); opacity: 0; }
-`
-
 const ProgressHoverIndicator = styled(Box)(({ theme, value }) => ({
   position: "absolute",
   top: -30,
@@ -300,6 +277,13 @@ const ProgressHoverIndicator = styled(Box)(({ theme, value }) => ({
     animation: `${hoverAnimation} 2s infinite`,
   },
 }))
+
+// Add a new hover animation keyframe
+const hoverAnimation = keyframes`
+  0% { transform: translateY(0); opacity: 0; }
+  50% { transform: translateY(-20px); opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
+`
 
 const MarkReviewButton = styled(Button)(({ theme, marked }) => ({
   borderRadius: 15,
@@ -425,7 +409,6 @@ const SubmittingOverlay = styled(Box)(({ theme }) => ({
   zIndex: 2000,
 }))
 
-// New Loading Container
 const LoadingContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
   display: "flex",
@@ -452,7 +435,7 @@ const LoadingText = styled(Typography)(({ theme }) => ({
   animation: `${fadeIn} 1s ease-in`,
 }))
 
-// Completely redesigned Timer Component without numerical values
+// Enhanced Timer Component
 const EnhancedTimer = ({ timeLeft }) => {
   const canvasRef = useRef(null)
   const totalSeconds = 3600
@@ -470,61 +453,42 @@ const EnhancedTimer = ({ timeLeft }) => {
     const centerX = width / 2
     const centerY = height / 2
 
-    // Animation function
     const animate = () => {
       const now = Date.now()
       const deltaTime = now - lastTimeRef.current
       lastTimeRef.current = now
 
-      // Clear canvas
       ctx.clearRect(0, 0, width, height)
-
-      // Draw background
       ctx.fillStyle = "#f5f5f5"
       ctx.fillRect(0, 0, width, height)
 
-      // Calculate time segments
       const totalSegments = 60
       const segmentsRemaining = Math.ceil((percentageRemaining / 100) * totalSegments)
       const segmentWidth = width / totalSegments
 
-      // Draw time segments
       for (let i = 0; i < totalSegments; i++) {
         const x = i * segmentWidth
-
         if (i < segmentsRemaining) {
-          // Active segment
           const gradient = ctx.createLinearGradient(x, 0, x + segmentWidth, 0)
           gradient.addColorStop(0, "#0c83c8")
           gradient.addColorStop(1, "#0a6eaa")
-
           ctx.fillStyle = gradient
-
-          // Animate the current segment
           const isCurrentSegment = i === segmentsRemaining - 1
           const segmentHeight = isCurrentSegment ? height * (0.7 + 0.3 * Math.sin(now / 500)) : height
-
           ctx.fillRect(x, (height - segmentHeight) / 2, segmentWidth - 2, segmentHeight)
-
-          // Add glow to active segments
           ctx.shadowColor = "rgba(12, 131, 200, 0.3)"
           ctx.shadowBlur = 5
-          ctx.shadowOffsetX = 0
-          ctx.shadowOffsetY = 0
         } else {
-          // Inactive segment
           ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
           ctx.fillRect(x, height * 0.4, segmentWidth - 2, height * 0.2)
         }
       }
 
-      // Draw animated particles for visual interest
       const particleCount = 5
       for (let i = 0; i < particleCount; i++) {
         const particleX = (segmentsRemaining / totalSegments) * width * (0.9 + 0.1 * Math.sin(now / 1000 + i))
         const particleY = height / 2 + 10 * Math.sin(now / 500 + (i * Math.PI) / particleCount)
         const particleSize = 2 + Math.sin(now / 300 + i) * 1
-
         ctx.fillStyle = "#fc7a46"
         ctx.beginPath()
         ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2)
@@ -561,7 +525,7 @@ const EnhancedTimer = ({ timeLeft }) => {
   )
 }
 
-// Enhanced Pie Chart Component with smoother animations
+// Enhanced Pie Chart Component
 const EnhancedPieChart = ({ data }) => {
   const canvasRef = useRef(null)
   const animationRef = useRef(null)
@@ -574,48 +538,36 @@ const EnhancedPieChart = ({ data }) => {
 
     let startAngle = -Math.PI / 2
     const newTargetAngles = {}
-
     Object.entries(data).forEach(([key, value]) => {
       if (value === 0) {
         newTargetAngles[key] = { start: startAngle, end: startAngle }
         return
       }
-
       const sliceAngle = (value / total) * 2 * Math.PI
       const endAngle = startAngle + sliceAngle
-
       newTargetAngles[key] = { start: startAngle, end: endAngle }
       startAngle = endAngle
     })
 
     targetAnglesRef.current = newTargetAngles
-
-    // Initialize current angles if not set
     if (Object.keys(currentAnglesRef.current).length === 0) {
       currentAnglesRef.current = JSON.parse(JSON.stringify(newTargetAngles))
     }
 
     const animate = () => {
       let needsAnimation = false
-
-      // Update current angles towards target angles
       Object.keys(targetAnglesRef.current).forEach((key) => {
         if (!currentAnglesRef.current[key]) {
           currentAnglesRef.current[key] = { start: -Math.PI / 2, end: -Math.PI / 2 }
         }
-
         const target = targetAnglesRef.current[key]
         const current = currentAnglesRef.current[key]
-
-        // Animate start angle
         if (Math.abs(current.start - target.start) > 0.01) {
           current.start += (target.start - current.start) * 0.1
           needsAnimation = true
         } else {
           current.start = target.start
         }
-
-        // Animate end angle
         if (Math.abs(current.end - target.end) > 0.01) {
           current.end += (target.end - current.end) * 0.1
           needsAnimation = true
@@ -625,7 +577,6 @@ const EnhancedPieChart = ({ data }) => {
       })
 
       drawChart()
-
       if (needsAnimation) {
         animationRef.current = requestAnimationFrame(animate)
       }
@@ -652,65 +603,41 @@ const EnhancedPieChart = ({ data }) => {
     const radius = Math.min(width, height) / 2 - 10
 
     ctx.clearRect(0, 0, width, height)
-
-    const colors = {
-      answered: {
-        fill: "#4caf50",
-        gradient: ["#66bb6a", "#43a047"],
-      },
-      marked: {
-        fill: "#fc7a46",
-        gradient: ["#ff8f65", "#e56a3d"],
-      },
-      notAnswered: {
-        fill: "#f44336",
-        gradient: ["#ef5350", "#d32f2f"],
-      },
-      notVisited: {
-        fill: "#e0e0e0",
-        gradient: ["#f5f5f5", "#bdbdbd"],
-      },
-    }
-
-    // Add shadow for the entire pie
     ctx.shadowColor = "rgba(0, 0, 0, 0.2)"
     ctx.shadowBlur = 10
     ctx.shadowOffsetX = 0
     ctx.shadowOffsetY = 0
 
+    const colors = {
+      answered: { fill: "#4caf50", gradient: ["#66bb6a", "#43a047"] },
+      marked: { fill: "#fc7a46", gradient: ["#ff8f65", "#e56a3d"] },
+      notAnswered: { fill: "#f44336", gradient: ["#ef5350", "#d32f2f"] },
+      notVisited: { fill: "#e0e0e0", gradient: ["#f5f5f5", "#bdbdbd"] },
+    }
+
     Object.entries(currentAnglesRef.current).forEach(([key, angles]) => {
       if (angles.start === angles.end) return
-
-      // Create gradient for slice
       const gradient = ctx.createLinearGradient(centerX - radius, centerY - radius, centerX + radius, centerY + radius)
       gradient.addColorStop(0, colors[key].gradient[0])
       gradient.addColorStop(1, colors[key].gradient[1])
-
       ctx.beginPath()
       ctx.moveTo(centerX, centerY)
       ctx.arc(centerX, centerY, radius, angles.start, angles.end)
       ctx.closePath()
       ctx.fillStyle = gradient
       ctx.fill()
-
-      // Add a subtle stroke
       ctx.lineWidth = 1
       ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"
       ctx.stroke()
     })
 
-    // Draw inner circle (creates donut effect)
     ctx.shadowBlur = 0
     ctx.beginPath()
     ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI)
     ctx.fillStyle = "#fff"
     ctx.fill()
-
-    // Add a subtle inner shadow to the donut hole
     ctx.shadowColor = "rgba(0, 0, 0, 0.1)"
     ctx.shadowBlur = 5
-    ctx.shadowOffsetX = 0
-    ctx.shadowOffsetY = 0
     ctx.beginPath()
     ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI)
     ctx.strokeStyle = "rgba(0, 0, 0, 0.05)"
@@ -757,6 +684,8 @@ const McqTest = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
 
   const [mcqIds, setMcqIds] = useState([])
+  const [codingIds, setCodingIds] = useState([]) // New state for coding IDs
+  const [testTotalScore, setTestTotalScore] = useState(0) // New state for total score
   const [currentIndex, setCurrentIndex] = useState(0)
   const [currentMcq, setCurrentMcq] = useState(null)
   const [answers, setAnswers] = useState({})
@@ -788,7 +717,7 @@ const McqTest = () => {
         setUserId(user.user.user_id)
         setPocId(user.user.mod_poc_id?.mod_poc_id)
       } catch (error) {
-        console.error("Error parsing user from session storage:", error)
+        console.error("Error parsing user from local storage:", error)
       }
     }
   }, [])
@@ -803,12 +732,7 @@ const McqTest = () => {
   useEffect(() => {
     const enterFullScreen = () => {
       document.documentElement.requestFullscreen().catch((err) => console.error(err))
-      if (
-        typeof window !== "undefined" &&
-        window.screen &&
-        window.screen.orientation &&
-        window.screen.orientation.lock
-      ) {
+      if (window.screen?.orientation?.lock) {
         window.screen.orientation.lock("portrait").catch((err) => console.error("Orientation lock failed:", err))
       }
     }
@@ -910,12 +834,7 @@ const McqTest = () => {
       window.removeEventListener("beforeunload", handleBeforeUnload)
       window.removeEventListener("popstate", preventNavigation)
       document.exitFullscreen().catch(() => {})
-      if (
-        typeof window !== "undefined" &&
-        window.screen &&
-        window.screen.orientation &&
-        window.screen.orientation.unlock
-      ) {
+      if (window.screen?.orientation?.unlock) {
         window.screen.orientation.unlock()
       }
     }
@@ -926,8 +845,10 @@ const McqTest = () => {
       try {
         const res = await getTestById(testId)
         setMcqIds(res.test_mcq_id || [])
+        setCodingIds(res.test_coding_id || []) // Set coding IDs
         setTestName(res.test_name)
         setTestLanguage(res.test_language)
+        setTestTotalScore(res.test_total_score || mcqIds.length) // Set total score
         setLoading(false)
         const initialVisited = { 0: true }
         setVisitedQuestions(initialVisited)
@@ -1030,28 +951,47 @@ const McqTest = () => {
       }
 
       const allMcqResponses = await Promise.all(mcqIds.map((mcqId) => getMcqById(mcqId)))
-
       const updatedCorrectAnswers = allMcqResponses.reduce((acc, mcq) => {
         acc[mcq.mcq_id] = mcq.mcq_answer
         return acc
       }, {})
 
-      const score = Object.entries(answers).reduce((acc, [mcqId, userAnswer]) => {
+      const mcqScore = Object.entries(answers).reduce((acc, [mcqId, userAnswer]) => {
         return acc + (userAnswer === updatedCorrectAnswers[mcqId] ? 1 : 0)
       }, 0)
 
-      const resultData = {
-        result_user_id: userId,
-        result_test_id: testId,
-        result_score: score,
-        result_total_score: mcqIds.length,
-        result_poc_id: pocId,
-        testName,
-        testLanguage,
+      if (codingIds.length > 0) {
+        // Navigate to the first coding problem
+        navigate(`/compiler/${codingIds[0]}`, {
+          state: {
+            testId,
+            testMcqIds: mcqIds,
+            testCodingIds: codingIds,
+            testTotalScore,
+            mcqScore,
+            testName,
+            testLanguage,
+            userId,
+            pocId,
+            currentCodingIndex: 0,
+            codingResults: [],
+          },
+        })
+      } else {
+        // No coding problems, submit the test
+        const resultData = {
+          result_user_id: userId,
+          result_test_id: testId,
+          result_score: mcqScore,
+          result_total_score: testTotalScore,
+          result_poc_id: pocId,
+          testName,
+          testLanguage,
+        }
+        await submitTestResult(resultData)
+        console.log("Test submitted successfully:", resultData)
+        navigate("/test-result", { state: { resultData } })
       }
-      await submitTestResult(resultData)
-      console.log("Test submitted successfully:", resultData)
-      navigate("/test-result", { state: { resultData } })
     } catch (err) {
       console.error("Error submitting test:", err)
     } finally {
@@ -1127,11 +1067,9 @@ const McqTest = () => {
       </TimerBox>
 
       <Box sx={{ mt: 7, p: 2 }}>
-        {/* Reintroduced Progress Bar with hover animation */}
         <Box className="progress-container" sx={{ position: "relative" }}>
           <ProgressBarContainer>
             <ProgressBarFill value={progress} />
-
           </ProgressBarContainer>
           <ProgressHoverIndicator value={progress}>{Math.round(progress)}%</ProgressHoverIndicator>
         </Box>
@@ -1199,12 +1137,8 @@ const McqTest = () => {
                                   <Radio
                                     sx={{
                                       color: "#0c83c8",
-                                      "&.Mui-checked": {
-                                        color: "#0c83c8",
-                                      },
-                                      "& .MuiSvgIcon-root": {
-                                        fontSize: 20,
-                                      },
+                                      "&.Mui-checked": { color: "#0c83c8" },
+                                      "& .MuiSvgIcon-root": { fontSize: 20 },
                                     }}
                                   />
                                 }
@@ -1229,11 +1163,23 @@ const McqTest = () => {
                       </SecondaryButton>
                       <PrimaryButton
                         variant="contained"
-                        endIcon={currentIndex + 1 < mcqIds.length ? <ArrowForwardIcon /> : <CheckCircleIcon />}
+                        endIcon={
+                          currentIndex + 1 < mcqIds.length ? (
+                            <ArrowForwardIcon />
+                          ) : codingIds.length > 0 ? (
+                            <ArrowForwardIcon />
+                          ) : (
+                            <CheckCircleIcon />
+                          )
+                        }
                         onClick={handleNext}
                         size={isMobile ? "medium" : "large"}
                       >
-                        {currentIndex + 1 < mcqIds.length ? "Next" : "Submit"}
+                        {currentIndex + 1 < mcqIds.length
+                          ? "Next"
+                          : codingIds.length > 0
+                          ? "Proceed to Coding"
+                          : "Submit"}
                       </PrimaryButton>
                     </Box>
                   </>
@@ -1331,7 +1277,7 @@ const McqTest = () => {
                       boxShadow: "0 4px 15px rgba(12, 131, 200, 0.3)",
                     }}
                   >
-                    Submit Test
+                    {codingIds.length > 0 ? "Proceed to Coding" : "Submit Test"}
                   </PrimaryButton>
                 </Box>
               </SidebarContainer>
@@ -1355,7 +1301,7 @@ const McqTest = () => {
             >
               <CustomCircularProgress size={60} thickness={5} />
               <Typography variant="h5" sx={{ mt: 2, color: "#0c83c8", fontWeight: "bold" }}>
-                Submitting Your Test
+                Processing Your Test
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 Please wait while we process your answers...
@@ -1372,8 +1318,7 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Exiting full screen mode will automatically submit your test. All progress will be saved and the test will
-            end.
+            Exiting full screen mode will automatically submit your test. All progress will be saved and the test will end.
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Please stay in full screen to continue the test.
@@ -1396,8 +1341,7 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Attempting to navigate away (including back button) will automatically submit your answers. This action
-            cannot be undone.
+            Attempting to navigate away (including back button) will automatically submit your answers. This action cannot be undone.
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Return to the test to continue or submit now to end.
@@ -1420,10 +1364,12 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to submit your test? This action cannot be undone.
+            Are you sure you want to {codingIds.length > 0 ? "proceed to coding problems" : "submit your test"}? This action cannot be undone.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            All your answers will be saved, and the test will end.
+            {codingIds.length > 0
+              ? "You will be taken to the coding section of the test."
+              : "All your answers will be saved, and the test will end."}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "space-between", p: 2 }}>
@@ -1431,7 +1377,7 @@ const McqTest = () => {
             Continue Test
           </WarningButton>
           <WarningButton variant="submit" onClick={handleSubmit}>
-            Submit Test
+            {codingIds.length > 0 ? "Proceed to Coding" : "Submit Test"}
           </WarningButton>
         </DialogActions>
       </WarningDialog>
@@ -1443,11 +1389,13 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            You have {mcqIds.length - Object.keys(answers).length} unanswered questions. Submitting now will mark these
-            as incorrect.
+            You have {mcqIds.length - Object.keys(answers).length} unanswered questions.{" "}
+            {codingIds.length > 0
+              ? "Proceeding to coding will mark these as incorrect."
+              : "Submitting now will mark these as incorrect."}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Would you like to continue the test or submit it now?
+            Would you like to continue the test or {codingIds.length > 0 ? "proceed to coding" : "submit it now"}?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "space-between", p: 2 }}>
@@ -1455,7 +1403,7 @@ const McqTest = () => {
             Continue Test
           </WarningButton>
           <WarningButton variant="submit" onClick={handleSubmit}>
-            Submit Test
+            {codingIds.length > 0 ? "Proceed to Coding" : "Submit Test"}
           </WarningButton>
         </DialogActions>
       </WarningDialog>
@@ -1464,4 +1412,3 @@ const McqTest = () => {
 }
 
 export default McqTest
-

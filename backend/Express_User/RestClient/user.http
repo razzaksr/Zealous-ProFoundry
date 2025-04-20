@@ -3,14 +3,23 @@ POST http://localhost:7000/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "selva",
+  "full_name": "janj",
   "department": "AI&DS",
   "college": "Muthayammal Engineering College",
-  "rollno": "22ad093",
-  "email": "selva@gmail.com",
+  "rollno": "22ad0821",
+  "email": "janj@gmail.com",
+  "password": "0000"
+}
+
+### Create Admin
+POST http://localhost:7000/user/add_user
+Content-Type: application/json
+
+{
+  "full_name": "selva",
+  "email": "selva12@gmail.com",
   "password": "0000",
-  "status": "active",
-  "user_last_login": "2025-03-16T10:00:00Z"
+  "admin": true
 }
 
 ### Login User
@@ -26,7 +35,18 @@ Content-Type: application/json
 GET http://localhost:7000/user/read_all_users
 
 ### Get User by ID
-GET http://localhost:7000/user/get_user_by_id/528f7cb8-0bfe-4366-a98d-831719ec53e6
+GET http://localhost:7000/user/get_user_by_id/60dfcae4-2c59-4957-9543-571858861a49
+### Get User only user ID
+GET http://localhost:7000/user/user-ids
+
+### GET USER ID BY ROLL NO
+GET http://localhost:7000/user/get_user_id_by_rollno/22it083
+
+### Get Bulk User by Roll No 
+POST http://localhost:7000/user/users/bulk 
+Content-Type: application/json
+
+{ "rollnos": [ "22IT010", "22IT036", "22IT035", "22IT045", "22IT003", "22IT017", "22IT019", "22IT028", "22IT001", "22IT018", "23IT508", "22IT052", "22IT055", "22IT073", "22IT087", "22IT038", "22IT054", "22IT063", "22IT072", "22IT075", "22IT065", "22IT086", "22IT079", "22IT053", "22IT025", "22IT057", "22IT032", "22IT060", "22IT009", "22IT071", "22IT074", "22IT051", "20IT507", "22IT076", "22IT050", "22IT043", "22IT066", "22IT081", "22IT077", "22IT002", "22IT044", "22IT083", "22IT022" ] }
 
 ### Update User
 PUT http://localhost:7000/user/update_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
@@ -46,5 +66,15 @@ Content-Type: application/json
   "user_last_login": "2025-03-16T12:30:00Z"
 }
 
+### Update User Status
+PUT http://localhost:7000/user/update_user_status/2a1a2103-a192-4811-9f42-12e65a6c6e3a
+Content-Type: application/json
+
+{
+  "status": true
+}
+
+
 ### Delete User
 DELETE http://localhost:7000/user/delete_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
+

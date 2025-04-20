@@ -37,8 +37,8 @@ const pocSchema = new mongoose.Schema({
     type: [
       {
         test_id: { type: String, required: true },
-        assigned_date: { type: String, required: true } 
-      }
+        assigned_date: { type: String, required: true },
+      },
     ],
     default: [],
   },
@@ -53,6 +53,11 @@ const pocSchema = new mongoose.Schema({
   poc_certificate: {
     type: Boolean,
     default: false,
+  },
+  certificates: {
+    type: Map,
+    of: String, 
+    default: {},
   },
 });
 

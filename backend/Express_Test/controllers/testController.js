@@ -65,7 +65,7 @@ router.get('/get_by_test_id/:test_id', async (req, res) => {
     }
 });
 
-// Update Test (add mcq and coding ids)
+// Update Test (replace mcq and coding ids with only valid provided ones)
 router.put('/update', async (req, res) => {
     try {
         const { test_id, mcq_id, coding_test_id, ...updateData } = req.body;
@@ -79,16 +79,18 @@ router.put('/update', async (req, res) => {
             return res.status(404).json({ success: false, msg: "Test not found" });
         }
 
-        // Update MCQ IDs
+        // Replace MCQ IDs if provided
         if (mcq_id) {
-            const newMcqIds = Array.isArray(mcq_id) ? mcq_id : [mcq_id];
-            test.test_mcq_id = [...new Set([...test.test_mcq_id, ...newMcqIds])];
+            const newMcqIds = (Array.isArray(mcq_id) ? mcq_id : [mcq_id])
+                .filter(id => id && id.trim() !== "");
+            test.test_mcq_id = [...new Set(newMcqIds)];
         }
 
-        // Update Coding Test IDs
+        // Replace Coding Test IDs if provided
         if (coding_test_id) {
-            const newCodingIds = Array.isArray(coding_test_id) ? coding_test_id : [coding_test_id];
-            test.test_coding_id = [...new Set([...test.test_coding_id, ...newCodingIds])];
+            const newCodingIds = (Array.isArray(coding_test_id) ? coding_test_id : [coding_test_id])
+                .filter(id => id && id.trim() !== "");
+            test.test_coding_id = [...new Set(newCodingIds)];
         }
 
         // Update other fields
@@ -102,6 +104,7 @@ router.put('/update', async (req, res) => {
         res.status(500).json({ success: false, msg: "Server Error", error: error.message });
     }
 });
+
 
 // Toggle Test Status (active/disabled)
 router.put('/toggle_status', async (req, res) => {

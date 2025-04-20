@@ -32,9 +32,8 @@ PUT http://localhost:4000/test_gateway/test/update
 Content-Type: application/json
 
 {
-  "test_id": "b913cdf9-79ff-4745-a57b-0a5882253dd2",
-  "mcq_id": ["5822a799-2a0e-4c14-90df-f25f72ef5d0e"],
-  "coding_test_id": ["coding_id-5", "coding_id-6"]
+  "test_id": "7213c219-3295-462d-b6cf-e35e3ee03a75",
+  "coding_test_id": ["9ee19f23-e30b-434d-a541-af9e5c51eac3"]
 }
 
 ###

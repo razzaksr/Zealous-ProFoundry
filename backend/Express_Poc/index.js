@@ -3,7 +3,6 @@ const express = require("express");
 const mongoose = require("./config/db");
 const bodyParser = require("body-parser");
 const cors = require("cors");
-
 const poc = require("./controllers/pocController");
 const expert = require("./controllers/expertController");
 const consul = require("./middleware/consul");

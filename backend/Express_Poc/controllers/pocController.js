@@ -291,4 +291,127 @@ router.get('/get_all_tests/:mod_poc_id', async (req, res) => {
   }
 });
 
+  // Add User and Generate Certificate with 10-Digit ID
+  router.post("/add-certificate", async (req, res) => {
+    try {
+      const { mod_poc_id, newUserId } = req.body;
+
+      // Find the Poc document using mod_poc_id
+      const poc = await Poc.findOne({ mod_poc_id });
+      if (!poc) {
+        return res.status(404).json({ message: "Poc not found" });
+      }
+
+      // ❌ Check if user is part of mod_users
+      if (!poc.mod_users.includes(newUserId)) {
+        return res.status(400).json({ message: "User not found in mod_users" });
+      }
+
+      // ✅ Check if certificate already exists
+      if (poc.certificates.has(newUserId)) {
+        return res.status(200).json({
+          message: "Certificate already generated for this user",
+          certificateId: poc.certificates.get(newUserId),
+        });
+      }
+
+      // Generate 10-digit certificate ID
+      const newCertificateId = generateRandomCertificateId();
+      poc.certificates.set(newUserId, newCertificateId);
+
+      await poc.save();
+
+      res.status(200).json({
+        message: "Certificate generated",
+        certificateId: newCertificateId,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Utility function to generate a 10-digit random certificate ID
+  function generateRandomCertificateId() {
+    return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+  }
+
+  // Retrieve Certificate ID using mod_poc_id
+  router.get("/get-certificate/:pocId/:userId", async (req, res) => {
+    try {
+      const { pocId, userId } = req.params;
+
+      // Use mod_poc_id instead of _id
+      const poc = await Poc.findOne({ mod_poc_id: pocId });
+      if (!poc) {
+        return res.status(404).json({ message: "Poc not found" });
+      }
+
+      const certificateId = poc.certificates.get(userId);
+      if (!certificateId) {
+        return res.status(404).json({ message: "Certificate not found for this user" });
+      }
+
+      res.status(200).json({ certificateId });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+// Remove only certificate ID using mod_poc_id
+router.delete("/remove-user/:pocId/:userId", async (req, res) => {
+  try {
+    const { pocId, userId } = req.params;
+
+    const poc = await Poc.findOne({ mod_poc_id: pocId });
+    if (!poc) {
+      return res.status(404).json({ message: "Poc not found" });
+    }
+
+    if (!poc.certificates.has(userId)) {
+      return res.status(404).json({ message: "Certificate not found for this user" });
+    }
+
+    poc.certificates.delete(userId);
+
+    await poc.save();
+    res.status(200).json({ message: "Certificate removed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Update a User's Certificate ID (if the certificate is generated later)
+router.put("/update-certificate", async (req, res) => {
+  try {
+    const { pocId, userId } = req.body;
+
+    const newCertificateId = generateRandomCertificateId(); // 10-digit
+
+    const poc = await Poc.findOne({ mod_poc_id: pocId });
+    if (!poc) return res.status(404).json({ message: "Poc not found" });
+
+    if (!poc.mod_users.includes(userId)) {
+      return res.status(404).json({ message: "User not found in this Poc" });
+    }
+
+    poc.certificates.set(userId, newCertificateId);
+    await poc.save();
+
+    res.status(200).json({ message: "Certificate updated", certificateId: newCertificateId });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+function generateRandomCertificateId() {
+  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+}
+
+
+
 module.exports = router;

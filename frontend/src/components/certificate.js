@@ -3,9 +3,10 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import { createRoot } from "react-dom/client";
+import axios from "axios"; // Add axios for API calls
 import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Adjust path
 import DigiSign from "../assests/DigiSign.png"; // Adjust path
-import { getUserById, getResultsByUserId, getModuleById ,fetchAggregateScores } from "../axios";
+import { getUserById, getModuleById, fetchAggregateScores } from "../axios"; // Removed getResultsByUserId
 import {
   Dialog,
   DialogContent,
@@ -17,37 +18,32 @@ import {
 import { styled } from "@mui/material/styles";
 
 // Certificate template
-const CertificateTemplate = ({ forwardedRef }) => {
+const CertificateTemplate = ({ forwardedRef, certificateId }) => {
   const [userDetails, setUserDetails] = useState(null);
   const [moduleDetails, setModuleDetails] = useState(null);
-  const [userResults, setUserResults] = useState(null);
   const [aggregateScore, setAggregateScore] = useState(null);
-
 
   useEffect(() => {
     const fetchData = async () => {
       const storedUser = localStorage.getItem("true");
       if (!storedUser) return;
-  
+
       try {
         const user = JSON.parse(storedUser);
         const userId = user?.user?.user_id;
         const modId = user?.user?.mod_poc_id?.mod_id;
         const pocId = user?.user?.mod_poc_id?.mod_poc_id;
-  
+
         if (userId) {
           const userData = await getUserById(userId);
           setUserDetails(userData);
-  
-          const resultsData = await getResultsByUserId(userId);
-          setUserResults(resultsData);
         }
-  
+
         if (modId) {
           const moduleData = await getModuleById(modId);
           setModuleDetails(moduleData);
         }
-  
+
         if (userId && pocId) {
           const scoreData = await fetchAggregateScores(pocId, userId);
           setAggregateScore(scoreData.response);
@@ -56,23 +52,14 @@ const CertificateTemplate = ({ forwardedRef }) => {
         console.error("Error fetching certificate data:", error);
       }
     };
-  
+
     fetchData();
   }, []);
-  
 
-  if (!userDetails || !moduleDetails || !userResults || userResults.length === 0 || !aggregateScore)
-    return null;
-  
-  const formatCertificateId = (id) => {
-    const idStr = String(id);
-    return idStr.length > 10 ? idStr.slice(-10) : idStr.padStart(10, "0");
-  };
+  if (!userDetails || !moduleDetails || !aggregateScore || !certificateId) return null;
 
   const percentage = aggregateScore?.average_percentage?.toFixed(2) || "0.00";
-
-
-  const issueDate = dayjs(userResults[userResults.length - 1]?.created_at).format("DD-MM-YYYY");
+  const issueDate = dayjs().format("DD-MM-YYYY");
 
   return (
     <div
@@ -91,7 +78,7 @@ const CertificateTemplate = ({ forwardedRef }) => {
     >
       <h2 style={{ fontSize: "46px", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
       <p style={{ fontSize: "16px", fontStyle: "italic" }}>
-        Certificate ID : CET/WP/{formatCertificateId(userResults[0]?.result_id)}
+        Certificate ID : CET/WP/{certificateId}
       </p>
 
       <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>
@@ -149,7 +136,7 @@ const CertificateTemplate = ({ forwardedRef }) => {
 };
 
 // Generate PDF
-const generateCertificate = async (setProgress) => {
+const generateCertificate = async (certificateId, setProgress) => {
   const certificateRef = { current: null };
   const container = document.createElement("div");
   container.style.position = "absolute";
@@ -158,7 +145,7 @@ const generateCertificate = async (setProgress) => {
 
   try {
     const root = createRoot(container);
-    root.render(<CertificateTemplate forwardedRef={(el) => (certificateRef.current = el)} />);
+    root.render(<CertificateTemplate forwardedRef={(el) => (certificateRef.current = el)} certificateId={certificateId} />);
 
     setProgress(20);
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -255,19 +242,59 @@ const CertificateGenerator = forwardRef((props, ref) => {
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
+  const [certificateId, setCertificateId] = useState(null);
 
   useImperativeHandle(ref, () => ({
     handleDownloadCertificate,
   }));
 
+  const fetchOrGenerateCertificateId = async (pocId, userId) => {
+    try {
+      // Try to fetch existing certificate ID
+      const response = await axios.get(`http://localhost:4000/poc_gateway/poc/get-certificate/${pocId}/${userId}`);
+      return response.data.certificateId;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // Certificate not found, generate a new one
+        const response = await axios.post("http://localhost:4000/poc_gateway/poc/add-certificate", {
+          mod_poc_id: pocId,
+          newUserId: userId,
+        });
+        return response.data.certificateId;
+      }
+      throw error;
+    }
+  };
+
   const handleDownloadCertificate = async () => {
     setOpen(true);
     setProgress(0);
     setError(null);
+
     try {
-      await generateCertificate(setProgress);
+      // Get userId and pocId from localStorage
+      const storedUser = localStorage.getItem("true");
+      if (!storedUser) {
+        throw new Error("User data not found in localStorage");
+      }
+
+      const user = JSON.parse(storedUser);
+      const userId = user?.user?.user_id;
+      const pocId = user?.user?.mod_poc_id?.mod_poc_id;
+
+      if (!userId || !pocId) {
+        throw new Error("Invalid userId or pocId");
+      }
+
+      // Fetch or generate certificate ID
+      const certId = await fetchOrGenerateCertificateId(pocId, userId);
+      setCertificateId(certId);
+
+      // Generate certificate PDF
+      await generateCertificate(certId, setProgress);
     } catch (err) {
-      setError("Failed to generate certificate. Please try again.");
+      console.error("Error in certificate generation:", err);
+      setError(err.response?.data?.message || "Failed to generate certificate. Please try again.");
     }
   };
 
@@ -275,6 +302,7 @@ const CertificateGenerator = forwardRef((props, ref) => {
     setOpen(false);
     setProgress(0);
     setError(null);
+    setCertificateId(null);
   };
 
   return (

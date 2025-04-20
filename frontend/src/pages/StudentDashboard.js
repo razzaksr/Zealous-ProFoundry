@@ -48,6 +48,7 @@ export default function StudentDashboard() {
         setUserId(userData.user.user_id);
         setModId(userData.user.mod_poc_id.mod_id);
         setPocId(userData.user.mod_poc_id.mod_poc_id);
+        console.log("User Admin:", userData.user.admin);
 
         if (userData?.user?.user_id && userData?.user?.mod_poc_id?.mod_poc_id) {
           fetchDashboardData(
