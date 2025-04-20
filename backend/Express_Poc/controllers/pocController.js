@@ -1,6 +1,11 @@
 const express = require("express");
 const Poc = require("../models/Poc");
 const router = express.Router();
+const admin = require("firebase-admin");
+
+console.log("Project ID:", process.env.FIREBASE_PROJECT_ID);
+console.log("Client Email:", process.env.FIREBASE_CLIENT_EMAIL);
+console.log("Private Key:", process.env.FIREBASE_PRIVATE_KEY);
 
 // add_poc
 router.post("/add_poc", async (req, res) => {
@@ -291,50 +296,82 @@ router.get('/get_all_tests/:mod_poc_id', async (req, res) => {
   }
 });
 
-  // Add User and Generate Certificate with 10-Digit ID
-  router.post("/add-certificate", async (req, res) => {
-    try {
-      const { mod_poc_id, newUserId } = req.body;
-
-      // Find the Poc document using mod_poc_id
-      const poc = await Poc.findOne({ mod_poc_id });
-      if (!poc) {
-        return res.status(404).json({ message: "Poc not found" });
-      }
-
-      // ❌ Check if user is part of mod_users
-      if (!poc.mod_users.includes(newUserId)) {
-        return res.status(400).json({ message: "User not found in mod_users" });
-      }
-
-      // ✅ Check if certificate already exists
-      if (poc.certificates.has(newUserId)) {
-        return res.status(200).json({
-          message: "Certificate already generated for this user",
-          certificateId: poc.certificates.get(newUserId),
-        });
-      }
-
-      // Generate 10-digit certificate ID
-      const newCertificateId = generateRandomCertificateId();
-      poc.certificates.set(newUserId, newCertificateId);
-
-      await poc.save();
-
-      res.status(200).json({
-        message: "Certificate generated",
-        certificateId: newCertificateId,
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Server error" });
-    }
+// Initialize Firebase Admin SDK (should be done once, typically in a separate config file)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      
+    }),
+    
   });
+}
 
-  // Utility function to generate a 10-digit random certificate ID
-  function generateRandomCertificateId() {
-    return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+const db = admin.firestore();
+
+router.post("/add-certificate", async (req, res) => {
+  try {
+    const { mod_poc_id, newUserId } = req.body;
+
+    // Find the Poc document using mod_poc_id
+    const poc = await Poc.findOne({ mod_poc_id });
+    if (!poc) {
+      return res.status(404).json({ message: "Poc not found" });
+    }
+
+    // Check if user is part of mod_users
+    if (!poc.mod_users.includes(newUserId)) {
+      return res.status(400).json({ message: "User not found in mod_users" });
+    }
+
+    // Check if certificate already exists in MongoDB
+    if (poc.certificates.has(newUserId)) {
+      return res.status(200).json({
+        message: "Certificate already generated for this user",
+        certificateId: poc.certificates.get(newUserId),
+      });
+    }
+
+    // Generate 10-digit certificate ID
+    const newCertificateId = generateRandomCertificateId();
+
+    // Check for duplicate certificateId in Firestore
+    const certificateRef = db.collection("certificates").doc(newCertificateId);
+    const certificateDoc = await certificateRef.get();
+    if (certificateDoc.exists) {
+      return res.status(409).json({
+        message: "Certificate ID already exists in Firebase, please try again",
+      });
+    }
+
+    // Set certificate in MongoDB
+    poc.certificates.set(newUserId, newCertificateId);
+    await poc.save();
+
+    // Save to Firebase Firestore
+    await certificateRef.set({
+      userId: newUserId,
+      certificateId: newCertificateId,
+      mod_poc_id: mod_poc_id,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    res.status(200).json({
+      message: "Certificate generated and saved to Firebase",
+      certificateId: newCertificateId,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Server error" });
   }
+});
+
+// Utility function to generate a 10-digit random certificate ID
+function generateRandomCertificateId() {
+  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+}
 
   // Retrieve Certificate ID using mod_poc_id
   router.get("/get-certificate/:pocId/:userId", async (req, res) => {
