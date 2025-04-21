@@ -1,0 +1,35 @@
+### Fetch All Results
+GET  http://localhost:4000/results_gateway/results/get-result
+Content-Type: application/json
+
+### Add a New Result
+POST  http://localhost:4000/results_gateway/results/post-result
+Content-Type: application/json
+
+{ "result_id":"abcd",
+  "result_user_id": "user982",
+  "result_test_id": "test956",
+  "result_score": 97,
+  "result_poc_id": "poc785"
+}
+
+### Update a Result
+PUT http://localhost:4000/results_gateway/results/update-result
+Content-Type: application/json
+
+{
+  "result_id":"abcd",
+  "result_user_id": "user982",
+  "result_test_id": "test956",
+  "result_score": 77,
+  "result_poc_id": "poc785"
+}
+
+
+### Delete a Result
+DELETE http://localhost:4000/results_gateway/results/delete-by-result-id/abcd
+Content-Type: application/json
+
+
+################# get result by user id
+GET http://localhost:4000/results_gateway/results/get-result-by-user/717150b2-2a19-45e8-9c24-69d93b4751c2

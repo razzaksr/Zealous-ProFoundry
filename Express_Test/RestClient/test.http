@@ -1,0 +1,42 @@
+### Create Test
+POST http://localhost:8000/test/create
+Content-Type: application/json
+
+{
+    "test_name": "JavaScript Test",
+    "test_language": "JavaScript",
+    "test_total_score": 25,
+    "test_mcq_id": [],
+    "test_coding_id": []
+}
+
+### Get All Tests
+GET http://localhost:8000/test/all
+
+### Get Test by ID
+GET http://localhost:8000/test/get_by_test_id/b913cdf9-79ff-4745-a57b-0a5882253dd2
+
+### Update Test (Add MCQ & Coding Test ID)
+PUT http://localhost:8000/test/update
+Content-Type: application/json
+
+{
+    "test_id": "b913cdf9-79ff-4745-a57b-0a5882253dd2",
+    "mcq_id": ["5822a799-2a0e-4c14-90df-f25f72ef5d0e"],
+    "coding_test_id": ["coding_id-5","coding_id-6"]
+}
+
+### Delete Test
+DELETE http://localhost:8000/test/delete/11571180-691a-4b62-b126-43e000b98479
+
+
+### Remove MCQ from Test Using Test ID & MCQ ID
+PUT http://localhost:8000/test/remove_mcq_from_test
+Content-Type: application/json
+
+{
+    "test_id": "11571180-691a-4b62-b126-43e000b98479",
+    "mcq_id": "d3d88451-7419-4bcd-ae0c-d04e515b2546"
+}
+
+

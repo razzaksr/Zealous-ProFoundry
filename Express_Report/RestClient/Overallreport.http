@@ -1,0 +1,77 @@
+//get data by using mod_id
+
+
+GET http://localhost:9000/overallreport/get-by-mod-id/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
+
+//get data by using mod_poc_id
+
+###
+GET http://localhost:9000/overallreport/get_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
+
+
+### CREATE Training
+POST http://localhost:9000/overallreport
+Content-Type: application/json
+
+{
+  "title":"abcdefghijklmnop",
+  "background": "Web Development Bootcamp ",
+  "mod_id": "863662d6-7565-4ba7-aaa5-5ecc9d6cae9e",
+  "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+  "schedule": "",
+  "executiondates": "",
+  "scopeOfTheTraining": "To train students on full-stack development",
+  "totalStrength": 30,
+  "pointOfContact": {
+    "name": "",
+    "role": "",
+    "email": "",
+    "contact": "",
+    "summary": [
+      {
+        "day": "Day 1",
+        "topicsCovered": "HTML, CSS Basics",
+        "technicalTasksPerformed": "Built a portfolio layout",
+        "gitLink": "https://github.com/user/repo1",
+        "attendancePresent": ["Student A", "Student B"],
+        "attendanceAbsent": ["Student C"]
+      },
+      {
+        "day": "Day 2",
+        "topicsCovered": "JavaScript Intro,MERN",
+        "technicalTasksPerformed": "Simple JS calculator",
+        "gitLink": "https://github.com/user/repo2",
+        "attendancePresent": ["Student A", "Student B", "Student C"],
+        "attendanceAbsent": []
+      }
+    ]
+  }
+}
+
+###
+
+### GET All Trainings
+GET http://localhost:9000/overallreport
+
+###
+
+### GET Training by ID
+GET http://localhost:3000/api/trainings/{{trainingId}}
+
+###
+
+### UPDATE Training by ID
+PUT http://localhost:3000/api/trainings/{{trainingId}}
+Content-Type: application/json
+
+{
+  "background": "Updated Web Development Bootcamp",
+  "scopeOfTheTraining": "Updated scope with MERN stack",
+  "totalStrength": 35
+}
+
+###
+
+### DELETE Training by ID
+DELETE http://localhost:3000/api/trainings/{{trainingId}}
+
