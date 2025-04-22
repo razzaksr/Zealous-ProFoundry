@@ -10,13 +10,7 @@ const SummarySchema = new mongoose.Schema({
   attendanceAbsent: { type: [String], required: false },
 }, { _id: false });
 
-const ExpertDetailsSchema = new mongoose.Schema({
-  name: String,
-  role: String,
-  company: String,
-  email: String,
-  contact: String,
-});
+
 
 // Point of Contact schema (filled via mod_poc_id externally)
 const PointOfContactSchema = new mongoose.Schema({
