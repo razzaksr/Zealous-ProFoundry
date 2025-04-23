@@ -10,7 +10,7 @@ Content-Type: application/json
 }
 
 ### Get all POCs
-GET http://localhost:6000/poc/read_all_poc
+GET http://localhost:4000/poc/read_all_poc
 
 ### get poc by using mod_id
 GET http://localhost:6000/poc/get_poc_by_mod_id/6503caf1-fb75-4640-99f2-d6a529b71205
@@ -59,3 +59,63 @@ GET http://localhost:6000/poc/mod_by_user/717150b2-2a19-45e8-9c24-69d93b4751c2
 
 ### GET MOD AND POC AND TEST ID BY USER ID 
 GET http://localhost:6000/poc/mod_and_poc/717150b2-2a19-45e8-9c24-69d93b4751c2
+
+/// report ///
+
+### get report by using mod_poc_id
+GET http://localhost:4000/poc/get_poc_report_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
+###
+
+### get poc by using mod_poc_id
+GET http://localhost:6000/poc/get_poc/3fcfeeae-653a-410c-b54c-4030210b0c15
+###
+
+
+### get report by using mod_poc_id
+GET http://localhost:6000/poc/get-by-mod-id/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
+###
+
+### get report by using mod_poc_id
+GET http://localhost:4000/poc/get_expert_using_poc/9ccefe74-f80c-4427-804e-827a61d7619a
+
+
+
+### Get full expert details using mod_poc_id
+PUT http://localhost:4000/poc/generate_report/9ccefe74-f80c-4427-804e-827a61d7619a
+Content-Type: application/json
+
+{
+  "title": "asdfghjk",
+  "company":"abcd",
+  "summary": [
+    {
+      "day": "Day 1",
+      "topicsCovered": "Introduction to Module",
+      "technicalTasksPerformed": "Task 1, Task 2",
+      "gitLink": "http://example.com/git-repo-1",
+      "attendancePresent": ["User 1", "User 2"],
+      "attendanceAbsent": ["User 3"]
+    },
+    {
+      "day": "Day 2",
+      "topicsCovered": "Advanced Topics in Module",
+      "technicalTasksPerformed": "Task 3, Task 4",
+      "gitLink": "http://example.com/git-repo-2",
+      "attendancePresent": ["User 1", "User 2", "User 4"],
+      "attendanceAbsent": []
+    },
+     {
+      "day": "Day 3",
+      "topicsCovered": "Advanced Topics in Module",
+      "technicalTasksPerformed": "Task 3, Task 4",
+      "gitLink": "http://example.com/git-repo-2",
+      "attendancePresent": ["User 1", "User 2", "User 4"],
+      "attendanceAbsent": []
+    }
+    
+  ]
+}
+
+###
+
+GET http://localhost:6000/poc/poc/report/9ccefe74-f80c-4427-804e-827a61d7619a

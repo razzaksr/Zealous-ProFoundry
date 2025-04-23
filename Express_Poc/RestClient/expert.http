@@ -56,3 +56,6 @@ GET http://localhost:6000/expert/get_expert_name/863662d6-7565-4ba7-aaa5-5ecc9d6
 
 ### GET EXPERT NAME BY MOD_ID
 GET http://localhost:6000/expert/get_expert/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
+
+### GET EXPERT by mod_poc_id
+GET http://localhost:6000/expert/get_expert_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
