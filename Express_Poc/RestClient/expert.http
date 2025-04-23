@@ -54,3 +54,5 @@ DELETE http://localhost:6000/expert/delete_expert/b090b958-c180-42aa-b611-8de235
 ### GET EXPERT NAME BY MOD_ID
 GET http://localhost:6000/expert/get_expert_name/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
 
+### GET EXPERT NAME BY MOD_ID
+GET http://localhost:6000/expert/get_expert/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e

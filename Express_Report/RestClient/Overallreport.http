@@ -6,7 +6,12 @@ GET http://localhost:9000/overallreport/get-by-mod-id/863662d6-7565-4ba7-aaa5-5e
 //get data by using mod_poc_id
 
 ###
-GET http://localhost:9000/overallreport/get_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
+GET http://localhost:9000/overallreport/get_by_poc_id/3fcfeeae-653a-410c-b54c-4030210b0c15
+
+//get expert data by using mod_id
+
+###
+GET http://localhost:9000/overallreport/get_expert_by_mod_id/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
 
 
 ### CREATE Training
@@ -14,14 +19,13 @@ POST http://localhost:9000/overallreport
 Content-Type: application/json
 
 {
-  "title":"abcdefghijklmnop",
-  "background": "Web Development Bootcamp ",
+  "title": "Web Development Bootcamp",
+  "background": "A hands-on workshop on full-stack web development using MERN stack",
   "mod_id": "863662d6-7565-4ba7-aaa5-5ecc9d6cae9e",
   "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
   "schedule": "",
   "executiondates": "",
-  "scopeOfTheTraining": "To train students on full-stack development",
-  "totalStrength": 30,
+  "scopeOfTheTraining": "To train students on full-stack development using modern web technologies",
   "pointOfContact": {
     "name": "",
     "role": "",
@@ -31,22 +35,34 @@ Content-Type: application/json
       {
         "day": "Day 1",
         "topicsCovered": "HTML, CSS Basics",
-        "technicalTasksPerformed": "Built a portfolio layout",
-        "gitLink": "https://github.com/user/repo1",
+        "technicalTasksPerformed": "Created a responsive webpage",
+        "gitLink": "https://github.com/example/repo-day1",
         "attendancePresent": ["Student A", "Student B"],
         "attendanceAbsent": ["Student C"]
       },
       {
         "day": "Day 2",
-        "topicsCovered": "JavaScript Intro,MERN",
-        "technicalTasksPerformed": "Simple JS calculator",
-        "gitLink": "https://github.com/user/repo2",
-        "attendancePresent": ["Student A", "Student B", "Student C"],
-        "attendanceAbsent": []
+        "topicsCovered": "JavaScript & React Basics",
+        "technicalTasksPerformed": "Built a to-do app",
+        "gitLink": "https://github.com/example/repo-day2",
+        "attendancePresent": ["Student A", "Student C"],
+        "attendanceAbsent": ["Student B"]
       }
     ]
-  }
+  },
+  "expertDetails": [
+    {
+      "name": "",
+      "role": "",
+      "company": "",
+      "email": "",
+      "contact": ""
+    }
+  ],
+  "totalStrength": 30
 }
+
+
 
 ###
 

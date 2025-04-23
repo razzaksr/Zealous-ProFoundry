@@ -68,19 +68,40 @@ router.get("/get_by_poc_id/:module_poc_id", async (req, res) => {
   }
 });
 
+//get expert details usng mod_id
+router.get("/get_expert_by_mod_id/:mod_id", async (req, res) => {
+  const { mod_id } = req.params;
 
+  try {
+    const result = await consul.catalog.service.nodes('Express_Poc');
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({ error: "Express_Poc service not found in Consul" });
+    }
+
+    const service = result[0]; // 👈 safer to use 0
+    const serviceAddress = service.Address || 'localhost';
+    const servicePort = service.ServicePort;
+
+    const response = await axios.get(`http://${serviceAddress}:${servicePort}/expert/get_expert/${mod_id}`);
+    res.json(response.data);
+
+  } catch (err) {
+    console.error("Error fetching poc by module ID:", err.message);
+    res.status(500).json({ error: "Unexpected error", details: err.message });
+  }
+});
 // Create
 
 router.post('/', async (req, res) => {
   try {
-    
     const { mod_id, mod_poc_id } = req.body;
 
     if (!mod_id || !mod_poc_id) {
       return res.status(400).json({ error: 'mod_id and mod_poc_id are required' });
     }
 
-    // ======== 1. Fetch Module Data (for schedule & execution dates) ========
+    // ======== 1. Fetch Module Data ========
     const modResult = await consul.catalog.service.nodes('Express_Mod');
     if (!modResult || modResult.length === 0) {
       return res.status(404).json({ error: "Express_Mod service not found in Consul" });
@@ -106,7 +127,7 @@ router.post('/', async (req, res) => {
     const schedule = `${days} day${days > 1 ? 's' : ''}`;
     const executiondates = formatExecutionDates(start, end);
 
-    // ======== 2. Fetch POC Data (for pointOfContact field) ========
+    // ======== 2. Fetch POC Data ========
     const pocResult = await consul.catalog.service.nodes('Express_Poc');
     if (!pocResult || pocResult.length === 0) {
       return res.status(404).json({ error: "Express_Poc service not found in Consul" });
@@ -116,36 +137,50 @@ router.post('/', async (req, res) => {
     const pocResponse = await axios.get(`http://${pocService.Address || 'localhost'}:${pocService.ServicePort}/poc/get_poc_by_poc_id/${mod_poc_id}`);
     const pocData = pocResponse.data;
 
-    // Merge incoming pointOfContact (e.g., summary) with POC service data
     const pointOfContact = {
-      ...req.body.pointOfContact, // keep custom fields like `summary`
+      ...req.body.pointOfContact,
       name: pocData.mod_poc_name,
       role: pocData.mod_poc_role,
       email: pocData.mod_poc_email,
       contact: pocData.mod_poc_mobile
     };
 
-    // ======== 3. Final Training Document Creation ========
+    // ======== 3. Fetch Expert Data ========
+    const expertResponse = await axios.get(`http://${pocService.Address || 'localhost'}:${pocService.ServicePort}/expert/get_expert/${mod_id}`);
+    const expertData = expertResponse.data;
+
+    const summary = req.body?.pointOfContact?.expertDetails?.summary || [];
+
+    const expertDetails = [{
+      name: expertData.mod_expert_name,
+      role: expertData.mod_expert_role,
+      company:expertData.mod_expert_company, // Update if available
+      email: "N/A",        // Update if your expert schema supports it
+      contact: expertData.mod_expert_mobile,
+      summary
+    }];
+
+    // ======== 4. Final Training Document Creation ========
     const trainingData = {
       ...req.body,
       schedule,
       executiondates,
-      pointOfContact
+      pointOfContact,
+      expertDetails
     };
 
     const training = new Training(trainingData);
     await training.save();
+
     console.log("Final Training Data:", trainingData);
-
-
     res.status(201).json(training);
 
   } catch (err) {
     console.error("Error creating training:", err.message);
     res.status(500).json({ error: "Unexpected error", details: err.message });
   }
- 
 });
+
 
 
 // Read All
