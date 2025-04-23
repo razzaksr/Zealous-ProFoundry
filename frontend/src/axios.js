@@ -160,29 +160,29 @@ export const fetchModuleName = async (modId) => {
   }
 };
 
-export const fetchOrgName = async (modId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/organization_gateway/organization/get_org_name_by_id/${modId}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching organisation name:", error);
-    throw error;
-  }
-};
+  export const fetchOrgName = async (modId) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/organization_gateway/organization/get_org_name_by_id/${modId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching organisation name:", error);
+      throw error;
+    }
+  };
 
 
 
-// FETCH POC BY ID 
+  // FETCH POC BY ID 
 
-export const fetchPocById = async (mod_poc_id) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_by_poc_id/${mod_poc_id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching POC by ID:", error);
-    throw error;
-  }
-};
+  export const fetchPocById = async (mod_poc_id) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_by_poc_id/${mod_poc_id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching POC by ID:", error);
+      throw error;
+    }
+  };
 
 // FETCH ALL POC
 
@@ -306,5 +306,25 @@ export const getCertificate = async (mod_poc_id, userId) => {
     return response.data;
   } catch (error) {
     throw error.response ? error.response.data : error;
+  }
+};
+
+// Fetch or generate certificate ID
+export const fetchOrGenerateCertificateId = async (pocId, userId) => {
+  try {
+    // Try to fetch existing certificate ID
+    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get-certificate/${pocId}/${userId}`);
+    return response.data.certificateId;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      // Certificate not found, generate a new one
+      const response = await axios.post(`${BASE_URL}/poc_gateway/poc/add-certificate`, {
+        mod_poc_id: pocId,
+        newUserId: userId,
+      });
+      return response.data.certificateId;
+    }
+    console.error(`Error fetching/generating certificate ID for poc ${pocId}, user ${userId}:`, error);
+    throw error.response?.data || error.message;
   }
 };

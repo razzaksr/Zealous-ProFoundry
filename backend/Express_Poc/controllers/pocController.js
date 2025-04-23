@@ -2,6 +2,8 @@ const express = require("express");
 const Poc = require("../models/Poc");
 const router = express.Router();
 const admin = require("firebase-admin");
+const consul = require("../middleware/consul");
+const axios = require("axios");
 
 console.log("Project ID:", process.env.FIREBASE_PROJECT_ID);
 console.log("Client Email:", process.env.FIREBASE_CLIENT_EMAIL);
@@ -311,6 +313,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// POST: Add certificate and save to MongoDB and Firestore
 router.post("/add-certificate", async (req, res) => {
   try {
     const { mod_poc_id, newUserId } = req.body;
@@ -328,10 +331,33 @@ router.post("/add-certificate", async (req, res) => {
 
     // Check if certificate already exists in MongoDB
     if (poc.certificates.has(newUserId)) {
+      const existingCertificateId = poc.certificates.get(newUserId);
       return res.status(200).json({
         message: "Certificate already generated for this user",
-        certificateId: poc.certificates.get(newUserId),
+        certificateId: existingCertificateId,
       });
+    }
+
+    // Fetch user details from Express_User service via Consul
+    const serviceName = "Express_User";
+    const services = await consul.catalog.service.nodes(serviceName);
+
+    if (!services || services.length === 0) {
+      return res.status(500).json({ message: "No available service instances found in Consul" });
+    }
+
+    const { ServiceAddress, ServicePort } = services[0];
+
+    if (!ServiceAddress || !ServicePort) {
+      return res.status(500).json({ message: "Invalid service details from Consul" });
+    }
+
+    const targetUrl = `http://${ServiceAddress}:${ServicePort}/user/get_user_by_id/${newUserId}`;
+    const response = await axios.get(targetUrl);
+    const user = response.data;
+
+    if (!user || !user.full_name) {
+      return res.status(404).json({ message: "User details not found" });
     }
 
     // Generate 10-digit certificate ID
@@ -350,11 +376,15 @@ router.post("/add-certificate", async (req, res) => {
     poc.certificates.set(newUserId, newCertificateId);
     await poc.save();
 
-    // Save to Firebase Firestore
+    // Save to Firebase Firestore with user details
     await certificateRef.set({
       userId: newUserId,
       certificateId: newCertificateId,
       mod_poc_id: mod_poc_id,
+      full_name: user.full_name,
+      rollno: user.rollno,
+      department: user.department,
+      college: user.college,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -363,11 +393,12 @@ router.post("/add-certificate", async (req, res) => {
       certificateId: newCertificateId,
     });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 });
-
 // Utility function to generate a 10-digit random certificate ID
 function generateRandomCertificateId() {
   return Math.floor(1000000000 + Math.random() * 9000000000).toString();

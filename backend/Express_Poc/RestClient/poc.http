@@ -85,7 +85,7 @@ Content-Type: application/json
 
 {
   "mod_poc_id": "dd13e5af-a777-4ce5-9a3d-8ee1b2502958",
-  "newUserId": "89810ab1-72b2-444e-8c7a-d8c9b6fe0039"
+  "newUserId": "528f7cb8-0bfe-4366-a98d-831719ec53e6"
 }
 
 ### Get Certificate ID for a User

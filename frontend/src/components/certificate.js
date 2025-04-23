@@ -3,10 +3,9 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import { createRoot } from "react-dom/client";
-import axios from "axios"; // Add axios for API calls
 import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Adjust path
 import DigiSign from "../assests/DigiSign.png"; // Adjust path
-import { getUserById, getModuleById, fetchAggregateScores } from "../axios"; // Removed getResultsByUserId
+import { getUserById, getModuleById, fetchAggregateScores, fetchOrGenerateCertificateId } from "../axios"; // Import from new service
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { QRCodeCanvas } from "qrcode.react"; // Correct named import
 
 // Certificate template
 const CertificateTemplate = ({ forwardedRef, certificateId }) => {
@@ -60,6 +60,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
 
   const percentage = aggregateScore?.average_percentage?.toFixed(2) || "0.00";
   const issueDate = dayjs().format("DD-MM-YYYY");
+  const verificationUrl = `https://vw47nbtx-3000.inc1.devtunnels.ms/verify?certificateId=${certificateId}`; // Replace with your deployment URL
 
   return (
     <div
@@ -78,7 +79,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
     >
       <h2 style={{ fontSize: "46px", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
       <p style={{ fontSize: "16px", fontStyle: "italic" }}>
-        Certificate ID : CET/WP/{certificateId}
+        Certificate ID: CET/WP/{certificateId}
       </p>
 
       <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>
@@ -99,14 +100,30 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
         Duration: {moduleDetails.mod_duration}.
       </p>
 
+      {/* QR Code */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: "100px",
+          left: "220px",
+          textAlign: "center",
+        }}
+      >
+        <QRCodeCanvas
+          value={verificationUrl}
+          size={100}
+          level="H"
+          style={{ marginBottom: "10px" }}
+        />
+      </div>
+
       <div
         style={{
           position: "absolute",
           bottom: "40px",
-          left: "60px",
+          left: "200px",
           textAlign: "center",
           fontSize: "1.3rem",
-          marginLeft: "200px",
         }}
       >
         <strong>{issueDate}</strong>
@@ -190,7 +207,7 @@ const generateCertificate = async (certificateId, setProgress) => {
     console.error("Error generating certificate:", error);
     throw error;
   } finally {
-    document.body.removeChild(container);
+    document.body.appendChild(container);
   }
 };
 
@@ -248,24 +265,6 @@ const CertificateGenerator = forwardRef((props, ref) => {
     handleDownloadCertificate,
   }));
 
-  const fetchOrGenerateCertificateId = async (pocId, userId) => {
-    try {
-      // Try to fetch existing certificate ID
-      const response = await axios.get(`http://localhost:4000/poc_gateway/poc/get-certificate/${pocId}/${userId}`);
-      return response.data.certificateId;
-    } catch (error) {
-      if (error.response?.status === 404) {
-        // Certificate not found, generate a new one
-        const response = await axios.post("http://localhost:4000/poc_gateway/poc/add-certificate", {
-          mod_poc_id: pocId,
-          newUserId: userId,
-        });
-        return response.data.certificateId;
-      }
-      throw error;
-    }
-  };
-
   const handleDownloadCertificate = async () => {
     setOpen(true);
     setProgress(0);
@@ -294,7 +293,7 @@ const CertificateGenerator = forwardRef((props, ref) => {
       await generateCertificate(certId, setProgress);
     } catch (err) {
       console.error("Error in certificate generation:", err);
-      setError(err.response?.data?.message || "Failed to generate certificate. Please try again.");
+      setError(err.message || "Failed to generate certificate. Please try again.");
     }
   };
 
