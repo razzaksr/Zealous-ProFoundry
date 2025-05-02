@@ -17,6 +17,7 @@ router.get("/get-result", async (req, res) => {
 });
 
 // **POST - Add a New Result**
+
 router.post("/post-result", async (req, res) => {
   try {
     const { result_user_id, result_test_id, result_score, result_total_score, result_poc_id } = req.body;
@@ -24,6 +25,16 @@ router.post("/post-result", async (req, res) => {
     // Validate required fields
     if (!result_user_id || !result_test_id || result_score == null || result_total_score == null || !result_poc_id) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Check for duplicate entry
+    const existingResult = await Result.findOne({
+      result_user_id,
+      result_test_id
+    });
+
+    if (existingResult) {
+      return res.status(409).json({ message: "Result already exists for this user and test" });
     }
 
     // Generate UUID for result_id
@@ -41,15 +52,12 @@ router.post("/post-result", async (req, res) => {
 
     await newResult.save();
 
-    res.status(201).json({ message: " Result stored successfully", result: newResult });
+    res.status(201).json({ message: "Result stored successfully", result: newResult });
   } catch (error) {
-    console.error(" Error saving result:", error.message);
+    console.error("Error saving result:", error.message);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 });
-
-module.exports = router;
-
 // BULK RESULT POST
 
 router.post("/post-bulk-results", async (req, res) => {
@@ -126,7 +134,7 @@ router.put("/update-result", async (req, res) => {
 
 // **DELETE - Remove a Result**
 router.delete("/delete-by-result-id/:result_id", async (req, res) => {
-  try {
+  try { 
     const { result_id } = req.params;
 
     const deletedResult = await Result.findOneAndDelete({ result_id });

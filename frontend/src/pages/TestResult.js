@@ -1,292 +1,456 @@
-import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  CircularProgress,
-  Grid,
-  Divider,
   Card,
-  CardContent,
+  Typography,
+  Button,
+  Box,
+  Grid,
+  CircularProgress,
+  Paper,
+  Fade,
+  Zoom,
+  Snackbar,
+  Alert,
 } from "@mui/material";
+import { styled, keyframes } from "@mui/material/styles";
 import {
   CheckCircle as CheckCircleIcon,
   Home as HomeIcon,
-  Download as DownloadIcon,
+  Warning as WarningIcon,
 } from "@mui/icons-material";
-import { styled } from "@mui/material/styles";
-import CertificateGenerator from "../components/certificate";
 
-// Styled components
-const ResultContainer = styled(Paper)(({ theme }) => ({
-  maxWidth: 800,
-  margin: "0 auto",
+// Pulse animation for CircularProgress
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`;
+
+// Fade-in animation for text
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+// Styled Components
+const FullScreenCard = styled(Card)(({ theme }) => ({
+  width: "100%",
+  minHeight: "100vh",
+  margin: 0,
+  borderRadius: 0,
   padding: theme.spacing(4),
-  borderRadius: theme.spacing(2),
-  boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-  backgroundColor: "#fff",
-  overflow: "hidden",
-}));
-
-const ScoreCircle = styled(Box)(({ percentage }) => ({
-  position: "relative",
-  width: 200,
-  height: 200,
-  margin: "0 auto",
-  borderRadius: "50%",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#f5f5f5",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    borderRadius: "50%",
-    background: `conic-gradient(
-      ${percentage >= 70 ? "#4caf50" : percentage >= 40 ? "#fc7a46" : "#f44336"} 
-      ${percentage * 3.6}deg, 
-      #f5f5f5 ${percentage * 3.6}deg 360deg
-    )`,
+  backgroundColor: "#f8f9fa",
+  overflowY: "auto",
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(2),
   },
 }));
 
-const InnerCircle = styled(Box)(() => ({
-  position: "relative",
-  width: "80%",
-  height: "80%",
-  borderRadius: "50%",
+const ResultContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(4),
+  borderRadius: 20,
+  boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
   backgroundColor: "#fff",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  boxShadow: "inset 0 0 10px rgba(0,0,0,0.05)",
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
   transition: "all 0.3s ease",
-  margin: theme.spacing(1),
   "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+    boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+  },
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(2),
   },
 }));
 
-const PrimaryButton = styled(StyledButton)({
-  backgroundColor: "#0c83c8",
-  color: "#fff",
-  "&:hover": {
-    backgroundColor: "#0a6eaa",
+const ScoreCircle = styled(CircularProgress)(({ theme, value }) => ({
+  color: value >= 80 ? "#4caf50" : value >= 50 ? "#fc7a46" : "#f44336",
+  "& .MuiCircularProgress-circle": {
+    strokeLinecap: "round",
   },
-});
+  animation: `${pulse} 1.5s infinite ease-in-out`,
+  position: "relative",
+}));
 
-const SecondaryButton = styled(StyledButton)({
+const ScoreText = styled(Typography)(({ theme }) => ({
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  fontWeight: "bold",
   color: "#0c83c8",
-  borderColor: "#0c83c8",
-  border: "1px solid",
-  "&:hover": {
-    borderColor: "#0a6eaa",
-  },
-});
+}));
 
-const ResultCard = styled(Card)(({ status }) => ({
-  transition: "all 0.3s ease",
-  backgroundColor: status === "pass" ? "rgba(76, 175, 80, 0.05)" : "rgba(244, 67, 54, 0.05)",
-  borderLeft: status === "pass" ? "4px solid #4caf50" : "4px solid #f44336",
-  marginBottom: "16px",
+const PrimaryButton = styled(Button)(({ theme }) => ({
+  borderRadius: 15,
+  background: "linear-gradient(135deg, #0c83c8 0%, #0a6eaa 100%)",
+  color: "white",
+  padding: theme.spacing(1.5, 4),
+  fontWeight: "bold",
+  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
   "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+    background: "linear-gradient(135deg, #0a6eaa 0%, #085d96 100%)",
+    transform: "translateY(-3px)",
+    boxShadow: "0 6px 15px rgba(12, 131, 200, 0.3)",
+  },
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(1, 3),
   },
 }));
 
-const ResultTest = () => {
-  const location = useLocation();
+const StatCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(2),
+  borderRadius: 15,
+  textAlign: "center",
+  background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
+  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+  transition: "all 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-3px)",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
+  },
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(1.5),
+  },
+}));
+
+const TestResult = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [resultData, setResultData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState(null);
-  const certificateRef = useRef();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("error");
 
+  // Fetch result data from location.state or localStorage
   useEffect(() => {
-    window.history.pushState(null, null, window.location.pathname);
-    const handleBackButton = (event) => {
-      event.preventDefault();
-      window.history.pushState(null, null, window.location.pathname);
-    };
-    window.addEventListener("popstate", handleBackButton);
+    const fetchResultData = () => {
+      try {
+        // First, try to get result from location.state (passed from McqTest.jsx)
+        const stateResult = location.state?.resultData;
+        let parsedResult = null;
 
-    const timer = setTimeout(() => {
-      if (location.state?.resultData) {
-        setResult(location.state.resultData);
-      } else {
-        navigate("/landing", { replace: true });
+        if (stateResult) {
+          parsedResult = stateResult;
+          // Save to localStorage to ensure persistence
+          localStorage.setItem("test_result", JSON.stringify(parsedResult));
+          console.log("Loaded test result from location.state:", parsedResult);
+        } else {
+          // Fallback to localStorage
+          const storedResult = localStorage.getItem("test_result");
+          if (!storedResult) {
+            throw new Error("No test result found");
+          }
+          parsedResult = JSON.parse(storedResult);
+          console.log("Loaded test result from localStorage:", parsedResult);
+        }
+
+        // Validate essential fields
+        if (
+          !parsedResult ||
+          !parsedResult.testName ||
+          !parsedResult.result_test_id ||
+          typeof parsedResult.result_score !== "number" ||
+          typeof parsedResult.result_total_score !== "number"
+        ) {
+          throw new Error("Invalid or incomplete test result data");
+        }
+
+        setResultData(parsedResult);
+      } catch (error) {
+        console.error("Error loading test result:", error);
+        setSnackbarMessage(error.message || "Failed to load test results");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        // Redirect to dashboard after showing error
+        setTimeout(() => {
+          navigate("/landing", { replace: true });
+        }, 3000);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 1000);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("popstate", handleBackButton);
     };
-  }, [location, navigate]);
 
-  const handleDownloadCertificate = async () => {
-    try {
-      if (certificateRef.current) {
-        await certificateRef.current.handleDownloadCertificate();
-      } else {
-        throw new Error("Certificate generator not ready");
-      }
-    } catch (err) {
-      console.error("Error downloading certificate:", err);
-      alert("Failed to generate certificate.");
-    }
+    fetchResultData();
+  }, [navigate, location.state]);
+
+  // Handle navigation back to dashboard
+  const handleBackToDashboard = () => {
+    console.log("Navigating back to dashboard");
+    // Clear test result from localStorage to prevent stale data
+    localStorage.removeItem("test_result");
+    navigate("/landing", { replace: true });
   };
-
-  const handleGoHome = () => navigate("/landing", { replace: true });
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          backgroundColor: "#f8f9fa",
-        }}
-      >
-        <CircularProgress sx={{ color: "#0c83c8" }} />
-      </Box>
+      <FullScreenCard>
+        <Box sx={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+          <Fade in={true} timeout={800}>
+            <Box sx={{ textAlign: "center" }}>
+              <CircularProgress size={60} thickness={5} sx={{ color: "#0c83c8" }} />
+              <Typography variant="h5" sx={{ mt: 2, color: "#0c83c8", fontWeight: "bold" }}>
+                Loading Results...
+              </Typography>
+            </Box>
+          </Fade>
+        </Box>
+      </FullScreenCard>
     );
   }
 
-  const score = result.result_score;
-  const totalScore = result.result_total_score;
-  const wrongAnswers = totalScore - score;
-  const percentage = Math.round((score / totalScore) * 100);
-  const isPassed = percentage >= 60;
-  const displayTestName = result.testName || "Unnamed Test";
-  const displayTestLanguage = result.testLanguage || "Unknown Language";
+  if (!resultData) {
+    return null; // Snackbar will handle error and redirect
+  }
+
+  const scorePercentage = resultData.result_total_score
+    ? ((resultData.result_score / resultData.result_total_score) * 100).toFixed(2)
+    : 0;
+
+  // Determine if test was auto-submitted due to malpractice
+  const wasAutoSubmitted = resultData.malpracticeCount > 0;
 
   return (
-    <Box sx={{ p: 3, minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      <ResultContainer>
-        <Box textAlign="center" mb={4}>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-            Test Results
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            Here's how you performed on the test
-          </Typography>
-        </Box>
+    <FullScreenCard>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
+          sx={{
+            width: "100%",
+            borderRadius: 2,
+            fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
 
-        <Box mb={4}>
-          <ScoreCircle percentage={percentage}>
-            <InnerCircle>
-              <Typography variant="h3" sx={{ fontWeight: "bold" }}>
-                {percentage}%
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Your Score
-              </Typography>
-            </InnerCircle>
-          </ScoreCircle>
-        </Box>
-
-        <ResultCard status={isPassed ? "pass" : "fail"}>
-          <CardContent>
-            <Box display="flex" alignItems="center" mb={1}>
-              <CheckCircleIcon
-                sx={{ color: isPassed ? "#4caf50" : "#f44336", mr: 1, fontSize: "2rem" }}
-              />
-              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                {`You scored ${percentage}% in ${displayTestName}`}
-              </Typography>
-            </Box>
-          </CardContent>
-        </ResultCard>
-
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6}>
-            <Box
+      <Box sx={{ maxWidth: 1200, mx: "auto", py: 4 }}>
+        <Zoom in={true} timeout={500}>
+          <ResultContainer elevation={3}>
+            <Typography
+              variant="h4"
               sx={{
-                p: 2,
-                borderRadius: 2,
-                backgroundColor: "rgba(12, 131, 200, 0.05)",
+                fontWeight: "bold",
+                color: "#0c83c8",
+                mb: 2,
+                textAlign: "center",
+                background: "linear-gradient(90deg, #0c83c8 0%, #0a6eaa 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                Score Details
-              </Typography>
-              <Divider sx={{ my: 1 }} />
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography>Correct Answers:</Typography>
-                <Typography sx={{ fontWeight: "bold" }}>{score}</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography>Wrong Answers:</Typography>
-                <Typography sx={{ fontWeight: "bold" }}>{wrongAnswers}</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography>Total Questions:</Typography>
-                <Typography sx={{ fontWeight: "bold" }}>{totalScore}</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography>Percentage:</Typography>
-                <Typography sx={{ fontWeight: "bold" }}>{percentage}%</Typography>
-              </Box>
-            </Box>
-          </Grid>
+              {resultData.testName} - Test Results
+            </Typography>
 
-          <Grid item xs={12} sm={6}>
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                backgroundColor: "rgba(252, 122, 70, 0.05)",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-              }}
+            {wasAutoSubmitted && (
+              <Box sx={{ textAlign: "center", mb: 3 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ color: "#f44336", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <WarningIcon sx={{ mr: 1 }} />
+                  Test Auto-Submitted Due to Malpractice
+                </Typography>
+              </Box>
+            )}
+
+            <Typography
+              variant="subtitle1"
+              sx={{ textAlign: "center", color: "#0c83c8", mb: 4 }}
             >
-              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-                Test Information
-              </Typography>
-              <Divider sx={{ my: 1 }} />
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography>Test Name:</Typography>
-                <Typography sx={{ fontWeight: "bold" }}>{displayTestName}</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" mt={1}>
-                <Typography>Language:</Typography>
-                <Typography sx={{ fontWeight: "bold" }}>{displayTestLanguage}</Typography>
-              </Box>
+              Completed by {resultData.studentName || "Unknown"}
+            </Typography>
+
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 4, position: "relative" }}>
+              <ScoreCircle variant="determinate" value={scorePercentage} size={150} thickness={5} />
+              <ScoreText variant="h5">{scorePercentage}%</ScoreText>
             </Box>
-          </Grid>
-        </Grid>
 
-        <Box display="flex" justifyContent="center" mt={2}>
-          <PrimaryButton startIcon={<DownloadIcon />} onClick={handleDownloadCertificate}>
-            Download Certificate
-          </PrimaryButton>
-          <SecondaryButton startIcon={<HomeIcon />} onClick={handleGoHome}>
-            Go Home
-          </SecondaryButton>
-        </Box>
-      </ResultContainer>
+            <Typography
+              variant="h6"
+              sx={{ textAlign: "center", color: "#0c83c8", mb: 3, fontWeight: "bold" }}
+            >
+              Score: {resultData.result_score} / {resultData.result_total_score}
+            </Typography>
 
-      {/* Certificate generator hidden but accessible */}
-      <CertificateGenerator ref={certificateRef} />
-    </Box>
+            <Grid container spacing={3}>
+              {/* User and Test Info */}
+              <Grid item xs={12} sm={6}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    User ID
+                  </Typography>
+                  <Typography variant="body1">{resultData.result_user_id || "N/A"}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Test ID
+                  </Typography>
+                  <Typography variant="body1">{resultData.result_test_id || "N/A"}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Test Language
+                  </Typography>
+                  <Typography variant="body1">{resultData.testLanguage || "N/A"}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    POC ID
+                  </Typography>
+                  <Typography variant="body1">{resultData.result_poc_id || "N/A"}</Typography>
+                </StatCard>
+              </Grid>
+
+              {/* MCQ Statistics */}
+              <Grid item xs={12}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#0c83c8", mt: 3, mb: 2 }}
+                >
+                  MCQ Performance
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Answered
+                  </Typography>
+                  <Typography variant="body1">{resultData.mcqAnswered || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Not Answered
+                  </Typography>
+                  <Typography variant="body1">{resultData.mcqNotAnswered || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Not Visited
+                  </Typography>
+                  <Typography variant="body1">{resultData.mcqNotVisited || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Correct
+                  </Typography>
+                  <Typography variant="body1">{resultData.mcqCorrect || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Wrong
+                  </Typography>
+                  <Typography variant="body1">{resultData.mcqWrong || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Marked for Review
+                  </Typography>
+                  <Typography variant="body1">{resultData.marked || 0}</Typography>
+                </StatCard>
+              </Grid>
+
+              {/* Coding Statistics */}
+              <Grid item xs={12}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#0c83c8", mt: 3, mb: 2 }}
+                >
+                  Coding Performance
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Answered
+                  </Typography>
+                  <Typography variant="body1">{resultData.codingAnswered || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Not Answered
+                  </Typography>
+                  <Typography variant="body1">{resultData.codingNotAnswered || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Not Visited
+                  </Typography>
+                  <Typography variant="body1">{resultData.codingNotVisited || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Correct
+                  </Typography>
+                  <Typography variant="body1">{resultData.codingCorrect || 0}</Typography>
+                </StatCard>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <StatCard>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
+                    Wrong
+                  </Typography>
+                  <Typography variant="body1">{resultData.codingWrong || 0}</Typography>
+                </StatCard>
+              </Grid>
+
+              {/* Malpractice */}
+              <Grid item xs={12}>
+                <StatCard sx={{ mt: 3, background: resultData.malpracticeCount > 0 ? "rgba(244, 67, 54, 0.1)" : "inherit" }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <WarningIcon sx={{ mr: 1, color: resultData.malpracticeCount > 0 ? "#f44336" : "#0c83c8" }} />
+                    Malpractice Count
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: resultData.malpracticeCount > 0 ? "#f44336" : "inherit" }}>
+                    {resultData.malpracticeCount || 0}
+                  </Typography>
+                </StatCard>
+              </Grid>
+            </Grid>
+
+            <Box sx={{ mt: 4, textAlign: "center" }}>
+              <PrimaryButton
+                variant="contained"
+                startIcon={<HomeIcon />}
+                onClick={handleBackToDashboard}
+              >
+                Back to Dashboard
+              </PrimaryButton>
+            </Box>
+          </ResultContainer>
+        </Zoom>
+      </Box>
+    </FullScreenCard>
   );
 };
 
-export default ResultTest;
+export default TestResult;

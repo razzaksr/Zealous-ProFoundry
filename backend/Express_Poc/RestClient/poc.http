@@ -10,7 +10,7 @@ Content-Type: application/json
 }
 
 ### Get all POCs
-GET http://localhost:6000/poc/read_all_poc
+GET /add-certificate
 
 ### Get POC by mod_poc_id
 GET http://localhost:6000/poc/get_poc_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a

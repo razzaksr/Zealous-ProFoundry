@@ -67,7 +67,7 @@ export default function DashboardHeader() {
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    localStorage.clear();
     window.location.assign("/");
     handleMenuClose();
   };

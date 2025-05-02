@@ -55,7 +55,7 @@ router.put("/update_poc", async (req, res) => {
     if (!updatedPoc) return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
 
     res.json(updatedPoc);
-  } catch (error) {
+  } catch (error) { 
     res.status(400).json({ error: error.message });
   }
 });

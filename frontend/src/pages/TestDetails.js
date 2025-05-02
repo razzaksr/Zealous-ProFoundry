@@ -211,6 +211,9 @@ const TestDetails = () => {
   const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
+    // Set testId in localStorage
+    localStorage.setItem("test_id", testId);
+
     const fetchTestData = async () => {
       try {
         setLoading(true);

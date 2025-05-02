@@ -3,11 +3,22 @@ POST http://localhost:8000/test/create
 Content-Type: application/json
 
 {
-  "test_name": "MongoDb Test",
-  "test_language": "DB",
-  "test_total_score": 25,
-  "test_mcq_id": [],
-  "test_coding_id": []
+  "test_name": "C Programming Test",
+  "test_language": "C",
+  "test_total_score": 30,
+  "test_mcq_id":  [
+    "854fa4d2-ec3a-4526-a818-d2928f353d61",
+    "66ec67b5-c288-40ca-abb6-c3a447dd58b5",
+    "2ed4ce5a-a9a8-436d-8886-7ccaefe33aea",
+    "723564f5-3996-4cfd-a502-3eb74726649a",
+    "f3e9d12f-3fbd-47ac-b676-de9c7e68a924",
+    "715bdd34-3d9f-497c-aefd-9c96fe03547f",
+    "4c816047-27f8-44b4-a4fa-dcad2de92206",
+    "f3abd71e-cc94-4b68-8829-4e0e60d2123f",
+    "8eb73f80-7041-4962-8c77-03668b45b6c6",
+    "b05e2d38-0bfd-4506-adb4-9f2c04f5dcf7"
+  ],
+  "test_coding_id": ["f5c92e88-81c0-4d1e-961f-34f1a010ace5","2564ad47-0052-4ee2-87f6-a60148d93b6f"]
 }
 
 ###
@@ -23,7 +34,7 @@ GET http://localhost:8000/test/active
 ###
 
 ### Get Test by ID
-GET http://localhost:8000/test/get_by_test_id/b913cdf9-79ff-4745-a57b-0a5882253dd2
+GET http://localhost:8000/test/get_by_test_id/7fb99966-8e32-4481-9f54-50bcf7e33e50
 
 ###
 

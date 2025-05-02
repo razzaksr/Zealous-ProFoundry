@@ -4,18 +4,66 @@ Content-Type: application/json
 
 [
     {
-        "mcq_question": "What is Express.js?",
-        "mcq_options": ["Framework", "Library", "Runtime", "Database"],
-        "mcq_answer": "Framework",
-        "mcq_tag": ["Backend", "Node.js"]
+      "mcq_question": "What is the output of printf(\"%d\", 5 / 2); in C?",
+      "mcq_options": ["2", "2.5", "3", "0"],
+      "mcq_answer": "2",
+      "mcq_tag": ["C", "Basics", "Operators"]
     },
     {
-        "mcq_question": "What is React?",
-        "mcq_options": ["Framework", "Library", "Language", "Database"],
-        "mcq_answer": "Library",
-        "mcq_tag": ["Frontend", "JavaScript"]
+      "mcq_question": "Which of the following is the correct way to declare a pointer in C?",
+      "mcq_options": ["int ptr;", "int *ptr;", "ptr int;", "*int ptr;"],
+      "mcq_answer": "int *ptr;",
+      "mcq_tag": ["C", "Pointers", "Basics"]
+    },
+    {
+      "mcq_question": "What is the purpose of the 'void' keyword in a function declaration?",
+      "mcq_options": ["Indicates no return value", "Indicates no parameters", "Both A and B", "None of the above"],
+      "mcq_answer": "Both A and B",
+      "mcq_tag": ["C", "Functions", "Basics"]
+    },
+    {
+      "mcq_question": "What does the 'sizeof' operator return?",
+      "mcq_options": ["Size of a variable in bytes", "Value of a variable", "Address of a variable", "Type of a variable"],
+      "mcq_answer": "Size of a variable in bytes",
+      "mcq_tag": ["C", "Operators", "Basics"]
+    },
+    {
+      "mcq_question": "Which loop is guaranteed to execute at least once in C?",
+      "mcq_options": ["for", "while", "do-while", "None of the above"],
+      "mcq_answer": "do-while",
+      "mcq_tag": ["C", "Loops", "Control Flow"]
+    },
+    {
+      "mcq_question": "What is the correct syntax for a single-line comment in C?",
+      "mcq_options": ["#", "//", "/* */", "<!-- -->"],
+      "mcq_answer": "//",
+      "mcq_tag": ["C", "Syntax", "Basics"]
+    },
+    {
+      "mcq_question": "What is the output of printf(\"%c\", 65); in C?",
+      "mcq_options": ["A", "65", "a", "Error"],
+      "mcq_answer": "A",
+      "mcq_tag": ["C", "Input/Output", "ASCII"]
+    },
+    {
+      "mcq_question": "Which of the following is NOT a valid storage class in C?",
+      "mcq_options": ["auto", "register", "static", "dynamic"],
+      "mcq_answer": "dynamic",
+      "mcq_tag": ["C", "Storage Classes", "Basics"]
+    },
+    {
+      "mcq_question": "What does the 'break' statement do in a loop?",
+      "mcq_options": ["Exits the loop", "Skips the current iteration", "Restarts the loop", "None of the above"],
+      "mcq_answer": "Exits the loop",
+      "mcq_tag": ["C", "Control Flow", "Loops"]
+    },
+    {
+      "mcq_question": "How is an array declared in C?",
+      "mcq_options": ["int arr[];", "int arr;", "int *arr;", "arr int[];"],
+      "mcq_answer": "int arr[];",
+      "mcq_tag": ["C", "Arrays", "Data Structures"]
     }
-]
+  ]
 
 ### Get All MCQs
 GET http://localhost:4000/mcq_gateway/mcq/get_all_mcqs

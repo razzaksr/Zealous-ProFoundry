@@ -22,6 +22,12 @@ import McqAdminPage from "./pages/McqAdminPage";
 import TestAdminPage from "./pages/TestAdminPage";
 import OnlineCompiler from "./pages/CodingTest";
 import CodeList from "./pages/CodeList";
+import Add_Mcq from "./pages/Add_Mcq";
+import Add_Module from "./pages/Add_Module";
+import Add_Organisation from "./pages/Add_Organisation";
+import Add_TestCase from "./pages/Add_Testcase";
+import Add_Coding from "./pages/Add_Coding";
+import Add_POC from "./pages/Add_Poc";
 
 const App = () => {
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -48,6 +54,12 @@ const App = () => {
               <Route path="/expert" element={<ExpertPage />} />
               <Route path="/mcq-admin" element={<McqAdminPage />} />
               <Route path="/test" element={<TestAdminPage />} />
+              <Route path="/add_mcq" element={<Add_Mcq />} />
+              <Route path="/add_module" element={<Add_Module />} />
+              <Route path="/add_organisation" element={<Add_Organisation />} />
+              <Route path="/add_testcase" element={<Add_TestCase />} />
+              <Route path="/add_coding" element={<Add_Coding />} />
+              <Route path="/add_poc" element={<Add_POC />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           ) : (
@@ -64,7 +76,6 @@ const App = () => {
               <Route path="/info" element={<InstructionsPage />} />
               <Route path="/compiler/:codeId" element={<OnlineCompiler />} />
               <Route path="/codelist" element={<CodeList />} />
-
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           )

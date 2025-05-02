@@ -13,7 +13,7 @@ GET http://localhost:4000/coding_gateway/coding/get_allCodes
 
 
 ### Get code details by id
-GET http://localhost:4000/coding_gateway/coding/get_code_by_id/a5395dbd-52f8-4061-a6ee-0292a237b020
+GET http://localhost:4000/coding_gateway/coding/get_code_by_id/ea1d62fa-cb64-483e-8d39-01e71628ae99
 
 
 ### Update the Code
@@ -21,10 +21,8 @@ PUT http://localhost:4000/coding_gateway/coding/update_code
 Content-Type: application/json
 
 {
-  "code_id": "f3f7b614-c4f9-423d-8562-c7ad6d58b6d4",
-  "code_problem_statement": "Write a function to find the factorial of a number.",
-  "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
-  "code_tags": ["math", "recursion", "factorial"]
+  "code_id": "9ee19f23-e30b-434d-a541-af9e5c51eac3",
+  "code_test_cases": ["2c05193b-6ce4-483c-81b6-44b86e23c277"],
 }
 
 ### Delete a code

@@ -39,6 +39,7 @@ import CppIcon from "@mui/icons-material/IntegrationInstructions";
 import CIcon from "@mui/icons-material/SettingsEthernet";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import SaveIcon from "@mui/icons-material/Save";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
 import OutputIcon from "@mui/icons-material/Output";
 import DoneIcon from "@mui/icons-material/Done";
@@ -47,7 +48,10 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { fetchCodeById, fetchTestCaseById, compileCode, submitTestResult } from "../axios";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { fetchCodeById, fetchTestCaseById, compileCode, submitTestResult, getTestById } from "../axios";
 
 // Language mapping for backend
 const languageApiMap = {
@@ -274,32 +278,39 @@ const createAppTheme = (mode) => {
 };
 
 const OnlineCompiler = () => {
-  const { codeId } = useParams(); // Extract codeId from URL
+  const { codeId } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
   const [mode, setMode] = useState(localStorage.getItem("themeMode") || "dark");
   const theme = createAppTheme(mode);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+  // Get testId from localStorage
+  const testId = localStorage.getItem("test_id") || "";
+
   // Test context from McqTest with fallback
   const {
-    testId = "",
     testMcqIds = [],
     testCodingIds = [],
     testTotalScore = 0,
     mcqScore = 0,
-    testName = "CodeLeet Test",
+    testName = "Zealous Compiler",
     testLanguage = "Unknown",
     userId = "",
     pocId = "",
     currentCodingIndex = 0,
     codingResults = [],
+    codingAnswered = 0,
+    codingNotAnswered = 0,
+    codingNotVisited = testCodingIds.length,
+    codingCorrect = 0,
+    codingWrong = 0,
   } = state || {};
 
   // Component state
-  const [input, setInput] = useState(localStorage.getItem("input") || "");
+  const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "python");
+  const [language, setLanguage] = useState("python");
   const [loading, setLoading] = useState(false);
   const [selectedCode, setSelectedCode] = useState(null);
   const [testCases, setTestCases] = useState([]);
@@ -314,6 +325,9 @@ const OnlineCompiler = () => {
   const [editorWidth, setEditorWidth] = useState(60);
   const [outputHeight, setOutputHeight] = useState(30);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [fetchedTestCodingIds, setFetchedTestCodingIds] = useState([]);
+  const [malpracticeCount, setMalpracticeCount] = useState(0);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const isDraggingRef = useRef(false);
   const dividerRef = useRef(null);
@@ -321,6 +335,7 @@ const OnlineCompiler = () => {
   const resizeTimeoutRef = useRef(null);
   const editorRef = useRef(null);
   const resizeObserverRef = useRef(null);
+  const autoSaveTimeoutRef = useRef(null);
 
   // Language templates
   const templates = {
@@ -346,15 +361,149 @@ const OnlineCompiler = () => {
     c: "C",
   };
 
-  // Debounce function
+  // Load saved submission payload from localStorage on mount
+  useEffect(() => {
+    if (codeId) {
+      const savedPayload = localStorage.getItem(`${codeId}`);
+      if (savedPayload) {
+        try {
+          const parsedPayload = JSON.parse(savedPayload);
+          setLanguage(parsedPayload.language ? Object.keys(languageApiMap).find(
+            key => languageApiMap[key] === parsedPayload.language
+          ) : "python");
+          setInput(parsedPayload.code || templates[language]);
+        } catch (error) {
+          console.error("Error parsing saved payload:", error);
+          setInput(templates[language]);
+        }
+      } else {
+        setInput(templates[language]);
+      }
+    }
+  }, [codeId, language]);
+
+  // Fetch test data from testId
+  useEffect(() => {
+    const fetchTestData = async () => {
+      if (!testId) {
+        setSnackbarMessage("No test ID found in localStorage.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const res = await getTestById(testId);
+        setFetchedTestCodingIds(res.test_coding_id || []);
+        setTestCases([]);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch test:", err);
+        setSnackbarMessage("Failed to fetch test data.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        setLoading(false);
+      }
+    };
+    fetchTestData();
+  }, [testId]);
+
+  // Malpractice detection
+  useEffect(() => {
+    const handleMalpractice = () => {
+      setMalpracticeCount((prev) => {
+        const newCount = prev + 1;
+        if (newCount >= 3 && !hasSubmitted) {
+          handleFinalSubmit(true);
+        }
+        return newCount;
+      });
+      setSnackbarMessage("Malpractice detected! Please stay on the test page.");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleMalpractice();
+      }
+    };
+
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      handleMalpractice();
+    };
+
+    const handleCopy = (e) => {
+      e.preventDefault();
+      handleMalpractice();
+    };
+
+    const handlePaste = (e) => {
+      e.preventDefault();
+      handleMalpractice();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopy);
+    document.addEventListener("paste", handlePaste);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopy);
+      document.removeEventListener("paste", handlePaste);
+    };
+  }, [hasSubmitted]);
+
+  // Auto-save function
+  const saveSubmissionPayload = useCallback(() => {
+    const formattedTestCases = testCases.map((testCase) => ({
+      input: Array.isArray(testCase.testcase_input)
+        ? testCase.testcase_input.join("\n")
+        : testCase.testcase_input || "",
+      expectedOutput: Array.isArray(testCase.testcase_output)
+        ? testCase.testcase_output.join("\n")
+        : testCase.testcase_output || "",
+    }));
+
+    const submissionPayload = {
+      language: languageApiMap[language],
+      code: input,
+      testCases: formattedTestCases,
+    };
+
+    localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
+  }, [codeId, language, input, testCases]);
+
+  // Debounce function for auto-save
   const debounce = (func, delay) => {
     return (...args) => {
-      clearTimeout(resizeTimeoutRef.current);
-      resizeTimeoutRef.current = setTimeout(() => {
+      clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = setTimeout(() => {
         func(...args);
       }, delay);
     };
   };
+
+  // Debounced auto-save
+  const debouncedSave = useCallback(debounce(saveSubmissionPayload, 1000), [saveSubmissionPayload]);
+
+  // Auto-save on input or language change
+  useEffect(() => {
+    if (codeId && input) {
+      debouncedSave();
+    }
+  }, [input, language, codeId, debouncedSave]);
+
+  // Cleanup auto-save timeout on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(autoSaveTimeoutRef.current);
+    };
+  }, []);
 
   // Effect to handle responsive layout and cleanup
   useEffect(() => {
@@ -509,16 +658,16 @@ const OnlineCompiler = () => {
   // Handle editor input changes
   const handleEditorChange = (value) => {
     setInput(value || "");
-    localStorage.setItem("input", value || "");
   };
 
   // Handle language selection
   const handleLanguageChange = (event) => {
     const value = event.target.value;
     setLanguage(value);
-    localStorage.setItem("language", value);
-    setInput(templates[value] || "");
-    localStorage.setItem("input", templates[value] || "");
+    const savedPayload = localStorage.getItem(`${codeId}`);
+    if (!savedPayload) {
+      setInput(templates[value] || "");
+    }
   };
 
   // Reset editor to template
@@ -529,7 +678,7 @@ const OnlineCompiler = () => {
   // Confirm editor reset
   const confirmResetEditor = () => {
     setInput(templates[language] || "");
-    localStorage.setItem("input", templates[language] || "");
+    localStorage.removeItem(`${codeId}`);
     setSnackbarMessage("Editor reset to template");
     setSnackbarSeverity("info");
     setSnackbarOpen(true);
@@ -549,6 +698,29 @@ const OnlineCompiler = () => {
     setSnackbarOpen(true);
   };
 
+  // Manual save
+  const handleSave = () => {
+    const formattedTestCases = testCases.map((testCase) => ({
+      input: Array.isArray(testCase.testcase_input)
+        ? testCase.testcase_input.join("\n")
+        : testCase.testcase_input || "",
+      expectedOutput: Array.isArray(testCase.testcase_output)
+        ? testCase.testcase_output.join("\n")
+        : testCase.testcase_output || "",
+    }));
+
+    const submissionPayload = {
+      language: languageApiMap[language],
+      code: input,
+      testCases: formattedTestCases,
+    };
+
+    localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
+    setSnackbarMessage("Progress saved manually");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+  };
+
   // Fetch code and test cases
   const fetchCodeAndTestCases = async (id) => {
     try {
@@ -558,18 +730,29 @@ const OnlineCompiler = () => {
       console.log("Fetched code:", code);
       setSelectedCode(code);
 
-      if (!code.code_test_cases || code.code_test_cases.length === 0) {
+      if (!code.code_test_cases_id || code.code_test_cases_id.length === 0) {
         setTestCases([]);
+        setSnackbarMessage("No test cases found for this problem.");
+        setSnackbarSeverity("warning");
+        setSnackbarOpen(true);
         return;
       }
 
-      console.log("Fetching test cases:", code.code_test_cases);
-      const testCasePromises = code.code_test_cases.map((testcase_id) =>
+      console.log("Fetching test cases:", code.code_test_cases_id);
+      const testCasePromises = code.code_test_cases_id.map((testcase_id) =>
         fetchTestCaseById(testcase_id)
       );
       const responses = await Promise.all(testCasePromises);
       console.log("Fetched test cases:", responses);
-      setTestCases(responses);
+
+      const validTestCases = responses.filter((tc) => tc && tc.testcase_input && tc.testcase_output);
+      setTestCases(validTestCases);
+
+      if (validTestCases.length === 0) {
+        setSnackbarMessage("No valid test cases retrieved.");
+        setSnackbarSeverity("warning");
+        setSnackbarOpen(true);
+      }
     } catch (err) {
       console.error("Fetch error:", err);
       setOutput(`Error fetching problem: ${err.message}`);
@@ -582,10 +765,11 @@ const OnlineCompiler = () => {
     }
   };
 
-  // Fetch code on component mount
+  // Fetch code on component mount or codeId change
   useEffect(() => {
     if (codeId) {
       fetchCodeAndTestCases(codeId);
+      setOutput("");
     } else {
       setOutput("Error: No code ID provided in URL");
       setShowOutput(true);
@@ -605,7 +789,6 @@ const OnlineCompiler = () => {
     setOutput("Running code against test cases...\n");
 
     try {
-      // Format test cases for submission
       const formattedTestCases = testCases.map((testCase) => ({
         input: Array.isArray(testCase.testcase_input)
           ? testCase.testcase_input.join("\n")
@@ -615,18 +798,18 @@ const OnlineCompiler = () => {
           : testCase.testcase_output || "",
       }));
 
-      // Prepare payload for backend compiler
       const submissionPayload = {
         language: languageApiMap[language],
         code: input,
         testCases: formattedTestCases,
       };
 
+      localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
+
       console.log("Submitting payload to compiler:", submissionPayload);
       const { results } = await compileCode(submissionPayload);
       console.log("Compiler response:", results);
 
-      // Format output for display
       const formattedOutput = results
         .map(
           (res, index) =>
@@ -650,16 +833,9 @@ const OnlineCompiler = () => {
     }
   };
 
-  // Handle code submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setOpenProgressDialog(true);
-    setOutput("Submitting code for evaluation...\n");
-    setShowOutput(true);
-
+  // Handle code submission for evaluation
+  const handleEvaluate = async () => {
     try {
-      // Format test cases for submission
       const formattedTestCases = testCases.map((testCase) => ({
         input: Array.isArray(testCase.testcase_input)
           ? testCase.testcase_input.join("\n")
@@ -669,18 +845,38 @@ const OnlineCompiler = () => {
           : testCase.testcase_output || "",
       }));
 
-      // Prepare payload for backend compiler
       const submissionPayload = {
         language: languageApiMap[language],
         code: input,
         testCases: formattedTestCases,
       };
 
-      console.log("Submitting payload for evaluation:", submissionPayload);
+      console.log("Evaluating payload:", submissionPayload);
       const { results } = await compileCode(submissionPayload);
       console.log("Evaluation response:", results);
 
-      // Format output for display
+      const allPassed = results.length > 0 && results.every((res) => res.passed);
+      const codingScore = allPassed ? 10 : 0;
+
+      return { results, codingScore };
+    } catch (error) {
+      console.error("Evaluation error:", error);
+      throw error;
+    }
+  };
+
+  // Handle final test submission
+  const handleFinalSubmit = async (isMalpractice = false) => {
+    if (hasSubmitted) return;
+
+    setLoading(true);
+    setOpenProgressDialog(true);
+    setOutput("Submitting test for final evaluation...\n");
+    setShowOutput(true);
+
+    try {
+      const { results, codingScore } = await handleEvaluate();
+
       const formattedOutput = results
         .map(
           (res, index) =>
@@ -691,14 +887,22 @@ const OnlineCompiler = () => {
         .join("\n");
       setOutput(formattedOutput);
 
-      // Check if all test cases passed
-      const allPassed = results.length > 0 && results.every((res) => res.passed);
-      const codingScore = allPassed ? 10 : 0;
       const newCodingResult = { codeId, score: codingScore, total: 10 };
-      const updatedCodingResults = [...codingResults, newCodingResult];
+      const existingIndex = codingResults.findIndex((result) => result.codeId === codeId);
+      let updatedCodingResults;
+      if (existingIndex !== -1) {
+        updatedCodingResults = [...codingResults];
+        updatedCodingResults[existingIndex] = newCodingResult;
+      } else {
+        updatedCodingResults = [...codingResults, newCodingResult];
+      }
 
-      // Submit the test result
       const finalScore = mcqScore + updatedCodingResults.reduce((sum, result) => sum + result.score, 0);
+      const updatedCodingAnswered = codingAnswered + (codingScore > 0 ? 1 : 0);
+      const updatedCodingCorrect = codingCorrect + (codingScore > 0 ? 1 : 0);
+      const updatedCodingWrong = codingWrong + (codingScore === 0 ? 1 : 0);
+      const updatedCodingNotAnswered = codingNotAnswered + (input === templates[language] ? 1 : 0);
+
       const resultData = {
         result_user_id: userId,
         result_test_id: testId,
@@ -707,23 +911,180 @@ const OnlineCompiler = () => {
         result_poc_id: pocId,
         testName,
         testLanguage,
+        malpracticeCount: isMalpractice ? malpracticeCount : 0,
+        codingAnswered: updatedCodingAnswered,
+        codingNotAnswered: updatedCodingNotAnswered,
+        codingNotVisited: codingNotVisited - 1,
+        codingCorrect: updatedCodingCorrect,
+        codingWrong: updatedCodingWrong,
       };
 
-      console.log("Submitting test result:", resultData);
+      console.log("Submitting final test result:", resultData);
       await submitTestResult(resultData);
-      navigate("/test-result", { state: { resultData } });
-      setSnackbarMessage("Code submitted successfully!");
+
+      const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
+      effectiveCodingIds.forEach(id => localStorage.removeItem(`${id}`));
+      localStorage.removeItem("test_id");
+
+      setHasSubmitted(true);
+      navigate("/test-result");
+      setSnackbarMessage("Test submitted successfully!");
       setSnackbarSeverity("success");
     } catch (error) {
-      console.error("Submit error:", error);
-      setOutput(`Error submitting code: ${error.message}`);
-      setSnackbarMessage(`Error during code submission: ${error.message}`);
+      console.error("Final submit error:", error);
+      setOutput(`Error submitting test: ${error.message}`);
+      setSnackbarMessage(`Error during test submission: ${error.message}`);
       setSnackbarSeverity("error");
     } finally {
       setLoading(false);
       setOpenProgressDialog(false);
       setSnackbarOpen(true);
     }
+  };
+
+  // Handle navigation to the next problem
+  const handleNext = async () => {
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
+    if (currentCodingIndex < effectiveCodingIds.length - 1) {
+      setLoading(true);
+      setOpenProgressDialog(true);
+      
+      try {
+        const { results, codingScore } = await handleEvaluate();
+
+        const formattedTestCases = testCases.map((testCase) => ({
+          input: Array.isArray(testCase.testcase_input)
+            ? testCase.testcase_input.join("\n")
+            : testCase.testcase_input || "",
+          expectedOutput: Array.isArray(testCase.testcase_output)
+            ? testCase.testcase_output.join("\n")
+            : testCase.testcase_output || "",
+        }));
+
+        const submissionPayload = {
+          language: languageApiMap[language],
+          code: input,
+          testCases: formattedTestCases,
+        };
+
+        localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
+
+        const newCodingResult = { codeId, score: codingScore, total: 10 };
+        const existingIndex = codingResults.findIndex((result) => result.codeId === codeId);
+        let updatedCodingResults;
+        if (existingIndex !== -1) {
+          updatedCodingResults = [...codingResults];
+          updatedCodingResults[existingIndex] = newCodingResult;
+        } else {
+          updatedCodingResults = [...codingResults, newCodingResult];
+        }
+
+        const updatedCodingAnswered = codingAnswered + (codingScore > 0 ? 1 : 0);
+        const updatedCodingCorrect = codingCorrect + (codingScore > 0 ? 1 : 0);
+        const updatedCodingWrong = codingWrong + (codingScore === 0 ? 1 : 0);
+        const updatedCodingNotAnswered = codingNotAnswered + (input === templates[language] ? 1 : 0);
+
+        const nextCodeId = effectiveCodingIds[currentCodingIndex + 1];
+        navigate(`/compiler/${nextCodeId}`, {
+          state: {
+            testId,
+            testMcqIds,
+            testCodingIds: effectiveCodingIds,
+            testTotalScore,
+            mcqScore,
+            testName,
+            testLanguage,
+            userId,
+            pocId,
+            currentCodingIndex: currentCodingIndex + 1,
+            codingResults: updatedCodingResults,
+            codingAnswered: updatedCodingAnswered,
+            codingNotAnswered: updatedCodingNotAnswered,
+            codingNotVisited: codingNotVisited - 1,
+            codingCorrect: updatedCodingCorrect,
+            codingWrong: updatedCodingWrong,
+          },
+        });
+        setSnackbarMessage("Moving to the next problem.");
+        setSnackbarSeverity("success");
+      } catch (error) {
+        console.error("Next problem error:", error);
+        setSnackbarMessage(`Error moving to next problem: ${error.message}`);
+        setSnackbarSeverity("error");
+      } finally {
+        setLoading(false);
+        setOpenProgressDialog(false);
+        setSnackbarOpen(true);
+      }
+    }
+  };
+
+  // Handle navigation to the previous problem
+  const handlePrevious = () => {
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
+    if (currentCodingIndex > 0) {
+      const formattedTestCases = testCases.map((testCase) => ({
+        input: Array.isArray(testCase.testcase_input)
+          ? testCase.testcase_input.join("\n")
+          : testCase.testcase_input || "",
+        expectedOutput: Array.isArray(testCase.testcase_output)
+          ? testCase.testcase_output.join("\n")
+          : testCase.testcase_output || "",
+      }));
+
+      const submissionPayload = {
+        language: languageApiMap[language],
+        code: input,
+        testCases: formattedTestCases,
+      };
+
+      localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
+
+      const prevCodeId = effectiveCodingIds[currentCodingIndex - 1];
+      navigate(`/compiler/${prevCodeId}`, {
+        state: {
+          testId,
+          testMcqIds,
+          testCodingIds: effectiveCodingIds,
+          testTotalScore,
+          mcqScore,
+          testName,
+          testLanguage,
+          userId,
+          pocId,
+          currentCodingIndex: currentCodingIndex - 1,
+          codingResults,
+          codingAnswered,
+          codingNotAnswered,
+          codingNotVisited,
+          codingCorrect,
+          codingWrong,
+        },
+      });
+    }
+  };
+
+  // Handle back navigation
+  const handleBack = () => {
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
+    const formattedTestCases = testCases.map((testCase) => ({
+      input: Array.isArray(testCase.testcase_input)
+        ? testCase.testcase_input.join("\n")
+        : testCase.testcase_input || "",
+      expectedOutput: Array.isArray(testCase.testcase_output)
+        ? testCase.testcase_output.join("\n")
+        : testCase.testcase_output || "",
+    }));
+
+    const submissionPayload = {
+      language: languageApiMap[language],
+      code: input,
+      testCases: formattedTestCases,
+    };
+
+    localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
+    
+    navigate(-1); // Navigate to the previous page
   };
 
   // Run code with RapidAPI
@@ -758,6 +1119,11 @@ const OnlineCompiler = () => {
       throw new Error(`RapidAPI error: ${error.message}`);
     }
   };
+
+  // Determine effective coding IDs
+  const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
+  const hasCodingProblems = effectiveCodingIds.length > 0;
+  const isLastProblem = currentCodingIndex >= effectiveCodingIds.length - 1;
 
   return (
     <ThemeProvider theme={theme}>
@@ -870,7 +1236,7 @@ const OnlineCompiler = () => {
                 fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
               }}
             >
-              {testName} - Coding Problem {currentCodingIndex + 1}
+              {testName} - Coding Problem {currentCodingIndex + 1} of {effectiveCodingIds.length || 1}
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 }, flexShrink: 0 }}>
@@ -966,6 +1332,11 @@ const OnlineCompiler = () => {
                     <RefreshIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
+                <Tooltip title="Save Code">
+                  <IconButton size="small" onClick={handleSave}>
+                    <SaveIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
                 <Tooltip title="Copy Code">
                   <IconButton size="small" onClick={copyToClipboard}>
                     <ContentCopyIcon fontSize="small" />
@@ -986,21 +1357,39 @@ const OnlineCompiler = () => {
                 >
                   Run
                 </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  startIcon={<DoneIcon />}
-                  size="small"
-                  sx={{
-                    fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                    px: { xs: 1, sm: 2 },
-                    fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                  }}
-                >
-                  Submit
-                </Button>
+                {isLastProblem ? (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleFinalSubmit()}
+                    disabled={loading || hasSubmitted}
+                    startIcon={<DoneIcon />}
+                    size="small"
+                    sx={{
+                      fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                      px: { xs: 1, sm: 2 },
+                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                    }}
+                  >
+                    Submit Test
+                  </Button>
+                ) : (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleNext}
+                    disabled={loading}
+                    startIcon={<NavigateNextIcon />}
+                    size="small"
+                    sx={{
+                      fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                      px: { xs: 1, sm: 2 },
+                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                    }}
+                  >
+                    Next
+                  </Button>
+                )}
               </Box>
             </Box>
             <Box sx={{ flex: 1, overflow: "hidden" }}>
@@ -1168,7 +1557,7 @@ const OnlineCompiler = () => {
                             {selectedCode.code_title || "Problem"}
                           </Typography>
                           <Chip
-                            label={selectedCode.code_difficulty || "Medium"}
+                            label={"10 Mark"}
                             size="small"
                             sx={{
                               bgcolor:
@@ -1443,6 +1832,65 @@ const OnlineCompiler = () => {
             </Box>
           )}
         </Box>
+        <Box
+          sx={{
+            p: 1,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            bgcolor: "background.paper",
+            borderTop: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={handleBack}
+              disabled={loading}
+              startIcon={<ArrowBackIcon />}
+              sx={{
+                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+              }}
+            >
+              Back
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handlePrevious}
+              disabled={currentCodingIndex === 0 || loading || !hasCodingProblems}
+              startIcon={<NavigateBeforeIcon />}
+              sx={{
+                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+              }}
+            >
+              Previous
+            </Button>
+          </Box>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+            }}
+          >
+            Problem {hasCodingProblems ? currentCodingIndex + 1 : 1} of {effectiveCodingIds.length || 1}
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={handleNext}
+            disabled={currentCodingIndex >= effectiveCodingIds.length - 1 || loading || !hasCodingProblems}
+            endIcon={<NavigateNextIcon />}
+            sx={{
+              fontSize: { xs: "0.65rem", sm: "0.75rem" },
+              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+            }}
+          >
+            Next
+          </Button>
+        </Box>
         {isMobile && (
           <Box sx={{ position: "fixed", bottom: 16, right: 16, zIndex: 1000, display: "flex", gap: 1 }}>
             <Fab
@@ -1456,10 +1904,10 @@ const OnlineCompiler = () => {
             <Fab
               color="secondary"
               aria-label="submit"
-              onClick={handleSubmit}
-              disabled={loading}
+              onClick={isLastProblem ? () => handleFinalSubmit() : handleNext}
+              disabled={loading || (isLastProblem && hasSubmitted)}
             >
-              <DoneIcon />
+              {isLastProblem ? <DoneIcon /> : <NavigateNextIcon />}
             </Fab>
           </Box>
         )}

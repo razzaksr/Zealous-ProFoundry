@@ -7,23 +7,31 @@ const TestCase = require("../models/TestCase");
 // ✅ Create TestCase
 router.post("/create_testCase", async (req, res) => {
   try {
-    const { testcase_input, testcase_output, testcase_tags } = req.body;
+    const testCases = req.body;
 
-    if (!testcase_input || !testcase_output) {
-      return res.status(400).json({ error: "Input and output fields are required" });
+    if (!Array.isArray(testCases) || testCases.length === 0) {
+      return res.status(400).json({ error: "Request body should be a non-empty array of test cases" });
     }
 
-    const newTestCase = new TestCase({
-      testcase_id: uuidv4(),
-      testcase_input,
-      testcase_output,
-      testcase_tags,
+    const newTestCases = testCases.map((testcase) => {
+      const { testcase_input, testcase_output, testcase_tags } = testcase;
+
+      if (!testcase_input || !testcase_output) {
+        throw new Error("Each test case must include input and output fields");
+      }
+
+      return new TestCase({
+        testcase_id: uuidv4(),
+        testcase_input,
+        testcase_output,
+        testcase_tags,
+      });
     });
 
-    await newTestCase.save();
-    res.status(201).json(newTestCase);
+    await TestCase.insertMany(newTestCases);
+    res.status(201).json({ message: "Test cases created successfully", testCases: newTestCases });
   } catch (error) {
-    console.error("Error creating test case:", error);
+    console.error("Error creating test cases:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -103,3 +111,26 @@ router.delete("/delete_testCase/:id", async (req, res) => {
 });
 
 module.exports = router;
+
+
+// Route: Get test case IDs by tag
+router.get("/get_testcases_by_tag/:tag", async (req, res) => {
+  try {
+    const { tag } = req.params;
+
+    if (!tag) {
+      return res.status(400).json({ error: "Tag is required" });
+    }
+
+    const matchingTestCases = await TestCase.find({ testcase_tags: tag }, "testcase_id");
+
+    res.status(200).json({
+      count: matchingTestCases.length,
+      testcase_ids: matchingTestCases.map(tc => tc.testcase_id),
+    });
+  } catch (error) {
+    console.error("Error fetching test cases by tag:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+

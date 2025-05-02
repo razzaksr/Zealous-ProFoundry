@@ -3,9 +3,20 @@ POST http://localhost:8000/coding/code
 Content-Type: application/json
 
 {
-  "code_problem_statement": "Write a function to check if a number is prime.",
-  "code_test_cases_id": ["test1", "test2"],
-  "code_tags": ["maths", "prime numbers", "loops"]
+"code_problem_statement": "Write a C function to check if a given string is a palindrome (case-sensitive).",
+      "code_test_cases_id":  [
+    "aa2ffaf4-b992-4a23-bb9b-50898bb5b83c",
+    "b8cb2cf6-31aa-4afe-a7fc-08b44a7a9207",
+    "d40a3600-4c61-478b-963b-f12bd6a47450",
+    "59642207-9e53-4592-85e1-434679c59474",
+    "a7a16670-b4f6-4fc3-b62e-38e7d97d600e",
+    "6bf4e673-b332-457b-8bfb-66d6976d783f",
+    "4d916009-6d1d-4df9-9953-9d987691387e",
+    "24b80ad4-847d-4e11-8522-f03fd4cd44a4",
+    "7b8b56d7-2414-4e2a-9eb1-318545f9b2f5",
+    "d4f9c421-2b03-48fa-b807-1b9245d1da93"
+  ],
+"code_tags": ["C", "palindrome", "string", "logic"]
 }
 
 ### Get All Codes

@@ -1,7 +1,5 @@
-"use client"
-
-import { useEffect, useState, useRef } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useEffect, useState, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Typography,
@@ -21,8 +19,8 @@ import {
   useTheme,
   Zoom,
   Fade,
-} from "@mui/material"
-import { styled, keyframes } from "@mui/material/styles"
+} from "@mui/material";
+import { styled, keyframes } from "@mui/material/styles";
 import {
   Flag as FlagIcon,
   ArrowBack as ArrowBackIcon,
@@ -32,34 +30,34 @@ import {
   HelpOutline as HelpOutlineIcon,
   AccessTime as AccessTimeIcon,
   QuestionMark as QuestionMarkIcon,
-} from "@mui/icons-material"
-import { getTestById, getMcqById, submitTestResult } from "../axios"
+} from "@mui/icons-material";
+import { getTestById, getMcqById, submitTestResult } from "../axios";
 
 // Pulse animation for the CircularProgress
 const pulse = keyframes`
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
-`
+`;
 
 // Fade-in animation for the text
 const fadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
-`
+`;
 
 // Shimmer animation for progress bar
 const shimmer = keyframes`
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
-`
+`;
 
 // Wave animation for progress bar
 const wave = keyframes`
   0% { transform: translateX(-100%); }
   50% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
-`
+`;
 
 // Custom Circular Progress Component
 const CustomCircularProgress = styled(CircularProgress)(({ theme }) => ({
@@ -68,7 +66,7 @@ const CustomCircularProgress = styled(CircularProgress)(({ theme }) => ({
     strokeLinecap: "round",
   },
   animation: `${pulse} 1.5s infinite ease-in-out`,
-}))
+}));
 
 // Styled Components
 const FullScreenCard = styled(Card)(({ theme }) => ({
@@ -83,7 +81,7 @@ const FullScreenCard = styled(Card)(({ theme }) => ({
   [theme.breakpoints.down("sm")]: {
     padding: theme.spacing(1),
   },
-}))
+}));
 
 const TimerBox = styled(Box)(({ theme }) => ({
   position: "fixed",
@@ -98,7 +96,7 @@ const TimerBox = styled(Box)(({ theme }) => ({
   boxShadow: "0 4px 20px rgba(12, 131, 200, 0.25)",
   borderBottomLeftRadius: 0,
   borderBottomRightRadius: 0,
-}))
+}));
 
 const QuestionIndicator = styled(Box)(({ theme, status }) => {
   const baseStyles = {
@@ -113,10 +111,10 @@ const QuestionIndicator = styled(Box)(({ theme, status }) => {
       status === "answered"
         ? "#4caf50"
         : status === "marked"
-          ? "#fc7a46"
-          : status === "notAnswered"
-            ? "#f44336"
-            : "#e0e0e0",
+        ? "#fc7a46"
+        : status === "notAnswered"
+        ? "#f44336"
+        : "#e0e0e0",
     color: status === "notVisited" ? "#000" : "#fff",
     fontWeight: "bold",
     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -132,7 +130,7 @@ const QuestionIndicator = styled(Box)(({ theme, status }) => {
       fontSize: "0.8rem",
       margin: theme.spacing(0.4),
     },
-  }
+  };
 
   const statusStyles = {
     answered: {
@@ -154,13 +152,13 @@ const QuestionIndicator = styled(Box)(({ theme, status }) => {
       borderRadius: "12px",
       background: "linear-gradient(145deg, #f5f5f5 0%, #e0e0e0 100%)",
     },
-  }
+  };
 
   return {
     ...baseStyles,
     ...(statusStyles[status] || statusStyles.notVisited),
-  }
-})
+  };
+});
 
 const StyledButton = styled(Button)(({ theme }) => ({
   borderRadius: 15,
@@ -169,14 +167,15 @@ const StyledButton = styled(Button)(({ theme }) => ({
     transform: "translateY(-3px)",
     boxShadow: "0 6px 15px rgba(0,0,0,0.15)",
   },
-}))
+}));
 
 const PrimaryButton = styled(StyledButton)({
   background: "linear-gradient(135deg, #0c83c8 0%, #0a6eaa 100%)",
+  color: "white",
   "&:hover": {
     background: "linear-gradient(135deg, #0a6eaa 0%, #085d96 100%)",
   },
-})
+});
 
 const SecondaryButton = styled(StyledButton)({
   color: "#0c83c8",
@@ -185,7 +184,7 @@ const SecondaryButton = styled(StyledButton)({
     borderColor: "#0a6eaa",
     backgroundColor: "rgba(12, 131, 200, 0.05)",
   },
-})
+});
 
 const OptionCard = styled(Paper)(({ theme, selected }) => ({
   padding: theme.spacing(2),
@@ -203,9 +202,8 @@ const OptionCard = styled(Paper)(({ theme, selected }) => ({
   },
   "& .MuiFormControlLabel-root": { width: "100%", margin: 0, pointerEvents: "none" },
   "& .MuiRadio-root": { pointerEvents: "none" },
-}))
+}));
 
-// Custom Progress Bar Component with hover animation
 const ProgressBarContainer = styled(Box)(({ theme }) => ({
   position: "relative",
   height: 12,
@@ -214,7 +212,7 @@ const ProgressBarContainer = styled(Box)(({ theme }) => ({
   overflow: "hidden",
   marginBottom: theme.spacing(2),
   boxShadow: "inset 0 2px 6px rgba(0,0,0,0.1)",
-}))
+}));
 
 const ProgressBarFill = styled(Box)(({ theme, value }) => ({
   position: "absolute",
@@ -249,7 +247,7 @@ const ProgressBarFill = styled(Box)(({ theme, value }) => ({
     transform: "translateX(-100%)",
     animation: `${wave} 2s infinite ease-in-out`,
   },
-}))
+}));
 
 const ProgressHoverIndicator = styled(Box)(({ theme, value }) => ({
   position: "absolute",
@@ -276,14 +274,13 @@ const ProgressHoverIndicator = styled(Box)(({ theme, value }) => ({
   ".progress-container:hover &": {
     animation: `${hoverAnimation} 2s infinite`,
   },
-}))
+}));
 
-// Add a new hover animation keyframe
 const hoverAnimation = keyframes`
   0% { transform: translateY(0); opacity: 0; }
   50% { transform: translateY(-20px); opacity: 1; }
   100% { transform: translateY(-40px); opacity: 0; }
-`
+`;
 
 const MarkReviewButton = styled(Button)(({ theme, marked }) => ({
   borderRadius: 15,
@@ -296,7 +293,7 @@ const MarkReviewButton = styled(Button)(({ theme, marked }) => ({
     transform: marked ? "translateY(-2px)" : "translateY(-2px)",
     boxShadow: marked ? "0 4px 12px rgba(252, 122, 70, 0.3)" : "0 2px 8px rgba(252, 122, 70, 0.1)",
   },
-}))
+}));
 
 const QuestionContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -310,7 +307,7 @@ const QuestionContainer = styled(Paper)(({ theme }) => ({
     boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
   },
   [theme.breakpoints.down("sm")]: { padding: theme.spacing(2) },
-}))
+}));
 
 const SidebarContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(2),
@@ -325,7 +322,7 @@ const SidebarContainer = styled(Paper)(({ theme }) => ({
   "&:hover": {
     boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
   },
-}))
+}));
 
 const NavigatorContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -339,7 +336,7 @@ const NavigatorContainer = styled(Box)(({ theme }) => ({
     gap: theme.spacing(0.4),
     maxHeight: "auto",
   },
-}))
+}));
 
 const VisualsContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -348,7 +345,7 @@ const VisualsContainer = styled(Box)(({ theme }) => ({
   alignItems: "center",
   gap: theme.spacing(2),
   [theme.breakpoints.down("sm")]: { flexDirection: "column" },
-}))
+}));
 
 const WarningDialog = styled(Dialog)(({ theme }) => ({
   "& .MuiPaper-root": {
@@ -358,8 +355,13 @@ const WarningDialog = styled(Dialog)(({ theme }) => ({
     border: "1px solid rgba(12, 131, 200, 0.1)",
     padding: theme.spacing(2),
     overflow: "hidden",
+    "&:hover": {
+      border: "1px solid #0c83c8",
+      boxShadow: "0 12px 48px rgba(0,0,0,0.25)",
+      background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
+    },
   },
-}))
+}));
 
 const WarningTitle = styled(Typography)(({ theme }) => ({
   fontWeight: "bold",
@@ -368,7 +370,7 @@ const WarningTitle = styled(Typography)(({ theme }) => ({
   alignItems: "center",
   gap: theme.spacing(1),
   marginBottom: theme.spacing(2),
-}))
+}));
 
 const WarningButton = styled(Button)(({ theme, variant }) => ({
   borderRadius: 15,
@@ -393,7 +395,7 @@ const WarningButton = styled(Button)(({ theme, variant }) => ({
       boxShadow: "0 6px 15px rgba(244, 67, 54, 0.3)",
     },
   }),
-}))
+}));
 
 const SubmittingOverlay = styled(Box)(({ theme }) => ({
   position: "fixed",
@@ -407,7 +409,7 @@ const SubmittingOverlay = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   alignItems: "center",
   zIndex: 2000,
-}))
+}));
 
 const LoadingContainer = styled(Box)(({ theme }) => ({
   height: "100vh",
@@ -415,7 +417,7 @@ const LoadingContainer = styled(Box)(({ theme }) => ({
   justifyContent: "center",
   alignItems: "center",
   background: "linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)",
-}))
+}));
 
 const LoadingBox = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -427,85 +429,86 @@ const LoadingBox = styled(Paper)(({ theme }) => ({
   alignItems: "center",
   gap: theme.spacing(2),
   border: "1px solid rgba(12, 131, 200, 0.1)",
-}))
+}));
 
 const LoadingText = styled(Typography)(({ theme }) => ({
   color: "#0c83c8",
   fontWeight: "bold",
   animation: `${fadeIn} 1s ease-in`,
-}))
+}));
 
-// Enhanced Timer Component
 const EnhancedTimer = ({ timeLeft }) => {
-  const canvasRef = useRef(null)
-  const totalSeconds = 3600
-  const percentageRemaining = (timeLeft / totalSeconds) * 100
-  const animationFrameRef = useRef(null)
-  const lastTimeRef = useRef(Date.now())
+  const canvasRef = useRef(null);
+  const totalSeconds = 3600;
+  const percentageRemaining = (timeLeft / totalSeconds) * 100;
+  const animationFrameRef = useRef(null);
+  const lastTimeRef = useRef(Date.now());
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const ctx = canvas.getContext("2d")
-    const width = canvas.width
-    const height = canvas.height
-    const centerX = width / 2
-    const centerY = height / 2
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
 
     const animate = () => {
-      const now = Date.now()
-      const deltaTime = now - lastTimeRef.current
-      lastTimeRef.current = now
+      const now = Date.now();
+      const deltaTime = now - lastTimeRef.current;
+      lastTimeRef.current = now;
 
-      ctx.clearRect(0, 0, width, height)
-      ctx.fillStyle = "#f5f5f5"
-      ctx.fillRect(0, 0, width, height)
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#f5f5f5";
+      ctx.fillRect(0, 0, width, height);
 
-      const totalSegments = 60
-      const segmentsRemaining = Math.ceil((percentageRemaining / 100) * totalSegments)
-      const segmentWidth = width / totalSegments
+      const totalSegments = 60;
+      const segmentsRemaining = Math.ceil((percentageRemaining / 100) * totalSegments);
+      const segmentWidth = width / totalSegments;
 
       for (let i = 0; i < totalSegments; i++) {
-        const x = i * segmentWidth
+        const x = i * segmentWidth;
         if (i < segmentsRemaining) {
-          const gradient = ctx.createLinearGradient(x, 0, x + segmentWidth, 0)
-          gradient.addColorStop(0, "#0c83c8")
-          gradient.addColorStop(1, "#0a6eaa")
-          ctx.fillStyle = gradient
-          const isCurrentSegment = i === segmentsRemaining - 1
-          const segmentHeight = isCurrentSegment ? height * (0.7 + 0.3 * Math.sin(now / 500)) : height
-          ctx.fillRect(x, (height - segmentHeight) / 2, segmentWidth - 2, segmentHeight)
-          ctx.shadowColor = "rgba(12, 131, 200, 0.3)"
-          ctx.shadowBlur = 5
+          const gradient = ctx.createLinearGradient(x, 0, x + segmentWidth, 0);
+          gradient.addColorStop(0, "#0c83c8");
+          gradient.addColorStop(1, "#0a6eaa");
+          ctx.fillStyle = gradient;
+          const isCurrentSegment = i === segmentsRemaining - 1;
+          const segmentHeight = isCurrentSegment ? height * (0.7 + 0.3 * Math.sin(now / 500)) : height;
+          ctx.fillRect(x, (height - segmentHeight) / 2, segmentWidth - 2, segmentHeight);
+          ctx.shadowColor = "rgba(12, 131, 200, 0.3)";
+          ctx.shadowBlur = 5;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
         } else {
-          ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
-          ctx.fillRect(x, height * 0.4, segmentWidth - 2, height * 0.2)
+          ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+          ctx.fillRect(x, height * 0.4, segmentWidth - 2, height * 0.2);
         }
       }
 
-      const particleCount = 5
+      const particleCount = 5;
       for (let i = 0; i < particleCount; i++) {
-        const particleX = (segmentsRemaining / totalSegments) * width * (0.9 + 0.1 * Math.sin(now / 1000 + i))
-        const particleY = height / 2 + 10 * Math.sin(now / 500 + (i * Math.PI) / particleCount)
-        const particleSize = 2 + Math.sin(now / 300 + i) * 1
-        ctx.fillStyle = "#fc7a46"
-        ctx.beginPath()
-        ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2)
-        ctx.fill()
+        const particleX = (segmentsRemaining / totalSegments) * width * (0.9 + 0.1 * Math.sin(now / 1000 + i));
+        const particleY = height / 2 + 10 * Math.sin(now / 500 + (i * Math.PI) / particleCount);
+        const particleSize = 2 + Math.sin(now / 300 + i) * 1;
+        ctx.fillStyle = "#fc7a46";
+        ctx.beginPath();
+        ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      animationFrameRef.current = requestAnimationFrame(animate)
-    }
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
 
-    animate()
+    animate();
 
     return () => {
       if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+        cancelAnimationFrame(animationFrameRef.current);
       }
-    }
-  }, [timeLeft, percentageRemaining])
+    };
+  }, [timeLeft, percentageRemaining]);
 
   return (
     <Box sx={{ textAlign: "center", width: { xs: "100%", sm: "45%" }, position: "relative" }}>
@@ -522,128 +525,121 @@ const EnhancedTimer = ({ timeLeft }) => {
         ></canvas>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-// Enhanced Pie Chart Component
 const EnhancedPieChart = ({ data }) => {
-  const canvasRef = useRef(null)
-  const animationRef = useRef(null)
-  const currentAnglesRef = useRef({})
-  const targetAnglesRef = useRef({})
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const currentAnglesRef = useRef({});
+  const targetAnglesRef = useRef({});
 
   useEffect(() => {
-    const total = Object.values(data).reduce((acc, val) => acc + val, 0)
-    if (total === 0) return
+    const total = Object.values(data).reduce((acc, val) => acc + val, 0);
+    if (total === 0) return;
 
-    let startAngle = -Math.PI / 2
-    const newTargetAngles = {}
+    let startAngle = -Math.PI / 2;
+    const newTargetAngles = {};
     Object.entries(data).forEach(([key, value]) => {
       if (value === 0) {
-        newTargetAngles[key] = { start: startAngle, end: startAngle }
-        return
+        newTargetAngles[key] = { start: startAngle, end: startAngle };
+        return;
       }
-      const sliceAngle = (value / total) * 2 * Math.PI
-      const endAngle = startAngle + sliceAngle
-      newTargetAngles[key] = { start: startAngle, end: endAngle }
-      startAngle = endAngle
-    })
+      const sliceAngle = (value / total) * 2 * Math.PI;
+      const endAngle = startAngle + sliceAngle;
+      newTargetAngles[key] = { start: startAngle, end: endAngle };
+      startAngle = endAngle;
+    });
+    targetAnglesRef.current = newTargetAngles;
 
-    targetAnglesRef.current = newTargetAngles
     if (Object.keys(currentAnglesRef.current).length === 0) {
-      currentAnglesRef.current = JSON.parse(JSON.stringify(newTargetAngles))
+      currentAnglesRef.current = JSON.parse(JSON.stringify(newTargetAngles));
     }
 
     const animate = () => {
-      let needsAnimation = false
+      let needsAnimation = false;
       Object.keys(targetAnglesRef.current).forEach((key) => {
         if (!currentAnglesRef.current[key]) {
-          currentAnglesRef.current[key] = { start: -Math.PI / 2, end: -Math.PI / 2 }
+          currentAnglesRef.current[key] = { start: -Math.PI / 2, end: -Math.PI / 2 };
         }
-        const target = targetAnglesRef.current[key]
-        const current = currentAnglesRef.current[key]
+        const target = targetAnglesRef.current[key];
+        const current = currentAnglesRef.current[key];
         if (Math.abs(current.start - target.start) > 0.01) {
-          current.start += (target.start - current.start) * 0.1
-          needsAnimation = true
+          current.start += (target.start - current.start) * 0.1;
+          needsAnimation = true;
         } else {
-          current.start = target.start
+          current.start = target.start;
         }
         if (Math.abs(current.end - target.end) > 0.01) {
-          current.end += (target.end - current.end) * 0.1
-          needsAnimation = true
+          current.end += (target.end - current.end) * 0.1;
+          needsAnimation = true;
         } else {
-          current.end = target.end
+          current.end = target.end;
         }
-      })
-
-      drawChart()
+      });
+      drawChart();
       if (needsAnimation) {
-        animationRef.current = requestAnimationFrame(animate)
+        animationRef.current = requestAnimationFrame(animate);
       }
-    }
-
-    animate()
-
+    };
+    animate();
     return () => {
       if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
+        cancelAnimationFrame(animationRef.current);
       }
-    }
-  }, [data])
+    };
+  }, [data]);
 
   const drawChart = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
-    const width = canvas.width
-    const height = canvas.height
-    const centerX = width / 2
-    const centerY = height / 2
-    const radius = Math.min(width, height) / 2 - 10
-
-    ctx.clearRect(0, 0, width, height)
-    ctx.shadowColor = "rgba(0, 0, 0, 0.2)"
-    ctx.shadowBlur = 10
-    ctx.shadowOffsetX = 0
-    ctx.shadowOffsetY = 0
-
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 10;
+    ctx.clearRect(0, 0, width, height);
     const colors = {
       answered: { fill: "#4caf50", gradient: ["#66bb6a", "#43a047"] },
       marked: { fill: "#fc7a46", gradient: ["#ff8f65", "#e56a3d"] },
       notAnswered: { fill: "#f44336", gradient: ["#ef5350", "#d32f2f"] },
       notVisited: { fill: "#e0e0e0", gradient: ["#f5f5f5", "#bdbdbd"] },
-    }
-
+    };
+    ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
     Object.entries(currentAnglesRef.current).forEach(([key, angles]) => {
-      if (angles.start === angles.end) return
-      const gradient = ctx.createLinearGradient(centerX - radius, centerY - radius, centerX + radius, centerY + radius)
-      gradient.addColorStop(0, colors[key].gradient[0])
-      gradient.addColorStop(1, colors[key].gradient[1])
-      ctx.beginPath()
-      ctx.moveTo(centerX, centerY)
-      ctx.arc(centerX, centerY, radius, angles.start, angles.end)
-      ctx.closePath()
-      ctx.fillStyle = gradient
-      ctx.fill()
-      ctx.lineWidth = 1
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"
-      ctx.stroke()
-    })
-
-    ctx.shadowBlur = 0
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI)
-    ctx.fillStyle = "#fff"
-    ctx.fill()
-    ctx.shadowColor = "rgba(0, 0, 0, 0.1)"
-    ctx.shadowBlur = 5
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI)
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.05)"
-    ctx.lineWidth = 1
-    ctx.stroke()
-  }
+      if (angles.start === angles.end) return;
+      const gradient = ctx.createLinearGradient(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+      gradient.addColorStop(0, colors[key].gradient[0]);
+      gradient.addColorStop(1, colors[key].gradient[1]);
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, angles.start, angles.end);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.6, 0, 2 * Math.PI);
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  };
 
   return (
     <Box sx={{ textAlign: "center", width: { xs: "100%", sm: "45%" } }}>
@@ -655,8 +651,8 @@ const EnhancedPieChart = ({ data }) => {
         <canvas ref={canvasRef} width="100" height="100" style={{ margin: "0 auto" }}></canvas>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
 const StatusIndicator = ({ status, label }) => (
   <Box sx={{ display: "flex", alignItems: "center", mx: 1 }}>
@@ -675,364 +671,578 @@ const StatusIndicator = ({ status, label }) => (
     />
     <Typography variant="caption">{label}</Typography>
   </Box>
-)
+);
+
+// Fisher-Yates shuffle algorithm
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
 
 const McqTest = () => {
-  const { testId } = useParams()
-  const navigate = useNavigate()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const { testId } = useParams();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const [mcqIds, setMcqIds] = useState([])
-  const [codingIds, setCodingIds] = useState([]) // New state for coding IDs
-  const [testTotalScore, setTestTotalScore] = useState(0) // New state for total score
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [currentMcq, setCurrentMcq] = useState(null)
-  const [answers, setAnswers] = useState({})
-  const [markedForReview, setMarkedForReview] = useState({})
-  const [testName, setTestName] = useState("")
-  const [testLanguage, setTestLanguage] = useState("")
-  const [timeLeft, setTimeLeft] = useState(3600)
-  const [loading, setLoading] = useState(true)
-  const [fetchingMcq, setFetchingMcq] = useState(false)
-  const [warningOpen, setWarningOpen] = useState(false)
-  const [refreshWarningOpen, setRefreshWarningOpen] = useState(false)
-  const [submitWarningOpen, setSubmitWarningOpen] = useState(false)
-  const [unansweredWarningOpen, setUnansweredWarningOpen] = useState(false)
-  const [warningCount, setWarningCount] = useState(0)
-  const [studentName, setStudentName] = useState("Loading...")
-  const [visitedQuestions, setVisitedQuestions] = useState({})
-  const [userId, setUserId] = useState(null)
-  const [pocId, setPocId] = useState(null)
-  const [correctAnswers, setCorrectAnswers] = useState({})
-  const [submitting, setSubmitting] = useState(false)
-  const timerRef = useRef(null)
+  const [mcqIds, setMcqIds] = useState([]);
+  const [codingIds, setCodingIds] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentMcq, setCurrentMcq] = useState(null);
+  const [progress, setProgress] = useState([]);
+  const [testName, setTestName] = useState("");
+  const [testLanguage, setTestLanguage] = useState("");
+  const [timeLeft, setTimeLeft] = useState(3600);
+  const [loading, setLoading] = useState(true);
+  const [fetchingMcq, setFetchingMcq] = useState(false);
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [refreshWarningOpen, setRefreshWarningOpen] = useState(false);
+  const [submitWarningOpen, setSubmitWarningOpen] = useState(false);
+  const [unansweredWarningOpen, setUnansweredWarningOpen] = useState(false);
+  const [codingTransitionWarningOpen, setCodingTransitionWarningOpen] = useState(false);
+  const [warningCount, setWarningCount] = useState(0);
+  const [studentName, setStudentName] = useState("Loading...");
+  const [userId, setUserId] = useState(null);
+  const [pocId, setPocId] = useState(null);
+  const [correctAnswers, setCorrectAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const timerRef = useRef(null);
 
+  // Load user data and saved progress
   useEffect(() => {
-    const storedUser = localStorage.getItem("true")
+    const storedUser = localStorage.getItem("true");
     if (storedUser) {
       try {
-        const user = JSON.parse(storedUser)
-        setStudentName(user.user.full_name)
-        setUserId(user.user.user_id)
-        setPocId(user.user.mod_poc_id?.mod_poc_id)
+        const user = JSON.parse(storedUser);
+        setStudentName(user.user.full_name);
+        setUserId(user.user.user_id);
+        setPocId(user.user.mod_poc_id?.mod_poc_id);
       } catch (error) {
-        console.error("Error parsing user from local storage:", error)
+        console.error("Error parsing user from session storage:", error);
       }
     }
-  }, [])
 
-  useEffect(() => {
-    if (warningCount > 1) {
-      console.log("Warning count exceeded 1, submitting test...")
-      handleSubmit()
+    const savedProgress = localStorage.getItem(`testProgress_${testId}`);
+    if (savedProgress) {
+      try {
+        const parsedProgress = JSON.parse(savedProgress);
+        setProgress(parsedProgress.progress || []);
+        setCurrentIndex(parsedProgress.currentIndex || 0);
+      } catch (error) {
+        console.error("Error parsing saved progress:", error);
+      }
     }
-  }, [warningCount])
+  }, [testId]);
 
+  // Save progress and result to localStorage
+  const saveProgressToLocalStorage = () => {
+    const progressData = {
+      progress: mcqIds.map((mcqId, index) => ({
+        mcq_id: mcqId,
+        answer: progress.find((p) => p.mcq_id === mcqId)?.answer || null,
+        marked: progress.find((p) => p.mcq_id === mcqId)?.marked || false,
+        visited: progress.find((p) => p.mcq_id === mcqId)?.visited || false,
+      })),
+      currentIndex,
+    };
+    try {
+      localStorage.setItem(`testProgress_${testId}`, JSON.stringify(progressData));
+    } catch (error) {
+      console.error("Error saving progress to localStorage:", error);
+    }
+  };
+
+  const saveResultToLocalStorage = () => {
+    const answeredCount = progress.filter((p) => p.answer).length;
+    const markedCount = progress.filter((p) => p.marked).length;
+    const notAnsweredCount = progress.filter((p) => p.visited && !p.answer && !p.marked).length;
+    const notVisitedCount = progress.filter((p) => !p.visited).length;
+    let mcqScore = 0;
+    let wrongAnswersCount = 0;
+
+    progress.forEach((p) => {
+      const userAnswer = p.answer;
+      const correctAnswer = correctAnswers[p.mcq_id];
+      if (userAnswer && correctAnswer) {
+        if (userAnswer === correctAnswer) {
+          mcqScore += 1;
+        } else {
+          wrongAnswersCount += 1;
+        }
+      }
+    });
+
+    const resultData = {
+      result_user_id: userId || "",
+      result_test_id: testId,
+      result_score: mcqScore,
+      result_total_score: mcqIds.length + codingIds.length * 10,
+      result_poc_id: pocId || "",
+      studentName,
+      testName,
+      testLanguage,
+      codingIds,
+      codingAnswered: 0,
+      codingNotAnswered: codingIds.length,
+      codingNotVisited: codingIds.length,
+      codingCorrect: 0,
+      codingWrong: 0,
+      mcqAnswered: answeredCount,
+      mcqCorrect: mcqScore,
+      mcqWrong: wrongAnswersCount,
+      mcqNotAnswered: notAnsweredCount,
+      mcqNotVisited: notVisitedCount,
+      marked: markedCount,
+      malpracticeCount: warningCount,
+    };
+
+    try {
+      localStorage.setItem(`testResult_${testId}`, JSON.stringify(resultData));
+    } catch (error) {
+      console.error("Error saving result to localStorage:", error);
+    }
+  };
+
+  // Save progress and result whenever relevant state changes
+  useEffect(() => {
+    if (mcqIds.length > 0 && userId && pocId) {
+      saveProgressToLocalStorage();
+      saveResultToLocalStorage();
+    }
+  }, [progress, currentIndex, mcqIds, correctAnswers, warningCount, userId, pocId, testId]);
+
+  // Fullscreen and navigation prevention
   useEffect(() => {
     const enterFullScreen = () => {
-      document.documentElement.requestFullscreen().catch((err) => console.error(err))
-      if (window.screen?.orientation?.lock) {
-        window.screen.orientation.lock("portrait").catch((err) => console.error("Orientation lock failed:", err))
+      document.documentElement.requestFullscreen().catch((err) => console.error(err));
+      if (
+        typeof window !== "undefined" &&
+        window.screen &&
+        window.screen.orientation &&
+        window.screen.orientation.lock
+      ) {
+        window.screen.orientation.lock("portrait").catch((err) => console.error("Orientation lock failed:", err));
       }
-    }
-    enterFullScreen()
-
-    window.history.pushState(null, document.title, window.location.href)
+    };
+    enterFullScreen();
+    window.history.pushState(null, document.title, window.location.href);
 
     const preventNavigation = (e) => {
-      e.preventDefault()
-      setRefreshWarningOpen(true)
-      setWarningCount((prev) => prev + 1)
-      window.history.pushState(null, document.title, window.location.href)
-      return false
-    }
+      e.preventDefault();
+      setRefreshWarningOpen(true);
+      setWarningCount((prev) => prev + 1);
+      window.history.pushState(null, document.title, window.location.href);
+      return false;
+    };
 
     const handleFullScreenChange = () => {
       if (!document.fullscreenElement) {
-        setWarningOpen(true)
-        setWarningCount((prev) => prev + 1)
-        new Audio("/alert.wav").play().catch(() => {})
+        setWarningOpen(true);
+        setWarningCount((prev) => prev + 1);
+        new Audio("/alert.wav").play().catch(() => {});
       }
-    }
+    };
 
     const handleKeyDown = (e) => {
       if (e.altKey || e.ctrlKey || e.metaKey || ["F5", "Tab", "Escape", "PrintScreen", "Backspace"].includes(e.key)) {
-        e.preventDefault()
-        setRefreshWarningOpen(true)
-        setWarningCount((prev) => prev + 1)
+        e.preventDefault();
+        setRefreshWarningOpen(true);
+        setWarningCount((prev) => prev + 1);
       }
-    }
+    };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setRefreshWarningOpen(true)
-        setWarningCount((prev) => prev + 1)
+        setRefreshWarningOpen(true);
+        setWarningCount((prev) => prev + 1);
       }
-    }
+    };
 
-    const handleContextMenu = (e) => e.preventDefault()
-    const handleCopy = (e) => e.preventDefault()
-    const handleCut = (e) => e.preventDefault()
-    const handlePaste = (e) => e.preventDefault()
+    const handleContextMenu = (e) => e.preventDefault();
+    const handleCopy = (e) => e.preventDefault();
+    const handleCut = (e) => e.preventDefault();
+    const handlePaste = (e) => e.preventDefault();
 
     const preventTouch = (e) => {
       if (e.touches.length > 1) {
-        e.preventDefault()
-        setRefreshWarningOpen(true)
-        setWarningCount((prev) => prev + 1)
+        e.preventDefault();
+        setRefreshWarningOpen(true);
+        setWarningCount((prev) => prev + 1);
       }
-    }
+    };
 
     const handleBeforeUnload = (e) => {
-      e.preventDefault()
-      e.returnValue = "Leaving will submit your test. Are you sure?"
-      setRefreshWarningOpen(true)
-      setWarningCount((prev) => prev + 1)
-      return e.returnValue
-    }
+      e.preventDefault();
+      e.returnValue = "Leaving will submit your test. Are you sure?";
+      setRefreshWarningOpen(true);
+      setWarningCount((prev) => prev + 1);
+      return e.returnValue;
+    };
 
     const handlePopState = (e) => {
-      e.preventDefault()
-      setRefreshWarningOpen(true)
-      setWarningCount((prev) => prev + 1)
-      window.history.pushState(null, document.title, window.location.href)
+      e.preventDefault();
+      setRefreshWarningOpen(true);
+      setWarningCount((prev) => prev + 1);
+      window.history.pushState(null, document.title, window.location.href);
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {})
+        document.documentElement.requestFullscreen().catch(() => {});
       }
-    }
+    };
 
-    window.addEventListener("popstate", handlePopState)
-    document.addEventListener("fullscreenchange", handleFullScreenChange)
-    document.addEventListener("keydown", handleKeyDown)
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-    document.addEventListener("contextmenu", handleContextMenu)
-    document.addEventListener("copy", handleCopy)
-    document.addEventListener("cut", handleCut)
-    document.addEventListener("paste", handlePaste)
-    document.addEventListener("touchstart", preventTouch, { passive: false })
-    document.addEventListener("touchmove", preventTouch, { passive: false })
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    window.addEventListener("popstate", preventNavigation)
+    window.addEventListener("popstate", handlePopState);
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopy);
+    document.addEventListener("cut", handleCut);
+    document.addEventListener("paste", handlePaste);
+    document.addEventListener("touchstart", preventTouch, { passive: false });
+    document.addEventListener("touchmove", preventTouch, { passive: false });
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", preventNavigation);
 
     const historyPushInterval = setInterval(() => {
-      window.history.pushState(null, document.title, window.location.href)
-    }, 100)
+      window.history.pushState(null, document.title, window.location.href);
+    }, 100);
 
     return () => {
-      clearInterval(historyPushInterval)
-      window.removeEventListener("popstate", handlePopState)
-      document.removeEventListener("fullscreenchange", handleFullScreenChange)
-      document.removeEventListener("keydown", handleKeyDown)
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-      document.removeEventListener("contextmenu", handleContextMenu)
-      document.removeEventListener("copy", handleCopy)
-      document.removeEventListener("cut", handleCut)
-      document.removeEventListener("paste", handlePaste)
-      document.removeEventListener("touchstart", preventTouch)
-      document.removeEventListener("touchmove", preventTouch)
-      window.removeEventListener("beforeunload", handleBeforeUnload)
-      window.removeEventListener("popstate", preventNavigation)
-      document.exitFullscreen().catch(() => {})
-      if (window.screen?.orientation?.unlock) {
-        window.screen.orientation.unlock()
+      clearInterval(historyPushInterval);
+      window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("fullscreenchange", handleFullScreenChange);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopy);
+      document.removeEventListener("cut", handleCut);
+      document.removeEventListener("paste", handlePaste);
+      document.removeEventListener("touchstart", preventTouch);
+      document.removeEventListener("touchmove", preventTouch);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", preventNavigation);
+      document.exitFullscreen().catch(() => {});
+      if (
+        typeof window !== "undefined" &&
+        window.screen &&
+        window.screen.orientation &&
+        window.screen.orientation.unlock
+      ) {
+        window.screen.orientation.unlock();
       }
-    }
-  }, [])
+    };
+  }, []);
 
+  // Fetch test data and shuffle questions if not already shuffled
   useEffect(() => {
     const fetchTestData = async () => {
       try {
-        const res = await getTestById(testId)
-        setMcqIds(res.test_mcq_id || [])
-        setCodingIds(res.test_coding_id || []) // Set coding IDs
-        setTestName(res.test_name)
-        setTestLanguage(res.test_language)
-        setTestTotalScore(res.test_total_score || mcqIds.length) // Set total score
-        setLoading(false)
-        const initialVisited = { 0: true }
-        setVisitedQuestions(initialVisited)
-      } catch (err) {
-        console.error("Failed to fetch test:", err)
-        setLoading(false)
-      }
-    }
-    fetchTestData()
-  }, [testId])
+        const res = await getTestById(testId);
+        const savedProgress = localStorage.getItem(`testProgress_${testId}`);
+        let shuffledMcqIds = res.test_mcq_id || [];
 
+        if (savedProgress) {
+          // Load shuffled order from saved progress
+          try {
+            const parsedProgress = JSON.parse(savedProgress);
+            const savedMcqIds = parsedProgress.progress.map((p) => p.mcq_id);
+            if (savedMcqIds.length === shuffledMcqIds.length && savedMcqIds.every((id) => shuffledMcqIds.includes(id))) {
+              shuffledMcqIds = savedMcqIds;
+            } else {
+              shuffledMcqIds = shuffleArray(shuffledMcqIds);
+            }
+          } catch (error) {
+            console.error("Error parsing saved progress for MCQ IDs:", error);
+            shuffledMcqIds = shuffleArray(shuffledMcqIds);
+          }
+        } else {
+          // Shuffle questions for new test session
+          shuffledMcqIds = shuffleArray(shuffledMcqIds);
+          // Initialize progress for new test
+          setProgress(
+            shuffledMcqIds.map((mcqId, index) => ({
+              mcq_id: mcqId,
+              answer: null,
+              marked: false,
+              visited: index === 0,
+            }))
+          );
+        }
+
+        setMcqIds(shuffledMcqIds);
+        setCodingIds(res.test_coding_id || []);
+        setTestName(res.test_name);
+        setTestLanguage(res.test_language);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to fetch test:", err);
+        setLoading(false);
+      }
+    };
+    fetchTestData();
+  }, [testId]);
+
+  // Warning count handler
+  useEffect(() => {
+    if (warningCount > 1) {
+      console.log("Warning count exceeded 1, submitting test...");
+      handleSubmit(true);
+    }
+  }, [warningCount]);
+
+  // Fetch current MCQ
   useEffect(() => {
     const fetchCurrentMcq = async () => {
       if (mcqIds.length && currentIndex < mcqIds.length) {
-        setFetchingMcq(true)
+        setFetchingMcq(true);
         try {
-          const res = await getMcqById(mcqIds[currentIndex])
-          setCurrentMcq(res)
+          const res = await getMcqById(mcqIds[currentIndex]);
+          setCurrentMcq(res);
           setCorrectAnswers((prev) => ({
             ...prev,
             [res.mcq_id]: res.mcq_answer,
-          }))
-          setVisitedQuestions((prev) => ({ ...prev, [currentIndex]: true }))
+          }));
+          setProgress((prev) =>
+            prev.map((p, index) =>
+              index === currentIndex ? { ...p, visited: true } : p
+            )
+          );
         } catch (err) {
-          console.error("Failed to fetch MCQ:", err)
+          console.error("Failed to fetch MCQ:", err);
         } finally {
-          setFetchingMcq(false)
+          setFetchingMcq(false);
         }
       }
-    }
-    fetchCurrentMcq()
-  }, [mcqIds, currentIndex])
+    };
+    fetchCurrentMcq();
+  }, [mcqIds, currentIndex]);
 
+  // Timer management
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timerRef.current)
-          handleSubmit()
-          return 0
+          clearInterval(timerRef.current);
+          handleSubmit(true);
+          return 0;
         }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(timerRef.current)
-  }, [])
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, []);
 
   const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600)
-    const mins = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours > 0 ? `${hours}:` : ""}${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`
-  }
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours > 0 ? `${hours}:` : ""}${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
 
   const handleOptionSelect = (option) => {
-    setAnswers((prev) => {
-      if (prev[currentMcq.mcq_id] === option) {
-        const newAnswers = { ...prev }
-        delete newAnswers[currentMcq.mcq_id]
-        return newAnswers
-      }
-      return { ...prev, [currentMcq.mcq_id]: option }
-    })
-  }
+    setProgress((prev) =>
+      prev.map((p, index) =>
+        index === currentIndex
+          ? { ...p, answer: p.answer === option ? null : option }
+          : p
+      )
+    );
+  };
 
   const handleMarkForReview = () => {
-    setMarkedForReview((prev) => ({
-      ...prev,
-      [currentMcq.mcq_id]: !prev[currentMcq.mcq_id],
-    }))
-  }
+    setProgress((prev) =>
+      prev.map((p, index) =>
+        index === currentIndex ? { ...p, marked: !p.marked } : p
+      )
+    );
+  };
 
   const handleNext = () => {
     if (currentIndex + 1 < mcqIds.length) {
-      setCurrentIndex((prev) => prev + 1)
+      setCurrentIndex((prev) => prev + 1);
     } else {
-      handleManualSubmit()
+      setCodingTransitionWarningOpen(true);
     }
-  }
+  };
 
   const handlePrevious = () => {
-    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1)
-  }
+    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
+  };
+
+  const handleProceedToCoding = () => {
+    setCodingTransitionWarningOpen(false);
+    const answers = progress.reduce((acc, p) => {
+      if (p.answer) acc[p.mcq_id] = p.answer;
+      return acc;
+    }, {});
+    navigate(`/compiler/${codingIds[0]}`, {
+      state: {
+        testId,
+        codingIds,
+        mcqAnswers: answers,
+        testName,
+        testLanguage,
+        userId,
+        pocId,
+        testMcqIds: mcqIds,
+        testTotalScore: mcqIds.length + codingIds.length * 10,
+        mcqScore: progress.reduce((score, p) => {
+          return score + (p.answer && p.answer === correctAnswers[p.mcq_id] ? 1 : 0);
+        }, 0),
+        currentCodingIndex: 0,
+        codingResults: [],
+      },
+    });
+  };
 
   const handleManualSubmit = () => {
-    const unansweredCount = mcqIds.length - Object.keys(answers).length
+    const unansweredCount = progress.filter((p) => !p.answer).length;
     if (unansweredCount > 0) {
-      setUnansweredWarningOpen(true)
+      setUnansweredWarningOpen(true);
     } else {
-      setSubmitWarningOpen(true)
+      setSubmitWarningOpen(true);
     }
-  }
+  };
 
-  const handleSubmit = async () => {
-    setSubmitting(true)
+  const handleSubmit = async (forceSubmit = false) => {
+    setSubmitting(true);
     try {
       if (!userId || !pocId) {
-        console.error("User ID or POC ID not available")
-        return
+        console.error("User ID or POC ID not available");
+        return;
       }
 
-      const allMcqResponses = await Promise.all(mcqIds.map((mcqId) => getMcqById(mcqId)))
+      const allMcqResponses = await Promise.all(mcqIds.map((mcqId) => getMcqById(mcqId)));
       const updatedCorrectAnswers = allMcqResponses.reduce((acc, mcq) => {
-        acc[mcq.mcq_id] = mcq.mcq_answer
-        return acc
-      }, {})
+        acc[mcq.mcq_id] = mcq.mcq_answer;
+        return acc;
+      }, {});
 
-      const mcqScore = Object.entries(answers).reduce((acc, [mcqId, userAnswer]) => {
-        return acc + (userAnswer === updatedCorrectAnswers[mcqId] ? 1 : 0)
-      }, 0)
+      const testTotalScore = mcqIds.length + codingIds.length * 10;
+      const answeredCount = progress.filter((p) => p.answer).length;
+      const notAnsweredCount = progress.filter((p) => p.visited && !p.answer && !p.marked).length;
+      const notVisitedCount = progress.filter((p) => !p.visited).length;
+      const markedCount = progress.filter((p) => p.marked).length;
+      let mcqScore = 0;
+      let wrongAnswersCount = 0;
 
-      if (codingIds.length > 0) {
-        // Navigate to the first coding problem
-        navigate(`/compiler/${codingIds[0]}`, {
-          state: {
-            testId,
-            testMcqIds: mcqIds,
-            testCodingIds: codingIds,
-            testTotalScore,
-            mcqScore,
-            testName,
-            testLanguage,
-            userId,
-            pocId,
-            currentCodingIndex: 0,
-            codingResults: [],
-          },
-        })
-      } else {
-        // No coding problems, submit the test
-        const resultData = {
-          result_user_id: userId,
-          result_test_id: testId,
-          result_score: mcqScore,
-          result_total_score: testTotalScore,
-          result_poc_id: pocId,
-          testName,
-          testLanguage,
+      progress.forEach((p) => {
+        const userAnswer = p.answer;
+        const correctAnswer = updatedCorrectAnswers[p.mcq_id];
+        if (userAnswer) {
+          if (userAnswer === correctAnswer) {
+            mcqScore += 1;
+          } else {
+            wrongAnswersCount += 1;
+          }
         }
-        await submitTestResult(resultData)
-        console.log("Test submitted successfully:", resultData)
-        navigate("/test-result", { state: { resultData } })
+      });
+
+      const resultData = {
+        result_user_id: userId,
+        result_test_id: testId,
+        result_score: mcqScore,
+        result_total_score: testTotalScore,
+        result_poc_id: pocId,
+        studentName,
+        testName,
+        testLanguage,
+        codingIds,
+        codingAnswered: 0,
+        codingNotAnswered: codingIds.length,
+        codingNotVisited: codingIds.length,
+        codingCorrect: 0,
+        codingWrong: 0,
+        mcqAnswered: answeredCount,
+        mcqCorrect: mcqScore,
+        mcqWrong: wrongAnswersCount,
+        mcqNotAnswered: notAnsweredCount,
+        mcqNotVisited: notVisitedCount,
+        marked: markedCount,
+        malpracticeCount: warningCount,
+      };
+
+      let submissionSuccessful = false;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (!submissionSuccessful && retryCount < maxRetries) {
+        try {
+          await submitTestResult(resultData);
+          submissionSuccessful = true;
+          console.log("Test submitted successfully:", resultData);
+        } catch (err) {
+          console.error(`Submission attempt ${retryCount + 1} failed:`, err);
+          retryCount++;
+          if (retryCount < maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
+        }
       }
+
+      if (!submissionSuccessful) {
+        console.error("Failed to submit test after retries.");
+        return;
+      }
+
+      // Save result to localStorage
+      try {
+        localStorage.setItem(`testResult_${testId}`, JSON.stringify(resultData));
+      } catch (error) {
+        console.error("Error saving result to localStorage:", error);
+      }
+
+      // Clear saved progress and result on successful submission
+      localStorage.removeItem(`testProgress_${testId}`);
+
+      // Navigate to test-result page
+      navigate("/test-result", { state: { resultData } });
     } catch (err) {
-      console.error("Error submitting test:", err)
+      console.error("Error submitting test:", err);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleStay = () => {
-    setRefreshWarningOpen(false)
-    setWarningOpen(false)
-    setSubmitWarningOpen(false)
-    setUnansweredWarningOpen(false)
+    setRefreshWarningOpen(false);
+    setWarningOpen(false);
+    setSubmitWarningOpen(false);
+    setUnansweredWarningOpen(false);
+    setCodingTransitionWarningOpen(false);
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => console.error("Failed to re-enter fullscreen:", err))
+      document.documentElement.requestFullscreen().catch((err) => console.error("Failed to re-enter fullscreen:", err));
     }
-    window.history.pushState(null, document.title, window.location.href)
-  }
+    window.history.pushState(null, document.title, window.location.href);
+  };
 
-  const handleQuestionNavigation = (index) => setCurrentIndex(index)
+  const handleQuestionNavigation = (index) => setCurrentIndex(index);
 
   const getQuestionStatus = (index) => {
-    const mcqId = mcqIds[index]
-    if (answers[mcqId]) return "answered"
-    if (markedForReview[mcqId]) return "marked"
-    if (visitedQuestions[index] && !answers[mcqId]) return "notAnswered"
-    return "notVisited"
-  }
+    const p = progress[index];
+    if (!p) return "notVisited";
+    if (p.answer) return "answered";
+    if (p.marked) return "marked";
+    if (p.visited) return "notAnswered";
+    return "notVisited";
+  };
 
   const getStatusCounts = () => {
-    let answered = 0
-    let marked = 0
-    let notAnswered = 0
-    let notVisited = 0
-    mcqIds.forEach((mcqId, index) => {
-      if (answers[mcqId]) answered++
-      else if (markedForReview[mcqId]) marked++
-      else if (visitedQuestions[index]) notAnswered++
-      else notVisited++
-    })
-    return { answered, marked, notAnswered, notVisited }
-  }
+    let answered = 0;
+    let marked = 0;
+    let notAnswered = 0;
+    let notVisited = 0;
+    progress.forEach((p) => {
+      if (p.answer) answered++;
+      else if (p.marked) marked++;
+      else if (p.visited) notAnswered++;
+      else notVisited++;
+    });
+    return { answered, marked, notAnswered, notVisited };
+  };
 
   if (loading) {
     return (
@@ -1047,11 +1257,11 @@ const McqTest = () => {
           </LoadingBox>
         </Fade>
       </LoadingContainer>
-    )
+    );
   }
 
-  const statusCounts = getStatusCounts()
-  const progress = (Object.keys(answers).length / mcqIds.length) * 100
+  const statusCounts = getStatusCounts();
+  const progressPercentage = (progress.filter((p) => p.answer).length / mcqIds.length) * 100;
 
   return (
     <FullScreenCard>
@@ -1069,9 +1279,9 @@ const McqTest = () => {
       <Box sx={{ mt: 7, p: 2 }}>
         <Box className="progress-container" sx={{ position: "relative" }}>
           <ProgressBarContainer>
-            <ProgressBarFill value={progress} />
+            <ProgressBarFill value={progressPercentage} />
           </ProgressBarContainer>
-          <ProgressHoverIndicator value={progress}>{Math.round(progress)}%</ProgressHoverIndicator>
+          <ProgressHoverIndicator value={progressPercentage}>{Math.round(progressPercentage)}%</ProgressHoverIndicator>
         </Box>
 
         <Grid container spacing={2} sx={{ height: { xs: "auto", md: "calc(100vh - 250px)" } }}>
@@ -1095,10 +1305,10 @@ const McqTest = () => {
                         variant="outlined"
                         startIcon={<FlagIcon />}
                         onClick={handleMarkForReview}
-                        marked={markedForReview[currentMcq.mcq_id]}
+                        marked={progress[currentIndex]?.marked}
                         size="small"
                       >
-                        {markedForReview[currentMcq.mcq_id] ? "Marked" : "Mark for Review"}
+                        {progress[currentIndex]?.marked ? "Marked" : "Mark for Review"}
                       </MarkReviewButton>
                     </Box>
 
@@ -1122,13 +1332,13 @@ const McqTest = () => {
 
                     <Box mt={2}>
                       <RadioGroup
-                        value={answers[currentMcq.mcq_id] || ""}
+                        value={progress[currentIndex]?.answer || ""}
                         onChange={(e) => handleOptionSelect(e.target.value)}
                       >
                         {currentMcq.mcq_options.map((option, idx) => (
                           <Fade in={true} key={idx} timeout={300} style={{ transitionDelay: `${idx * 50}ms` }}>
                             <OptionCard
-                              selected={answers[currentMcq.mcq_id] === option}
+                              selected={progress[currentIndex]?.answer === option}
                               onClick={() => handleOptionSelect(option)}
                             >
                               <FormControlLabel
@@ -1137,8 +1347,12 @@ const McqTest = () => {
                                   <Radio
                                     sx={{
                                       color: "#0c83c8",
-                                      "&.Mui-checked": { color: "#0c83c8" },
-                                      "& .MuiSvgIcon-root": { fontSize: 20 },
+                                      "&.Mui-checked": {
+                                        color: "#0c83c8",
+                                      },
+                                      "& .MuiSvgIcon-root": {
+                                        fontSize: 20,
+                                      },
                                     }}
                                   />
                                 }
@@ -1163,23 +1377,11 @@ const McqTest = () => {
                       </SecondaryButton>
                       <PrimaryButton
                         variant="contained"
-                        endIcon={
-                          currentIndex + 1 < mcqIds.length ? (
-                            <ArrowForwardIcon />
-                          ) : codingIds.length > 0 ? (
-                            <ArrowForwardIcon />
-                          ) : (
-                            <CheckCircleIcon />
-                          )
-                        }
+                        endIcon={<ArrowForwardIcon />}
                         onClick={handleNext}
                         size={isMobile ? "medium" : "large"}
                       >
-                        {currentIndex + 1 < mcqIds.length
-                          ? "Next"
-                          : codingIds.length > 0
-                          ? "Proceed to Coding"
-                          : "Submit"}
+                        Next
                       </PrimaryButton>
                     </Box>
                   </>
@@ -1245,10 +1447,10 @@ const McqTest = () => {
                           getQuestionStatus(index) === "answered"
                             ? "Answered"
                             : getQuestionStatus(index) === "marked"
-                              ? "Marked for Review"
-                              : getQuestionStatus(index) === "notAnswered"
-                                ? "Not Answered"
-                                : "Not Visited"
+                            ? "Marked for Review"
+                            : getQuestionStatus(index) === "notAnswered"
+                            ? "Not Answered"
+                            : "Not Visited"
                         }
                         arrow
                         placement="top"
@@ -1264,7 +1466,26 @@ const McqTest = () => {
                   </NavigatorContainer>
                 </Box>
 
-                <Box sx={{ width: "100%", mt: 3 }}>
+                <Box sx={{ width: "100%", mt: 3, display: "flex", flexDirection: "column", gap: 1 }}>
+                  {codingIds.length > 0 && (
+                    <PrimaryButton
+                      variant="contained"
+                      onClick={() => setCodingTransitionWarningOpen(true)}
+                      startIcon={<CheckCircleIcon />}
+                      fullWidth
+                      disabled={submitting}
+                      sx={{
+                        py: 1.5,
+                        background: "linear-gradient(135deg, #4caf50 0%, #388e3c 100%)",
+                        "&:hover": {
+                          background: "linear-gradient(135deg, #388e3c 0%, #2e7d32 100%)",
+                        },
+                        boxShadow: "0 4px 15px rgba(76, 175, 80, 0.3)",
+                      }}
+                    >
+                      Proceed to Coding
+                    </PrimaryButton>
+                  )}
                   <PrimaryButton
                     variant="contained"
                     onClick={handleManualSubmit}
@@ -1277,7 +1498,7 @@ const McqTest = () => {
                       boxShadow: "0 4px 15px rgba(12, 131, 200, 0.3)",
                     }}
                   >
-                    {codingIds.length > 0 ? "Proceed to Coding" : "Submit Test"}
+                    Submit Test
                   </PrimaryButton>
                 </Box>
               </SidebarContainer>
@@ -1301,7 +1522,7 @@ const McqTest = () => {
             >
               <CustomCircularProgress size={60} thickness={5} />
               <Typography variant="h5" sx={{ mt: 2, color: "#0c83c8", fontWeight: "bold" }}>
-                Processing Your Test
+                Submitting Your Test
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 Please wait while we process your answers...
@@ -1318,7 +1539,8 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Exiting full screen mode will automatically submit your test. All progress will be saved and the test will end.
+            Exiting full screen mode will automatically submit your test. All progress will be saved and the test will
+            end.
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Please stay in full screen to continue the test.
@@ -1328,7 +1550,7 @@ const McqTest = () => {
           <WarningButton variant="stay" onClick={handleStay}>
             Stay in Test
           </WarningButton>
-          <WarningButton variant="submit" onClick={handleSubmit}>
+          <WarningButton variant="submit" onClick={() => handleSubmit(true)}>
             Submit & Exit
           </WarningButton>
         </DialogActions>
@@ -1341,7 +1563,8 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Attempting to navigate away (including back button) will automatically submit your answers. This action cannot be undone.
+            Attempting to navigate away (including back button) will automatically submit your answers. This action
+            cannot be undone.
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Return to the test to continue or submit now to end.
@@ -1351,7 +1574,7 @@ const McqTest = () => {
           <WarningButton variant="stay" onClick={handleStay}>
             Return to Test
           </WarningButton>
-          <WarningButton variant="submit" onClick={handleSubmit}>
+          <WarningButton variant="submit" onClick={() => handleSubmit(true)}>
             Submit & Exit
           </WarningButton>
         </DialogActions>
@@ -1364,20 +1587,18 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to {codingIds.length > 0 ? "proceed to coding problems" : "submit your test"}? This action cannot be undone.
+            Are you sure you want to submit your test? This action cannot be undone.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {codingIds.length > 0
-              ? "You will be taken to the coding section of the test."
-              : "All your answers will be saved, and the test will end."}
+            All your answers will be saved, and the test will end.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "space-between", p: 2 }}>
           <WarningButton variant="stay" onClick={handleStay}>
             Continue Test
           </WarningButton>
-          <WarningButton variant="submit" onClick={handleSubmit}>
-            {codingIds.length > 0 ? "Proceed to Coding" : "Submit Test"}
+          <WarningButton variant="submit" onClick={() => handleSubmit()}>
+            Submit Test
           </WarningButton>
         </DialogActions>
       </WarningDialog>
@@ -1389,26 +1610,48 @@ const McqTest = () => {
         </WarningTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            You have {mcqIds.length - Object.keys(answers).length} unanswered questions.{" "}
-            {codingIds.length > 0
-              ? "Proceeding to coding will mark these as incorrect."
-              : "Submitting now will mark these as incorrect."}
+            You have {progress.filter((p) => !p.answer).length} unanswered questions. Submitting now will mark these
+            as incorrect.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Would you like to continue the test or {codingIds.length > 0 ? "proceed to coding" : "submit it now"}?
+            Would you like to continue the test or submit it now?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "space-between", p: 2 }}>
           <WarningButton variant="stay" onClick={handleStay}>
             Continue Test
           </WarningButton>
-          <WarningButton variant="submit" onClick={handleSubmit}>
-            {codingIds.length > 0 ? "Proceed to Coding" : "Submit Test"}
+          <WarningButton variant="submit" onClick={() => handleSubmit()}>
+            Submit Test
+          </WarningButton>
+        </DialogActions>
+      </WarningDialog>
+
+      <WarningDialog open={codingTransitionWarningOpen} onClose={handleStay}>
+        <WarningTitle>
+          <WarningIcon sx={{ fontSize: 32 }} />
+          Proceed to Coding Section
+        </WarningTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            You have completed the MCQ section. Do you want to proceed to the coding section? You cannot return to the
+            MCQ section after proceeding.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Ensure you have reviewed your answers before continuing.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "space-between", p: 2 }}>
+          <WarningButton variant="stay" onClick={handleStay}>
+            Stay in MCQ Section
+          </WarningButton>
+          <WarningButton variant="submit" onClick={handleProceedToCoding}>
+            Proceed to Coding
           </WarningButton>
         </DialogActions>
       </WarningDialog>
     </FullScreenCard>
-  )
-}
+  );
+};
 
-export default McqTest
+export default McqTest;

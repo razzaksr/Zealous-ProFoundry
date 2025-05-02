@@ -283,6 +283,33 @@ router.post("/post_data_analytics", async (req, res) => {
     });
   }
 });
+
+// GET MCQ IDs by tag
+// GET MCQ IDs by multiple tags
+router.get("/get_mcqs_by_tags/:tags", async (req, res) => {
+  try {
+    const { tags } = req.params;
+
+    if (!tags) {
+      return res.status(400).json({ error: "Tags parameter is required" });
+    }
+
+    const tagsArray = tags.split(",").map(tag => tag.trim());
+
+    const matchingMCQs = await MCQ.find(
+      { mcq_tag: { $in: tagsArray } }, 
+      "mcq_id"
+    );
+
+    res.status(200).json({
+      count: matchingMCQs.length,
+      mcq_ids: matchingMCQs.map(mcq => mcq.mcq_id),
+    });
+  } catch (error) {
+    console.error("Error fetching MCQs by tags:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
   
   
   
