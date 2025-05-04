@@ -726,12 +726,14 @@ const McqTest = () => {
       }
     }
 
-    const savedProgress = localStorage.getItem(`testProgress_${testId}`);
+    const savedProgress = localStorage.getItem(`testProgress`);
     if (savedProgress) {
       try {
         const parsedProgress = JSON.parse(savedProgress);
         setProgress(parsedProgress.progress || []);
         setCurrentIndex(parsedProgress.currentIndex || 0);
+        setMcqIds(parsedProgress.mcqIds || []);
+        setCodingIds(parsedProgress.codingIds || []);
       } catch (error) {
         console.error("Error parsing saved progress:", error);
       }
@@ -748,9 +750,11 @@ const McqTest = () => {
         visited: progress.find((p) => p.mcq_id === mcqId)?.visited || false,
       })),
       currentIndex,
+      mcqIds,
+      codingIds,
     };
     try {
-      localStorage.setItem(`testProgress_${testId}`, JSON.stringify(progressData));
+      localStorage.setItem(`testProgress`, JSON.stringify(progressData));
     } catch (error) {
       console.error("Error saving progress to localStorage:", error);
     }
@@ -798,10 +802,14 @@ const McqTest = () => {
       mcqNotVisited: notVisitedCount,
       marked: markedCount,
       malpracticeCount: warningCount,
+      nextNavigation: codingIds.length > 0 ? `/compiler/${codingIds[0]}` : null,
     };
 
     try {
-      localStorage.setItem(`testResult_${testId}`, JSON.stringify(resultData));
+      const existingResult = localStorage.getItem(`testResult`);
+      if (!existingResult || !JSON.parse(existingResult).nextNavigation) {
+        localStorage.setItem(`testResult`, JSON.stringify(resultData));
+      }
     } catch (error) {
       console.error("Error saving result to localStorage:", error);
     }
@@ -809,11 +817,11 @@ const McqTest = () => {
 
   // Save progress and result whenever relevant state changes
   useEffect(() => {
-    if (mcqIds.length > 0 && userId && pocId) {
+    if (mcqIds.length > 0 && codingIds.length >= 0 && userId && pocId) {
       saveProgressToLocalStorage();
       saveResultToLocalStorage();
     }
-  }, [progress, currentIndex, mcqIds, correctAnswers, warningCount, userId, pocId, testId]);
+  }, [progress, currentIndex, mcqIds, codingIds, correctAnswers, warningCount, userId, pocId, testId]);
 
   // Fullscreen and navigation prevention
   useEffect(() => {
@@ -941,26 +949,55 @@ const McqTest = () => {
     const fetchTestData = async () => {
       try {
         const res = await getTestById(testId);
-        const savedProgress = localStorage.getItem(`testProgress_${testId}`);
+        const savedProgress = localStorage.getItem(`testProgress`);
         let shuffledMcqIds = res.test_mcq_id || [];
+        let shuffledCodingIds = res.test_coding_id || [];
 
         if (savedProgress) {
           // Load shuffled order from saved progress
           try {
             const parsedProgress = JSON.parse(savedProgress);
-            const savedMcqIds = parsedProgress.progress.map((p) => p.mcq_id);
-            if (savedMcqIds.length === shuffledMcqIds.length && savedMcqIds.every((id) => shuffledMcqIds.includes(id))) {
+            const savedMcqIds = parsedProgress.mcqIds || [];
+            const savedCodingIds = parsedProgress.codingIds || [];
+            // Validate MCQ IDs
+            if (
+              savedMcqIds.length === shuffledMcqIds.length &&
+              savedMcqIds.every((id) => shuffledMcqIds.includes(id))
+            ) {
               shuffledMcqIds = savedMcqIds;
             } else {
               shuffledMcqIds = shuffleArray(shuffledMcqIds);
             }
+            // Validate Coding IDs
+            if (
+              savedCodingIds.length === shuffledCodingIds.length &&
+              savedCodingIds.every((id) => shuffledCodingIds.includes(id))
+            ) {
+              shuffledCodingIds = savedCodingIds;
+            } else {
+              shuffledCodingIds = shuffleArray(shuffledCodingIds);
+            }
+            // Load progress if available
+            setProgress(parsedProgress.progress || []);
+            setCurrentIndex(parsedProgress.currentIndex || 0);
           } catch (error) {
-            console.error("Error parsing saved progress for MCQ IDs:", error);
+            console.error("Error parsing saved progress:", error);
             shuffledMcqIds = shuffleArray(shuffledMcqIds);
+            shuffledCodingIds = shuffleArray(shuffledCodingIds);
+            // Initialize progress for new test
+            setProgress(
+              shuffledMcqIds.map((mcqId, index) => ({
+                mcq_id: mcqId,
+                answer: null,
+                marked: false,
+                visited: index === 0,
+              }))
+            );
           }
         } else {
-          // Shuffle questions for new test session
+          // Shuffle questions and coding IDs for new test session
           shuffledMcqIds = shuffleArray(shuffledMcqIds);
+          shuffledCodingIds = shuffleArray(shuffledCodingIds);
           // Initialize progress for new test
           setProgress(
             shuffledMcqIds.map((mcqId, index) => ({
@@ -973,7 +1010,7 @@ const McqTest = () => {
         }
 
         setMcqIds(shuffledMcqIds);
-        setCodingIds(res.test_coding_id || []);
+        setCodingIds(shuffledCodingIds);
         setTestName(res.test_name);
         setTestLanguage(res.test_language);
         setLoading(false);
@@ -1078,6 +1115,7 @@ const McqTest = () => {
       if (p.answer) acc[p.mcq_id] = p.answer;
       return acc;
     }, {});
+    saveResultToLocalStorage();
     navigate(`/compiler/${codingIds[0]}`, {
       state: {
         testId,
@@ -1163,6 +1201,7 @@ const McqTest = () => {
         mcqNotVisited: notVisitedCount,
         marked: markedCount,
         malpracticeCount: warningCount,
+        nextNavigation: codingIds.length > 0 ? `/compiler/${codingIds[0]}` : null,
       };
 
       let submissionSuccessful = false;
@@ -1190,13 +1229,13 @@ const McqTest = () => {
 
       // Save result to localStorage
       try {
-        localStorage.setItem(`testResult_${testId}`, JSON.stringify(resultData));
+        const existingResult = localStorage.getItem(`testResult`);
+        if (!existingResult || !JSON.parse(existingResult).nextNavigation) {
+          localStorage.setItem(`testResult`, JSON.stringify(resultData));
+        }
       } catch (error) {
         console.error("Error saving result to localStorage:", error);
       }
-
-      // Clear saved progress and result on successful submission
-      localStorage.removeItem(`testProgress_${testId}`);
 
       // Navigate to test-result page
       navigate("/test-result", { state: { resultData } });

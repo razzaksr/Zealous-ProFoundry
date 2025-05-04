@@ -132,11 +132,11 @@ const TestResult = () => {
         if (stateResult) {
           parsedResult = stateResult;
           // Save to localStorage to ensure persistence
-          localStorage.setItem("test_result", JSON.stringify(parsedResult));
+          localStorage.setItem("testResult", JSON.stringify(parsedResult));
           console.log("Loaded test result from location.state:", parsedResult);
         } else {
           // Fallback to localStorage
-          const storedResult = localStorage.getItem("test_result");
+          const storedResult = localStorage.getItem("testResult");
           if (!storedResult) {
             throw new Error("No test result found");
           }
@@ -177,7 +177,7 @@ const TestResult = () => {
   const handleBackToDashboard = () => {
     console.log("Navigating back to dashboard");
     // Clear test result from localStorage to prevent stale data
-    localStorage.removeItem("test_result");
+    localStorage.removeItem("testResult");
     navigate("/landing", { replace: true });
   };
 

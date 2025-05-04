@@ -19,10 +19,10 @@ import {
   MenuItem,
   Select,
   Snackbar,
-  Stack,
-  Tooltip,
-  Typography,
   Alert,
+  Typography,
+  Tooltip,
+  Stack,
   createTheme,
   ThemeProvider,
   useMediaQuery,
@@ -294,8 +294,8 @@ const OnlineCompiler = () => {
     testCodingIds = [],
     testTotalScore = 0,
     mcqScore = 0,
-    testName = "Zealous Compiler",
-    testLanguage = "Unknown",
+    testName = "",
+    testLanguage = "",
     userId = "",
     pocId = "",
     currentCodingIndex = 0,
@@ -305,6 +305,14 @@ const OnlineCompiler = () => {
     codingNotVisited = testCodingIds.length,
     codingCorrect = 0,
     codingWrong = 0,
+    studentName = "",
+    mcqAnswered = 0,
+    mcqCorrect = 0,
+    mcqWrong = 0,
+    mcqNotAnswered = 0,
+    mcqNotVisited = testMcqIds.length,
+    marked = 0,
+    warningCount = 0,
   } = state || {};
 
   // Component state
@@ -326,7 +334,7 @@ const OnlineCompiler = () => {
   const [outputHeight, setOutputHeight] = useState(30);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [fetchedTestCodingIds, setFetchedTestCodingIds] = useState([]);
-  const [malpracticeCount, setMalpracticeCount] = useState(0);
+  const [malpracticeCount, setMalpracticeCount] = useState(warningCount);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const isDraggingRef = useRef(false);
@@ -447,14 +455,14 @@ const OnlineCompiler = () => {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("copy", handleCopy);
-    document.addEventListener("paste", handlePaste);
+    // document.addEventListener("copy", handleCopy);
+    // document.addEventListener("paste", handlePaste);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("copy", handleCopy);
-      document.removeEventListener("paste", handlePaste);
+      // document.removeEventListener("copy", handleCopy);
+      // document.removeEventListener("paste", handlePaste);
     };
   }, [hasSubmitted]);
 
@@ -902,32 +910,51 @@ const OnlineCompiler = () => {
       const updatedCodingCorrect = codingCorrect + (codingScore > 0 ? 1 : 0);
       const updatedCodingWrong = codingWrong + (codingScore === 0 ? 1 : 0);
       const updatedCodingNotAnswered = codingNotAnswered + (input === templates[language] ? 1 : 0);
+      const updatedCodingNotVisited = Math.max(0, codingNotVisited - 1); // Ensure non-negative
+      const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
 
       const resultData = {
-        result_user_id: userId,
+        result_user_id: userId || "",
         result_test_id: testId,
         result_score: finalScore,
-        result_total_score: testTotalScore,
-        result_poc_id: pocId,
+        result_total_score: testMcqIds.length + effectiveCodingIds.length * 10,
+        result_poc_id: pocId || "",
+        studentName,
         testName,
         testLanguage,
-        malpracticeCount: isMalpractice ? malpracticeCount : 0,
+        codingIds: effectiveCodingIds,
         codingAnswered: updatedCodingAnswered,
         codingNotAnswered: updatedCodingNotAnswered,
-        codingNotVisited: codingNotVisited - 1,
+        codingNotVisited: updatedCodingNotVisited,
         codingCorrect: updatedCodingCorrect,
         codingWrong: updatedCodingWrong,
+        mcqAnswered,
+        mcqCorrect,
+        mcqWrong,
+        mcqNotAnswered,
+        mcqNotVisited,
+        marked,
+        malpracticeCount: isMalpractice ? malpracticeCount : warningCount,
       };
+
+      console.log("Saving test result to localStorage:", resultData);
+      try {
+        localStorage.setItem("testResult", JSON.stringify(resultData));
+      } catch (error) {
+        console.error("Error saving result to localStorage:", error);
+        setSnackbarMessage("Error saving test result to localStorage.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
 
       console.log("Submitting final test result:", resultData);
       await submitTestResult(resultData);
 
-      const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testCodingIds;
       effectiveCodingIds.forEach(id => localStorage.removeItem(`${id}`));
       localStorage.removeItem("test_id");
 
       setHasSubmitted(true);
-      navigate("/test-result");
+      navigate("/test-result", { state: { resultData } });
       setSnackbarMessage("Test submitted successfully!");
       setSnackbarSeverity("success");
     } catch (error) {
@@ -983,6 +1010,7 @@ const OnlineCompiler = () => {
         const updatedCodingCorrect = codingCorrect + (codingScore > 0 ? 1 : 0);
         const updatedCodingWrong = codingWrong + (codingScore === 0 ? 1 : 0);
         const updatedCodingNotAnswered = codingNotAnswered + (input === templates[language] ? 1 : 0);
+        const updatedCodingNotVisited = Math.max(0, codingNotVisited - 1); // Ensure non-negative
 
         const nextCodeId = effectiveCodingIds[currentCodingIndex + 1];
         navigate(`/compiler/${nextCodeId}`, {
@@ -1000,9 +1028,17 @@ const OnlineCompiler = () => {
             codingResults: updatedCodingResults,
             codingAnswered: updatedCodingAnswered,
             codingNotAnswered: updatedCodingNotAnswered,
-            codingNotVisited: codingNotVisited - 1,
+            codingNotVisited: updatedCodingNotVisited,
             codingCorrect: updatedCodingCorrect,
             codingWrong: updatedCodingWrong,
+            studentName,
+            mcqAnswered,
+            mcqCorrect,
+            mcqWrong,
+            mcqNotAnswered,
+            mcqNotVisited,
+            marked,
+            warningCount: malpracticeCount,
           },
         });
         setSnackbarMessage("Moving to the next problem.");
@@ -1059,6 +1095,14 @@ const OnlineCompiler = () => {
           codingNotVisited,
           codingCorrect,
           codingWrong,
+          studentName,
+          mcqAnswered,
+          mcqCorrect,
+          mcqWrong,
+          mcqNotAnswered,
+          mcqNotVisited,
+          marked,
+          warningCount: malpracticeCount,
         },
       });
     }
@@ -1085,39 +1129,6 @@ const OnlineCompiler = () => {
     localStorage.setItem(`${codeId}`, JSON.stringify(submissionPayload));
     
     navigate(-1); // Navigate to the previous page
-  };
-
-  // Run code with RapidAPI
-  const runCodeWithInput = async (code, inputData) => {
-    const data = new URLSearchParams();
-    data.append("LanguageChoice", languageApiMap[language]);
-    data.append("Program", code);
-    data.append("Input", inputData || "");
-
-    try {
-      const response = await fetch("https://code-compiler.p.rapidapi.com/v2", {
-        method: "POST",
-        headers: {
-          "x-rapidapi-key": process.env.REACT_APP_RAPIDAPI_KEY || "1bd042778fmshd4b16d97e812af0p1395bejsn19af4753d4d1",
-          "x-rapidapi-host": "code-compiler.p.rapidapi.com",
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: data,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const jsonResponse = await response.json();
-      if (jsonResponse.Errors) {
-        throw new Error(jsonResponse.Errors);
-      }
-
-      return jsonResponse.Result || "No output received from the compiler.";
-    } catch (error) {
-      throw new Error(`RapidAPI error: ${error.message}`);
-    }
   };
 
   // Determine effective coding IDs
