@@ -1,456 +1,319 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Card,
-  Typography,
-  Button,
   Box,
+  Typography,
   Grid,
-  CircularProgress,
   Paper,
-  Fade,
-  Zoom,
-  Snackbar,
-  Alert,
+  Button,
+  CircularProgress,
+  AppBar,
+  Toolbar,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  useMediaQuery,
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
 } from "@mui/material";
-import { styled, keyframes } from "@mui/material/styles";
-import {
-  CheckCircle as CheckCircleIcon,
-  Home as HomeIcon,
-  Warning as WarningIcon,
-} from "@mui/icons-material";
+import { Home as HomeIcon } from "@mui/icons-material";
+import { alpha, styled } from "@mui/material/styles";
 
-// Pulse animation for CircularProgress
-const pulse = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-`;
-
-// Fade-in animation for text
-const fadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-// Styled Components
-const FullScreenCard = styled(Card)(({ theme }) => ({
-  width: "100%",
-  minHeight: "100vh",
-  margin: 0,
-  borderRadius: 0,
-  padding: theme.spacing(4),
-  backgroundColor: "#f8f9fa",
-  overflowY: "auto",
-  [theme.breakpoints.down("sm")]: {
-    padding: theme.spacing(2),
+// Create a custom theme (matching McqPage.jsx)
+const theme = createTheme({
+  typography: {
+    fontFamily: ["Inter", "Roboto", '"Segoe UI"', "Arial", "sans-serif"].join(","),
+    h6: { fontWeight: 600 },
+    body1: { lineHeight: 1.6 },
+    button: { fontWeight: 600, textTransform: "none" },
   },
-}));
+  palette: {
+    primary: { main: "#0c83c8" },
+    secondary: { main: "#fc7a46" },
+    success: { main: "#2e7d32" },
+    warning: { main: "#f57c00" },
+    background: { default: "#f5f7fa" },
+  },
+  shape: { borderRadius: 10 },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: { borderRadius: 8, padding: "8px 16px" },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: { borderRadius: 12 },
+      },
+    },
+  },
+});
 
-const ResultContainer = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: 20,
-  boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
+// Styled components
+const ResultPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  height: "100%",
+  minHeight: "70vh",
+  display: "flex",
+  flexDirection: "column",
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
   backgroundColor: "#fff",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
-  },
-  [theme.breakpoints.down("sm")]: {
-    padding: theme.spacing(2),
-  },
 }));
 
-const ScoreCircle = styled(CircularProgress)(({ theme, value }) => ({
-  color: value >= 80 ? "#4caf50" : value >= 50 ? "#fc7a46" : "#f44336",
-  "& .MuiCircularProgress-circle": {
-    strokeLinecap: "round",
-  },
-  animation: `${pulse} 1.5s infinite ease-in-out`,
-  position: "relative",
-}));
-
-const ScoreText = styled(Typography)(({ theme }) => ({
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: "translate(-50%, -50%)",
-  fontWeight: "bold",
-  color: "#0c83c8",
-}));
-
-const PrimaryButton = styled(Button)(({ theme }) => ({
-  borderRadius: 15,
-  background: "linear-gradient(135deg, #0c83c8 0%, #0a6eaa 100%)",
-  color: "white",
-  padding: theme.spacing(1.5, 4),
-  fontWeight: "bold",
-  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  "&:hover": {
-    background: "linear-gradient(135deg, #0a6eaa 0%, #085d96 100%)",
-    transform: "translateY(-3px)",
-    boxShadow: "0 6px 15px rgba(12, 131, 200, 0.3)",
-  },
-  [theme.breakpoints.down("sm")]: {
-    padding: theme.spacing(1, 3),
-  },
-}));
-
-const StatCard = styled(Paper)(({ theme }) => ({
+const StatBox = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
-  borderRadius: 15,
+  borderRadius: 8,
+  backgroundColor: alpha(theme.palette.primary.main, 0.1),
   textAlign: "center",
-  background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
-  boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: theme.spacing(1),
+}));
+
+const AnimatedButton = styled(Button)(({ theme }) => ({
   transition: "all 0.3s ease",
   "&:hover": {
-    transform: "translateY(-3px)",
-    boxShadow: "0 6px 20px rgba(0,0,0,0.1)",
-  },
-  [theme.breakpoints.down("sm")]: {
-    padding: theme.spacing(1.5),
+    transform: "translateY(-2px)",
+    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
   },
 }));
 
-const TestResult = () => {
+const TestResultPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [resultData, setResultData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("error");
+  const [dialog, setDialog] = useState({ open: false, message: "", onConfirm: null });
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  // Fetch result data from location.state or localStorage
+  // Fetch test result from localStorage
   useEffect(() => {
-    const fetchResultData = () => {
+    const fetchResult = () => {
       try {
-        // First, try to get result from location.state (passed from McqTest.jsx)
-        const stateResult = location.state?.resultData;
-        let parsedResult = null;
-
-        if (stateResult) {
-          parsedResult = stateResult;
-          // Save to localStorage to ensure persistence
-          localStorage.setItem("testResult", JSON.stringify(parsedResult));
-          console.log("Loaded test result from location.state:", parsedResult);
-        } else {
-          // Fallback to localStorage
-          const storedResult = localStorage.getItem("testResult");
-          if (!storedResult) {
-            throw new Error("No test result found");
-          }
-          parsedResult = JSON.parse(storedResult);
-          console.log("Loaded test result from localStorage:", parsedResult);
+        setLoading(true);
+        const savedResult = localStorage.getItem("test_result");
+        if (!savedResult) {
+          setDialog({
+            open: true,
+            message: "No test result found. Please take a test first.",
+            onConfirm: () => navigate("/dashboard"),
+          });
+          return;
         }
-
-        // Validate essential fields
-        if (
-          !parsedResult ||
-          !parsedResult.testName ||
-          !parsedResult.result_test_id ||
-          typeof parsedResult.result_score !== "number" ||
-          typeof parsedResult.result_total_score !== "number"
-        ) {
-          throw new Error("Invalid or incomplete test result data");
+        const parsedResult = JSON.parse(savedResult);
+        if (!parsedResult.testName || !parsedResult.studentName) {
+          setDialog({
+            open: true,
+            message: "Invalid test result data.",
+            onConfirm: () => navigate("/dashboard"),
+          });
+          return;
         }
-
         setResultData(parsedResult);
       } catch (error) {
-        console.error("Error loading test result:", error);
-        setSnackbarMessage(error.message || "Failed to load test results");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
-        // Redirect to dashboard after showing error
-        setTimeout(() => {
-          navigate("/landing", { replace: true });
-        }, 3000);
+        console.error("Error fetching test result:", error);
+        setDialog({
+          open: true,
+          message: "Failed to load test result.",
+          onConfirm: () => navigate("/dashboard"),
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchResultData();
-  }, [navigate, location.state]);
+    fetchResult();
+  }, [navigate]);
 
-  // Handle navigation back to dashboard
+  // Handle navigation to dashboard
   const handleBackToDashboard = () => {
-    console.log("Navigating back to dashboard");
-    // Clear test result from localStorage to prevent stale data
-    localStorage.removeItem("testResult");
-    navigate("/landing", { replace: true });
+    // Optionally clear localStorage to prevent stale data
+    localStorage.removeItem("test_result");
+    localStorage.removeItem("test_progress");
+    localStorage.removeItem("test_timer");
+    navigate("/dashboard");
   };
 
+  // Render loading state
   if (loading) {
     return (
-      <FullScreenCard>
-        <Box sx={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <Fade in={true} timeout={800}>
-            <Box sx={{ textAlign: "center" }}>
-              <CircularProgress size={60} thickness={5} sx={{ color: "#0c83c8" }} />
-              <Typography variant="h5" sx={{ mt: 2, color: "#0c83c8", fontWeight: "bold" }}>
-                Loading Results...
-              </Typography>
-            </Box>
-          </Fade>
-        </Box>
-      </FullScreenCard>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <CircularProgress />
+      </Box>
     );
   }
 
-  if (!resultData) {
-    return null; // Snackbar will handle error and redirect
-  }
-
-  const scorePercentage = resultData.result_total_score
-    ? ((resultData.result_score / resultData.result_total_score) * 100).toFixed(2)
-    : 0;
-
-  // Determine if test was auto-submitted due to malpractice
-  const wasAutoSubmitted = resultData.malpracticeCount > 0;
-
+  // Render result page
   return (
-    <FullScreenCard>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Dialog
+        open={dialog.open}
+        onClose={() => setDialog({ open: false })}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
       >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant="filled"
-          sx={{
-            width: "100%",
-            borderRadius: 2,
-            fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-          }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+        <DialogTitle id="alert-dialog-title">Error</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {dialog.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={dialog.onConfirm} color="primary" autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-      <Box sx={{ maxWidth: 1200, mx: "auto", py: 4 }}>
-        <Zoom in={true} timeout={500}>
-          <ResultContainer elevation={3}>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: "bold",
-                color: "#0c83c8",
-                mb: 2,
-                textAlign: "center",
-                background: "linear-gradient(90deg, #0c83c8 0%, #0a6eaa 100%)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              {resultData.testName} - Test Results
-            </Typography>
+      <AppBar position="fixed" color="primary" elevation={2}>
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Test Results
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-            {wasAutoSubmitted && (
-              <Box sx={{ textAlign: "center", mb: 3 }}>
-                <Typography
-                  variant="h6"
-                  sx={{ color: "#f44336", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center" }}
-                >
-                  <WarningIcon sx={{ mr: 1 }} />
-                  Test Auto-Submitted Due to Malpractice
+      <Box sx={{ mt: 8, p: { xs: 2, md: 4 }, bgcolor: theme.palette.background.default }}>
+        <ResultPaper elevation={3}>
+          <Typography variant="h5" gutterBottom>
+            {resultData?.testName} - Result
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+            Student: {resultData?.studentName}
+          </Typography>
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="h6" gutterBottom>
+            Score
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            {resultData?.result_score} / {resultData?.result_total_score} (
+            {((resultData?.result_score / resultData?.result_total_score) * 100).toFixed(2)}%)
+          </Typography>
+
+          <Typography variant="h6" gutterBottom>
+            MCQ Statistics
+          </Typography>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={6} sm={4}>
+              <StatBox>
+                <Typography variant="body2" color="success.main">
+                  Correct
                 </Typography>
-              </Box>
-            )}
-
-            <Typography
-              variant="subtitle1"
-              sx={{ textAlign: "center", color: "#0c83c8", mb: 4 }}
-            >
-              Completed by {resultData.studentName || "Unknown"}
-            </Typography>
-
-            <Box sx={{ display: "flex", justifyContent: "center", mb: 4, position: "relative" }}>
-              <ScoreCircle variant="determinate" value={scorePercentage} size={150} thickness={5} />
-              <ScoreText variant="h5">{scorePercentage}%</ScoreText>
-            </Box>
-
-            <Typography
-              variant="h6"
-              sx={{ textAlign: "center", color: "#0c83c8", mb: 3, fontWeight: "bold" }}
-            >
-              Score: {resultData.result_score} / {resultData.result_total_score}
-            </Typography>
-
-            <Grid container spacing={3}>
-              {/* User and Test Info */}
-              <Grid item xs={12} sm={6}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    User ID
-                  </Typography>
-                  <Typography variant="body1">{resultData.result_user_id || "N/A"}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Test ID
-                  </Typography>
-                  <Typography variant="body1">{resultData.result_test_id || "N/A"}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Test Language
-                  </Typography>
-                  <Typography variant="body1">{resultData.testLanguage || "N/A"}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    POC ID
-                  </Typography>
-                  <Typography variant="body1">{resultData.result_poc_id || "N/A"}</Typography>
-                </StatCard>
-              </Grid>
-
-              {/* MCQ Statistics */}
-              <Grid item xs={12}>
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: "bold", color: "#0c83c8", mt: 3, mb: 2 }}
-                >
-                  MCQ Performance
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Answered
-                  </Typography>
-                  <Typography variant="body1">{resultData.mcqAnswered || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Not Answered
-                  </Typography>
-                  <Typography variant="body1">{resultData.mcqNotAnswered || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Not Visited
-                  </Typography>
-                  <Typography variant="body1">{resultData.mcqNotVisited || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Correct
-                  </Typography>
-                  <Typography variant="body1">{resultData.mcqCorrect || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Wrong
-                  </Typography>
-                  <Typography variant="body1">{resultData.mcqWrong || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Marked for Review
-                  </Typography>
-                  <Typography variant="body1">{resultData.marked || 0}</Typography>
-                </StatCard>
-              </Grid>
-
-              {/* Coding Statistics */}
-              <Grid item xs={12}>
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: "bold", color: "#0c83c8", mt: 3, mb: 2 }}
-                >
-                  Coding Performance
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Answered
-                  </Typography>
-                  <Typography variant="body1">{resultData.codingAnswered || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Not Answered
-                  </Typography>
-                  <Typography variant="body1">{resultData.codingNotAnswered || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Not Visited
-                  </Typography>
-                  <Typography variant="body1">{resultData.codingNotVisited || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Correct
-                  </Typography>
-                  <Typography variant="body1">{resultData.codingCorrect || 0}</Typography>
-                </StatCard>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <StatCard>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8" }}>
-                    Wrong
-                  </Typography>
-                  <Typography variant="body1">{resultData.codingWrong || 0}</Typography>
-                </StatCard>
-              </Grid>
-
-              {/* Malpractice */}
-              <Grid item xs={12}>
-                <StatCard sx={{ mt: 3, background: resultData.malpracticeCount > 0 ? "rgba(244, 67, 54, 0.1)" : "inherit" }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#0c83c8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <WarningIcon sx={{ mr: 1, color: resultData.malpracticeCount > 0 ? "#f44336" : "#0c83c8" }} />
-                    Malpractice Count
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: resultData.malpracticeCount > 0 ? "#f44336" : "inherit" }}>
-                    {resultData.malpracticeCount || 0}
-                  </Typography>
-                </StatCard>
-              </Grid>
+                <Typography variant="h6">{resultData?.mcqCorrect}</Typography>
+              </StatBox>
             </Grid>
+            <Grid item xs={6} sm={4}>
+              <StatBox>
+                <Typography variant="body2" color="error.main">
+                  Wrong
+                </Typography>
+                <Typography variant="h6">{resultData?.mcqWrong}</Typography>
+              </StatBox>
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <StatBox>
+                <Typography variant="body2" color="primary.main">
+                  Answered
+                </Typography>
+                <Typography variant="h6">{resultData?.mcqAnswered}</Typography>
+              </StatBox>
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <StatBox>
+                <Typography variant="body2" color="warning.main">
+                  Marked
+                </Typography>
+                <Typography variant="h6">{resultData?.marked}</Typography>
+              </StatBox>
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <StatBox>
+                <Typography variant="body2" color="textSecondary">
+                  Not Answered
+                </Typography>
+                <Typography variant="h6">{resultData?.mcqNotAnswered}</Typography>
+              </StatBox>
+            </Grid>
+            <Grid item xs={6} sm={4}>
+              <StatBox>
+                <Typography variant="body2" color="textSecondary">
+                  Not Visited
+                </Typography>
+                <Typography variant="h6">{resultData?.mcqNotVisited}</Typography>
+              </StatBox>
+            </Grid>
+          </Grid>
 
-            <Box sx={{ mt: 4, textAlign: "center" }}>
-              <PrimaryButton
-                variant="contained"
-                startIcon={<HomeIcon />}
-                onClick={handleBackToDashboard}
-              >
-                Back to Dashboard
-              </PrimaryButton>
-            </Box>
-          </ResultContainer>
-        </Zoom>
+          {resultData?.codingIds?.length > 0 && (
+            <>
+              <Typography variant="h6" gutterBottom>
+                Coding Statistics
+              </Typography>
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={6} sm={4}>
+                  <StatBox>
+                    <Typography variant="body2" color="success.main">
+                      Correct
+                    </Typography>
+                    <Typography variant="h6">{resultData?.codingCorrect}</Typography>
+                  </StatBox>
+                </Grid>
+                <Grid item xs={6} sm={4}>
+                  <StatBox>
+                    <Typography variant="body2" color="error.main">
+                      Wrong
+                    </Typography>
+                    <Typography variant="h6">{resultData?.codingWrong}</Typography>
+                  </StatBox>
+                </Grid>
+                <Grid item xs={6} sm={4}>
+                  <StatBox>
+                    <Typography variant="body2" color="primary.main">
+                      Answered
+                    </Typography>
+                    <Typography variant="h6">{resultData?.codingAnswered}</Typography>
+                  </StatBox>
+                </Grid>
+                <Grid item xs={6} sm={4}>
+                  <StatBox>
+                    <Typography variant="body2" color="textSecondary">
+                      Not Answered
+                    </Typography>
+                    <Typography variant="h6">{resultData?.codingNotAnswered}</Typography>
+                  </StatBox>
+                </Grid>
+                <Grid item xs={6} sm={4}>
+                  <StatBox>
+                    <Typography variant="body2" color="textSecondary">
+                      Not Visited
+                    </Typography>
+                    <Typography variant="h6">{resultData?.codingNotVisited}</Typography>
+                  </StatBox>
+                </Grid>
+              </Grid>
+            </>
+          )}
+
+          <Box sx={{ mt: "auto", display: "flex", justifyContent: "flex-end" }}>
+            <AnimatedButton
+              variant="contained"
+              color="primary"
+              startIcon={<HomeIcon />}
+              onClick={handleBackToDashboard}
+            >
+              Back to Dashboard
+            </AnimatedButton>
+          </Box>
+        </ResultPaper>
       </Box>
-    </FullScreenCard>
+    </ThemeProvider>
   );
 };
 
-export default TestResult;
+export default TestResultPage;

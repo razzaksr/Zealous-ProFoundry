@@ -37,6 +37,17 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Clear localStorage except for 'true' and 'isLoggedIn'
+    const preserveKeys = ["true", "isLoggedIn"];
+    Object.keys(localStorage).forEach((key) => {
+      if (!preserveKeys.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    // Clear browser history and set current page as only entry
+    window.history.replaceState(null, null, window.location.href);
+
     const storedUser = localStorage.getItem("true");
 
     if (storedUser) {
@@ -77,7 +88,6 @@ export default function StudentDashboard() {
     try {
       setIsLoading(true);
 
-      // Fetch module and POC data using fetchModuleAndPoc
       const modulePocData = await fetchModuleAndPoc(userId);
       console.log("Module and POC data:", modulePocData);
 
@@ -85,7 +95,6 @@ export default function StudentDashboard() {
       setPocId(modulePocData.mod_poc_id || null);
       setCoordinatorName(modulePocData.mod_poc_name || "Not assigned");
 
-      // Fetch additional data if mod_id is available
       if (modulePocData.mod_id) {
         const [expertData, moduleData, orgData] = await Promise.all([
           fetchExpertName(modulePocData.mod_id),
@@ -98,7 +107,6 @@ export default function StudentDashboard() {
         setOrgName(orgData.org_name || "Unknown organization");
       }
 
-      // Fetch course progress if userId and pocId are available
       if (userId && modulePocData.mod_poc_id) {
         await fetchCourseProgress(userId, modulePocData.mod_poc_id);
       }

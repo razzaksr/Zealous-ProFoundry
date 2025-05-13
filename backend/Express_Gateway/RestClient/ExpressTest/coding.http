@@ -13,7 +13,7 @@ GET http://localhost:4000/coding_gateway/coding/get_allCodes
 
 
 ### Get code details by id
-GET http://localhost:4000/coding_gateway/coding/get_code_by_id/ea1d62fa-cb64-483e-8d39-01e71628ae99
+GET   ea1d62fa-cb64-483e-8d39-01e71628ae99
 
 
 ### Update the Code

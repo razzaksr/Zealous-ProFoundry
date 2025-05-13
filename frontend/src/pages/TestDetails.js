@@ -16,6 +16,9 @@ import {
   ThemeProvider,
   createTheme,
   CssBaseline,
+  Snackbar,
+  Alert,
+  Tooltip,
 } from "@mui/material";
 import { alpha, styled } from "@mui/material/styles";
 import {
@@ -26,6 +29,8 @@ import {
   Quiz as QuizIcon,
   Code as CodeIcon,
   CheckCircleOutline as CheckIcon,
+  LockClock as LockIcon,
+  Error as ErrorIcon,
 } from "@mui/icons-material";
 import { getTestById } from "../axios"; // Import from apiService
 
@@ -98,6 +103,23 @@ const theme = createTheme({
         root: {
           fontWeight: 500,
           borderRadius: 6,
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          "& .MuiAlert-root": {
+            fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+          },
         },
       },
     },
@@ -200,11 +222,26 @@ const LoadingContainer = styled(Box)(({ theme }) => ({
   gap: theme.spacing(2),
 }));
 
+const StatusChip = styled(Chip)(({ theme, status }) => ({
+  ...(status === "active" && {
+    backgroundColor: alpha(theme.palette.success.main, 0.1),
+    color: theme.palette.success.main,
+  }),
+  ...(status === "disabled" && {
+    backgroundColor: alpha(theme.palette.error.main, 0.1),
+    color: theme.palette.error.main,
+  }),
+}));
+
 const TestDetails = () => {
   const { testId } = useParams();
   const navigate = useNavigate();
   const [testData, setTestData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
 
   // Responsive breakpoints
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -221,6 +258,9 @@ const TestDetails = () => {
         setTestData(data);
       } catch (err) {
         console.error("Failed to fetch test data:", err);
+        setSnackbarMessage("Failed to fetch test data.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       } finally {
         setLoading(false);
       }
@@ -229,12 +269,79 @@ const TestDetails = () => {
     fetchTestData();
   }, [testId]);
 
-  const handleProceed = () => {
-    navigate(`/mcq/${testId}`);
+  // Check if test has MCQ component
+  const hasMcq = testData?.test_mcq_id && testData.test_mcq_id.length > 0;
+  
+  // Check if test has coding component
+  const hasCoding = testData?.test_coding_id && testData.test_coding_id.length > 0;
+  
+  // Check if test is active
+  const isTestActive = testData?.status === "active";
+
+  // Determine first component to navigate to
+  const getFirstComponentPath = () => {
+    if (hasMcq) return `/mcq/${testId}`;
+    if (hasCoding) return `/coding/${testId}`;
+    return null;
+  };
+
+  const handleProceed = async () => {
+    // Don't proceed if test is disabled
+    if (!isTestActive) {
+      setSnackbarMessage("This test is currently disabled. Please try again later.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const firstComponentPath = getFirstComponentPath();
+    if (!firstComponentPath) {
+      setSnackbarMessage("No test components found.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    try {
+      // Request fullscreen mode
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+        // Navigate to first component after successful fullscreen
+        navigate(firstComponentPath);
+      } else if (document.documentElement.mozRequestFullScreen) {
+        await document.documentElement.mozRequestFullScreen();
+        setIsFullscreen(true);
+        navigate(firstComponentPath);
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        await document.documentElement.webkitRequestFullscreen();
+        setIsFullscreen(true);
+        navigate(firstComponentPath);
+      } else if (document.documentElement.msRequestFullscreen) {
+        await document.documentElement.msRequestFullscreen();
+        setIsFullscreen(true);
+        navigate(firstComponentPath);
+      } else {
+        // Fallback if fullscreen not supported
+        setSnackbarMessage("Fullscreen mode not supported by your browser. The test requires fullscreen.");
+        setSnackbarSeverity("warning");
+        setSnackbarOpen(true);
+      }
+    } catch (err) {
+      console.error("Fullscreen request failed:", err);
+      setIsFullscreen(false);
+      setSnackbarMessage("Failed to enter fullscreen mode. Please allow fullscreen and try again.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
   };
 
   const handleBack = () => {
     navigate(-1);
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   const renderLoading = () => (
@@ -303,9 +410,51 @@ const TestDetails = () => {
     );
   }
 
+  // Determine button text based on available components
+  const getButtonText = () => {
+    if (!isTestActive) return "Test Disabled";
+    if (hasMcq) return "Proceed to MCQ";
+    if (hasCoding) return "Proceed to Coding";
+    return "No Components Available";
+  };
+
+  const getTestOverviewText = () => {
+    let description = `This assessment is designed to evaluate your proficiency in ${testData.test_language}.`;
+    
+    if (hasMcq && hasCoding) {
+      description += " The test consists of multiple-choice questions and coding challenges.";
+    } else if (hasMcq) {
+      description += " The test consists of multiple-choice questions.";
+    } else if (hasCoding) {
+      description += " The test consists of coding challenges.";
+    }
+    
+    description += " The test is timed, and your performance will be scored based on accuracy and completion time.";
+    
+    return description;
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          variant="filled"
+          sx={{
+            width: "100%",
+            fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
       <Box
         sx={{
           display: "flex",
@@ -342,6 +491,12 @@ const TestDetails = () => {
                   {testData.test_name}
                 </Typography>
               </Box>
+              <StatusChip
+                label={testData.status === "active" ? "Active" : "Disabled"}
+                status={testData.status}
+                size="small"
+                icon={testData.status === "active" ? <CheckIcon /> : <LockIcon />}
+              />
             </Box>
 
             <CardContent sx={{ p: 0 }}>
@@ -391,7 +546,7 @@ const TestDetails = () => {
 
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <InfoCard elevation={0}>
+                  <InfoCard elevation={0} sx={{ opacity: hasMcq ? 1 : 0.7 }}>
                     <IconWrapper>
                       <QuizIcon />
                     </IconWrapper>
@@ -403,7 +558,7 @@ const TestDetails = () => {
                         <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
                           {testData.test_mcq_id?.length || 0} questions
                         </Typography>
-                        {(testData.test_mcq_id?.length || 0) > 0 && (
+                        {hasMcq ? (
                           <Chip
                             size="small"
                             label="Included"
@@ -414,13 +569,23 @@ const TestDetails = () => {
                             }}
                             icon={<CheckIcon style={{ fontSize: 16 }} />}
                           />
+                        ) : (
+                          <Chip
+                            size="small"
+                            label="Not Included"
+                            sx={{
+                              backgroundColor: alpha(theme.palette.grey[500], 0.1),
+                              color: theme.palette.grey[500],
+                              ml: 1,
+                            }}
+                          />
                         )}
                       </Box>
                     </Box>
                   </InfoCard>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <InfoCard elevation={0}>
+                  <InfoCard elevation={0} sx={{ opacity: hasCoding ? 1 : 0.7 }}>
                     <SecondaryIconWrapper>
                       <CodeIcon />
                     </SecondaryIconWrapper>
@@ -432,7 +597,7 @@ const TestDetails = () => {
                         <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
                           {testData.test_coding_id?.length || 0} tasks
                         </Typography>
-                        {(testData.test_coding_id?.length || 0) > 0 && (
+                        {hasCoding ? (
                           <Chip
                             size="small"
                             label="Included"
@@ -442,6 +607,16 @@ const TestDetails = () => {
                               ml: 1,
                             }}
                             icon={<CheckIcon style={{ fontSize: 16 }} />}
+                          />
+                        ) : (
+                          <Chip
+                            size="small"
+                            label="Not Included"
+                            sx={{
+                              backgroundColor: alpha(theme.palette.grey[500], 0.1),
+                              color: theme.palette.grey[500],
+                              ml: 1,
+                            }}
                           />
                         )}
                       </Box>
@@ -461,13 +636,42 @@ const TestDetails = () => {
                   Test Overview
                 </Typography>
                 <Typography variant="body1" color="textSecondary" paragraph>
-                  This assessment consists of multiple-choice questions and coding challenges designed to evaluate your
-                  proficiency in {testData.test_language}. The test is timed, and your performance will be scored based
-                  on accuracy and completion time.
+                  {getTestOverviewText()}
                 </Typography>
-                <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
-                  Click "Proceed to MCQ" to begin the multiple-choice section of the assessment.
-                </Typography>
+                
+                {!isTestActive && (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      mt: 2,
+                      mb: 2,
+                      borderRadius: 2,
+                      backgroundColor: alpha(theme.palette.error.main, 0.05),
+                      border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <ErrorIcon color="error" fontSize="small" />
+                    <Typography variant="body2" color="error.main">
+                      This test is currently disabled and not available for taking. Please check back later or contact the administrator.
+                    </Typography>
+                  </Paper>
+                )}
+                
+                {(hasMcq || hasCoding) ? (
+                  <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
+                    {isTestActive
+                      ? `Click "${getButtonText()}" to begin the assessment. The test will open in fullscreen mode.`
+                      : "The test is currently disabled and cannot be started."}
+                  </Typography>
+                ) : (
+                  <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+                    No test components found. Please contact the administrator.
+                  </Typography>
+                )}
               </Box>
             </CardContent>
           </Box>
@@ -491,20 +695,29 @@ const TestDetails = () => {
             >
               Back
             </AnimatedButton>
-            <AnimatedButton
-              variant="contained"
-              color="secondary"
-              onClick={handleProceed}
-              endIcon={<ArrowIcon />}
-              disableElevation
-              sx={{
-                px: isSmallScreen ? 3 : 4,
-                py: isSmallScreen ? 1 : 1.5,
-                color: "#ffffff",
-              }}
+            <Tooltip 
+              title={!isTestActive ? "This test is currently disabled" : ""} 
+              placement="top"
+              disableHoverListener={isTestActive}
             >
-              Proceed to MCQ
-            </AnimatedButton>
+              <span>
+                <AnimatedButton
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleProceed}
+                  endIcon={isTestActive ? <ArrowIcon /> : <LockIcon />}
+                  disableElevation
+                  disabled={!isTestActive || (!hasMcq && !hasCoding)}
+                  sx={{
+                    px: isSmallScreen ? 3 : 4,
+                    py: isSmallScreen ? 1 : 1.5,
+                    color: "#ffffff",
+                  }}
+                >
+                  {getButtonText()}
+                </AnimatedButton>
+              </span>
+            </Tooltip>
           </CardActions>
         </AnimatedCard>
       </Box>

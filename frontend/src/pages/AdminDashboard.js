@@ -63,6 +63,7 @@ const AdminDashboard = () => {
     { label: 'Add TestCase', icon: <BugReport />, path: '/add_testcase' },
     { label: 'Add Coding', icon: <BugReport />, path: '/add_coding' },
     { label: 'Add POC', icon: <BugReport />, path: '/add_poc' },
+    { label: 'GENERATE CERTIFICATE', icon: <BugReport />, path: '/admin_certficate' },
   ];
 
   return (

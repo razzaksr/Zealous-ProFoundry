@@ -10,7 +10,7 @@ Content-Type: application/json
 }
 
 ### Get all POCs
-GET /add-certificate
+GET http://localhost:6000/poc/read_all_poc
 
 ### Get POC by mod_poc_id
 GET http://localhost:6000/poc/get_poc_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
@@ -23,8 +23,11 @@ PUT http://localhost:6000/poc/update_poc
 Content-Type: application/json
 
 {
-    "mod_id":"6503caf1-fb75-4640-99f2-d6a529b71205",
-    "mod_poc_id": "3fcfeeae-653a-410c-b54c-4030210b0c15"
+    "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+    "poc_certificate": {
+    "cert_id": "CET/WP/",
+    "cert_status": true
+  }
 }
 
 ### Update only mod_tests and mod_users
@@ -80,12 +83,24 @@ GET http://localhost:6000/poc/tests_till_today/9ccefe74-f80c-4427-804e-827a61d76
 GET http://localhost:6000/poc/get_all_tests/9ccefe74-f80c-4427-804e-827a61d7619a
 
 ### Create a Certficcate in poc using user id 
-POST http://localhost:6000/poc/add-certificate
+POST http://localhost:6000/poc/generate-certificates
 Content-Type: application/json
 
 {
   "mod_poc_id": "dd13e5af-a777-4ce5-9a3d-8ee1b2502958",
-  "newUserId": "528f7cb8-0bfe-4366-a98d-831719ec53e6"
+  "userIds": "89810ab1-72b2-444e-8c7a-d8c9b6fe0039"
+}
+
+### Create a Certficcate in poc using bulk user id  
+POST http://localhost:6000/poc/generate-certificates
+Content-Type: application/json
+
+{
+  "mod_poc_id": "dd13e5af-a777-4ce5-9a3d-8ee1b2502958",
+    "userIds": [
+        "528f7cb8-0bfe-4366-a98d-831719ec53e6",
+        "2a1a2103-a192-4811-9f42-12e65a6c6e3a"
+    ]
 }
 
 ### Get Certificate ID for a User

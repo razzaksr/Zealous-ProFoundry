@@ -3,9 +3,9 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import { createRoot } from "react-dom/client";
-import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Adjust path
+import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Fixed typo
 import DigiSign from "../assests/DigiSign.png"; // Adjust path
-import { getUserById, getModuleById, fetchAggregateScores, fetchOrGenerateCertificateId } from "../axios"; // Import from new service
+import { getUserById, getModuleById, fetchAggregateScores, fetchOrGenerateCertificates } from "../axios";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { QRCodeCanvas } from "qrcode.react"; // Correct named import
+import { QRCodeCanvas } from "qrcode.react";
 
 // Certificate template
 const CertificateTemplate = ({ forwardedRef, certificateId }) => {
@@ -60,7 +60,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
 
   const percentage = aggregateScore?.average_percentage?.toFixed(2) || "0.00";
   const issueDate = dayjs().format("DD-MM-YYYY");
-  const verificationUrl = `https://vw47nbtx-3000.inc1.devtunnels.ms/verify?certificateId=${certificateId}`; // Replace with your deployment URL
+  const verificationUrl = `https://zealoustechcorp.com/verify?certificateId=${encodeURIComponent(certificateId)}`;
 
   return (
     <div
@@ -77,9 +77,24 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
         textAlign: "center",
       }}
     >
+      {/* Temporary inline background for debugging */}
+      <img
+        src={BackgroundImg}
+        alt="Background"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: -1,
+          objectFit: "cover",
+        }}
+        onError={(e) => console.error("Failed to load inline background image:", e, BackgroundImg)}
+      />
       <h2 style={{ fontSize: "46px", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
       <p style={{ fontSize: "16px", fontStyle: "italic" }}>
-        Certificate ID: CET/WP/{certificateId}
+        Certificate ID: {certificateId}
       </p>
 
       <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>
@@ -100,11 +115,10 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
         Duration: {moduleDetails.mod_duration}.
       </p>
 
-      {/* QR Code */}
       <div
         style={{
           position: "absolute",
-          bottom: "100px",
+          bottom: "90px",
           left: "220px",
           textAlign: "center",
         }}
@@ -142,7 +156,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
       >
         <img
           src={DigiSign || "/placeholder.svg"}
-          alt="stamp"
+          alt="Digital Signature"
           style={{ height: "90px", width: "90px", marginBottom: "5px" }}
         />
         <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "200px", margin: "5px auto 0" }} />
@@ -153,42 +167,53 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
 };
 
 // Generate PDF
-const generateCertificate = async (certificateId, setProgress) => {
+const generateCertificate = async (certificateId, setProgress, setError) => {
   const certificateRef = { current: null };
   const container = document.createElement("div");
   container.style.position = "absolute";
   container.style.left = "-9999px";
   document.body.appendChild(container);
+  const root = createRoot(container);
 
   try {
-    const root = createRoot(container);
     root.render(<CertificateTemplate forwardedRef={(el) => (certificateRef.current = el)} certificateId={certificateId} />);
 
     setProgress(20);
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait for rendering
 
-    if (!certificateRef.current) throw new Error("Certificate rendering failed");
+    if (!certificateRef.current) {
+      throw new Error("Failed to render certificate template");
+    }
 
+    console.log("Loading background image from:", BackgroundImg); // Debug path
     const background = new Image();
     background.src = BackgroundImg;
     await new Promise((resolve, reject) => {
-      background.onload = resolve;
-      background.onerror = reject;
+      background.onload = () => {
+        console.log("Background image loaded successfully:", background.src, background.width, background.height); // Debug
+        resolve();
+      };
+      background.onerror = (error) => {
+        console.error("Failed to load background image:", error, BackgroundImg);
+        reject(new Error(`Failed to load background image: ${BackgroundImg}`));
+      };
     });
 
     setProgress(40);
     const canvas = await html2canvas(certificateRef.current, {
       useCORS: true,
       backgroundColor: "transparent",
-      scale: 3,
+      scale: 2, // Optimized scale
     });
 
     setProgress(60);
-    const imgData = canvas.toDataURL("image/png", 1.0);
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const imgData = canvas.toDataURL("image/jpeg", 0.8); // JPEG for compression
+    console.log(`Canvas data URL size: ${(imgData.length * 0.75 / 1024 / 1024).toFixed(2)} MB`); // Debug canvas size
 
-    pdf.addImage(background, "JPEG", 0, 0, 297, 210);
-    pdf.addImage(imgData, "PNG", 0, 0, 297, 210);
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+    console.log("Adding background to PDF:", background.src); // Debug
+    pdf.addImage(background, "JPEG", 0, 0, 297, 210); // Removed FAST for testing
+    pdf.addImage(imgData, "JPEG", 0, 0, 297, 210); // Removed FAST for testing
 
     const storedUser = localStorage.getItem("true");
     const user = storedUser ? JSON.parse(storedUser) : null;
@@ -205,9 +230,10 @@ const generateCertificate = async (certificateId, setProgress) => {
     setProgress(100);
   } catch (error) {
     console.error("Error generating certificate:", error);
-    throw error;
+    setError(error.message || "Failed to generate certificate PDF");
   } finally {
-    document.body.appendChild(container);
+    root.unmount();
+    document.body.removeChild(container);
   }
 };
 
@@ -271,7 +297,6 @@ const CertificateGenerator = forwardRef((props, ref) => {
     setError(null);
 
     try {
-      // Get userId and pocId from localStorage
       const storedUser = localStorage.getItem("true");
       if (!storedUser) {
         throw new Error("User data not found in localStorage");
@@ -285,15 +310,14 @@ const CertificateGenerator = forwardRef((props, ref) => {
         throw new Error("Invalid userId or pocId");
       }
 
-      // Fetch or generate certificate ID
-      const certId = await fetchOrGenerateCertificateId(pocId, userId);
+      const certId = await fetchOrGenerateCertificates(pocId, userId);
       setCertificateId(certId);
 
-      // Generate certificate PDF
-      await generateCertificate(certId, setProgress);
+      await generateCertificate(certId, setProgress, setError);
     } catch (err) {
       console.error("Error in certificate generation:", err);
-      setError(err.message || "Failed to generate certificate. Please try again.");
+      const errorMessage = err.message || "Failed to generate certificate. Please try again.";
+      setError(errorMessage);
     }
   };
 

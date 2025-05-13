@@ -174,13 +174,13 @@ export const fetchModuleName = async (modId) => {
 
   // FETCH POC BY ID 
 
-  export const fetchPocById = async (mod_poc_id) => {
+  export const fetchPocById = async (pocId) => {
     try {
-      const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_by_poc_id/${mod_poc_id}`);
+      const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_by_poc_id/${pocId}`);
       return response.data;
     } catch (error) {
-      console.error("Error fetching POC by ID:", error);
-      throw error;
+      console.error(`Error fetching POC ${pocId}:`, error);
+      throw error.response?.data?.message || error.message;
     }
   };
 
@@ -189,9 +189,10 @@ export const fetchModuleName = async (modId) => {
 export const fetchAllPocs = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/poc_gateway/poc/read_all_poc`);
-    return response;
+    return response.data; 
   } catch (error) {
-    throw new Error('Failed to fetch POCs');
+    console.error("Error fetching all POCs:", error);
+    throw new Error("Failed to fetch POCs");
   }
 };
 
@@ -310,21 +311,72 @@ export const getCertificate = async (mod_poc_id, userId) => {
 };
 
 // Fetch or generate certificate ID
-export const fetchOrGenerateCertificateId = async (pocId, userId) => {
+export const fetchOrGenerateCertificates = async (pocId, userIds) => {
   try {
-    // Try to fetch existing certificate ID
-    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get-certificate/${pocId}/${userId}`);
-    return response.data.certificateId;
-  } catch (error) {
-    if (error.response?.status === 404) {
-      // Certificate not found, generate a new one
-      const response = await axios.post(`${BASE_URL}/poc_gateway/poc/add-certificate`, {
-        mod_poc_id: pocId,
-        newUserId: userId,
-      });
-      return response.data.certificateId;
+    // Validate inputs
+    if (!pocId || typeof pocId !== "string") {
+      throw new Error("mod_poc_id must be a non-empty string");
     }
-    console.error(`Error fetching/generating certificate ID for poc ${pocId}, user ${userId}:`, error);
-    throw error.response?.data || error.message;
+    const isSingleUser = !Array.isArray(userIds);
+    const userIdsArray = isSingleUser ? [userIds] : userIds;
+    if (userIdsArray.length === 0 || !userIdsArray.every(id => typeof id === "string" && id)) {
+      throw new Error("userIds must be a non-empty string or array of non-empty strings");
+    }
+
+    // Log the request URL and body for debugging
+    const requestUrl = `${BASE_URL}/poc_gateway/poc/generate-certificates`;
+    console.log(`Sending request to: ${requestUrl} with body:`, { mod_poc_id: pocId, userIds: userIdsArray });
+
+    // Send request to POST /generate-certificates
+    const response = await axios.post(requestUrl, {
+      mod_poc_id: pocId,
+      userIds: userIdsArray, // Always send as array
+    });
+
+    const data = response.data;
+    console.log(`Raw response from ${requestUrl}:`, data); // Debug raw response
+
+    let results, errors;
+
+    // Handle single-user response format
+    if (data.certificateId && userIdsArray.length === 1) {
+      results = [{
+        userId: userIdsArray[0],
+        certificateId: data.certificateId,
+        message: data.message || "Certificate retrieved successfully",
+      }];
+      errors = [];
+    } else if (data.results && Array.isArray(data.results)) {
+      // Handle multi-user response format
+      results = data.results;
+      errors = data.errors || [];
+    } else {
+      throw new Error("Invalid response format from generate-certificates: missing results or certificateId");
+    }
+
+    // Validate response
+    if (!Array.isArray(results) || !Array.isArray(errors)) {
+      throw new Error("Invalid response format from generate-certificates: results or errors not arrays");
+    }
+
+    // Single user case (string input)
+    if (isSingleUser) {
+      if (errors.length > 0) {
+        throw new Error(errors[0].message || `Failed to fetch/generate certificate for user ${userIds}`);
+      }
+      if (results.length === 0) {
+        throw new Error(`No certificate generated for user ${userIds}`);
+      }
+      return results[0].certificateId; // Return single certificateId
+    }
+
+    // Bulk user case (array input)
+    return { results, errors };
+  } catch (error) {
+    const errorMessage = error.response?.status === 404
+      ? `Certificate generation endpoint not found at ${BASE_URL}/poc_gateway/poc/generate-certificates. Please check backend configuration.`
+      : error.response?.data?.message || error.message;
+    console.error(`Error fetching/generating certificate(s) for poc ${pocId}, user(s) ${userIds}:`, error);
+    throw new Error(errorMessage);
   }
 };

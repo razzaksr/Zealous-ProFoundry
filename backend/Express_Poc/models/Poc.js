@@ -51,12 +51,15 @@ const pocSchema = new mongoose.Schema({
     default: [],
   },
   poc_certificate: {
-    type: Boolean,
-    default: false,
+    type: {
+      cert_id: { type: String, required: true },
+      cert_status: { type: Boolean, default: false }
+    },
+    default: null
   },
   certificates: {
     type: Map,
-    of: String, 
+    of: String,
     default: {},
   },
 });

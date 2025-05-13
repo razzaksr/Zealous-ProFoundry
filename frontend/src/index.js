@@ -9,8 +9,8 @@ import CertificateApp from "./components/certificate";
 import StudentDashboard from "./pages/StudentDashboard";
 import TestIntro from "./pages/TestIntro";
 import TestDetails from "./pages/TestDetails";
-import CodingPage from "./pages/CodingTest";
-import McqTest from "./pages/McqTest";
+import CodingPage from "./pages/CodingPage";
+import McqPage from "./pages/McqPage";
 import InstructionsPage from "./pages/Info";
 import AdminDashboard from "./pages/AdminDashboard";
 import PocPage from "./pages/PocPage";
@@ -20,7 +20,7 @@ import OrganizationPage from "./pages/OrganizationPage";
 import ExpertPage from "./pages/ExpertPage";
 import McqAdminPage from "./pages/McqAdminPage";
 import TestAdminPage from "./pages/TestAdminPage";
-import OnlineCompiler from "./pages/CodingTest";
+import OnlineCompiler from "./pages/CodingPage";
 import CodeList from "./pages/CodeList";
 import Add_Mcq from "./pages/Add_Mcq";
 import Add_Module from "./pages/Add_Module";
@@ -28,6 +28,7 @@ import Add_Organisation from "./pages/Add_Organisation";
 import Add_TestCase from "./pages/Add_Testcase";
 import Add_Coding from "./pages/Add_Coding";
 import Add_POC from "./pages/Add_Poc";
+import BulkCertificateGenerator from "./pages/BulkCertificateGenerator";
 
 const App = () => {
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -60,6 +61,7 @@ const App = () => {
               <Route path="/add_testcase" element={<Add_TestCase />} />
               <Route path="/add_coding" element={<Add_Coding />} />
               <Route path="/add_poc" element={<Add_POC />} />
+              <Route path="/admin_certficate" element={<BulkCertificateGenerator />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           ) : (
@@ -69,12 +71,11 @@ const App = () => {
               <Route path="/test-modules" element={<TestModule />} />
               <Route path="/test-intro/:testId" element={<TestIntro />} />
               <Route path="/test-details/:testId" element={<TestDetails />} />
-              <Route path="/mcq/:testId" element={<McqTest />} />
-              <Route path="/coding/:testId" element={<CodingPage />} />
+              <Route path="/mcq/:testId" element={<McqPage />} />
+              <Route path="/coding/:codeId" element={<CodingPage />} />
               <Route path="/test-result" element={<TestResult />} />
-              <Route path="/testresults" element={<TestResult />} />
               <Route path="/info" element={<InstructionsPage />} />
-              <Route path="/compiler/:codeId" element={<OnlineCompiler />} />
+              <Route path="/coding/:codeId" element={<OnlineCompiler />} />
               <Route path="/codelist" element={<CodeList />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>

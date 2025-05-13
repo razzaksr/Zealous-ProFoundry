@@ -27,7 +27,7 @@ const TestModule = () => {
       console.log("Fetched tests:", response.test_ids);
 
       if (response?.mod_id) {
-        sessionStorage.setItem("mod_id", response.mod_id);
+        localStorage.setItem("mod_id", response.mod_id);
       }
 
       if (response?.test_ids?.length) {
@@ -47,7 +47,7 @@ const TestModule = () => {
   }, []);
 
   useEffect(() => {
-    const storedUser = sessionStorage.getItem("true");
+    const storedUser = localStorage.getItem("true");
     if (storedUser) {
       try {
         const user = JSON.parse(storedUser);

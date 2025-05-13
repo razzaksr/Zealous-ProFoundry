@@ -23,7 +23,7 @@ GET http://localhost:4000/test_gateway/test/active
 ###
 
 ### Get Test by ID
-GET http://localhost:4000/test_gateway/test/get_by_test_id/7213c219-3295-462d-b6cf-e35e3ee03a75
+GET http://localhost:4000/test_gateway/test/get_by_test_id/7fb99966-8e32-4481-9f54-50bcf7e33e50
 
 ###
 

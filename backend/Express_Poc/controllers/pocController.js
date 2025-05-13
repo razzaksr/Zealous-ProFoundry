@@ -313,10 +313,21 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// POST: Add certificate and save to MongoDB and Firestore
-router.post("/add-certificate", async (req, res) => {
+// Unified endpoint for single and bulk certificate generation
+router.post("/generate-certificates", async (req, res) => {
   try {
-    const { mod_poc_id, newUserId } = req.body;
+    const { mod_poc_id, userIds } = req.body;
+
+    // Validate input
+    if (!mod_poc_id) {
+      return res.status(400).json({ message: "mod_poc_id is required" });
+    }
+
+    // Normalize userIds to an array
+    const userIdsArray = Array.isArray(userIds) ? userIds : typeof userIds === "string" ? [userIds] : [];
+    if (userIdsArray.length === 0) {
+      return res.status(400).json({ message: "userIds must be a non-empty string or array" });
+    }
 
     // Find the Poc document using mod_poc_id
     const poc = await Poc.findOne({ mod_poc_id });
@@ -324,21 +335,7 @@ router.post("/add-certificate", async (req, res) => {
       return res.status(404).json({ message: "Poc not found" });
     }
 
-    // Check if user is part of mod_users
-    if (!poc.mod_users.includes(newUserId)) {
-      return res.status(400).json({ message: "User not found in mod_users" });
-    }
-
-    // Check if certificate already exists in MongoDB
-    if (poc.certificates.has(newUserId)) {
-      const existingCertificateId = poc.certificates.get(newUserId);
-      return res.status(200).json({
-        message: "Certificate already generated for this user",
-        certificateId: existingCertificateId,
-      });
-    }
-
-    // Fetch user details from Express_User service via Consul
+    // Fetch user details service via Consul
     const serviceName = "Express_User";
     const services = await consul.catalog.service.nodes(serviceName);
 
@@ -352,46 +349,115 @@ router.post("/add-certificate", async (req, res) => {
       return res.status(500).json({ message: "Invalid service details from Consul" });
     }
 
-    const targetUrl = `http://${ServiceAddress}:${ServicePort}/user/get_user_by_id/${newUserId}`;
-    const response = await axios.get(targetUrl);
-    const user = response.data;
+    const results = [];
+    const errors = [];
 
-    if (!user || !user.full_name) {
-      return res.status(404).json({ message: "User details not found" });
+    // Process each userId
+    for (const userId of userIdsArray) {
+      try {
+        // Check if user is part of mod_users
+        if (!poc.mod_users.includes(userId)) {
+          errors.push({ userId, message: "User not found in mod_users" });
+          continue;
+        }
+
+        // Check if certificate already exists in MongoDB
+        if (poc.certificates.has(userId)) {
+          const existingCertificateId = poc.certificates.get(userId);
+          results.push({
+            userId,
+            certificateId: existingCertificateId,
+            message: "Certificate already generated for this user",
+          });
+          continue;
+        }
+
+        // Fetch user details
+        const targetUrl = `http://${ServiceAddress}:${ServicePort}/user/get_user_by_id/${userId}`;
+        const response = await axios.get(targetUrl);
+        const user = response.data;
+
+        if (!user || !user.full_name) {
+          errors.push({ userId, message: "User details not found" });
+          continue;
+        }
+
+        // Generate certificate ID with 5-digit number
+        let newCertificateId;
+        let attempts = 0;
+        const maxAttempts = 5;
+
+        while (attempts < maxAttempts) {
+          const certPrefix = poc.poc_certificate.cert_id; // e.g., "CET/WP/"
+          const randomFiveDigit = Math.floor(10000 + Math.random() * 90000).toString();
+          newCertificateId = `${certPrefix}${randomFiveDigit}`; // e.g., "CET/WP/12345"
+
+          // Check for duplicate in Firestore
+          const certificateRef = db.collection("certificates").doc(newCertificateId);
+          const certificateDoc = await certificateRef.get();
+          if (!certificateDoc.exists) {
+            break;
+          }
+          attempts++;
+        }
+
+        if (attempts >= maxAttempts) {
+          errors.push({ userId, message: "Failed to generate unique certificate ID after multiple attempts" });
+          continue;
+        }
+
+        // Set certificate in MongoDB
+        poc.certificates.set(userId, newCertificateId);
+
+        // Save to Firebase Firestore
+        const certificateRef = db.collection("certificates").doc(newCertificateId);
+        await certificateRef.set({
+          userId,
+          certificateId: newCertificateId,
+          mod_poc_id,
+          full_name: user.full_name,
+          rollno: user.rollno,
+          department: user.department,
+          college: user.college,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        results.push({
+          userId,
+          certificateId: newCertificateId,
+          message: "Certificate generated and saved to Firebase",
+        });
+      } catch (error) {
+        errors.push({ userId, message: error.message || "Error processing user" });
+      }
     }
 
-    // Generate 10-digit certificate ID
-    const newCertificateId = generateRandomCertificateId();
-
-    // Check for duplicate certificateId in Firestore
-    const certificateRef = db.collection("certificates").doc(newCertificateId);
-    const certificateDoc = await certificateRef.get();
-    if (certificateDoc.exists) {
-      return res.status(409).json({
-        message: "Certificate ID already exists in Firebase, please try again",
-      });
-    }
-
-    // Set certificate in MongoDB
-    poc.certificates.set(newUserId, newCertificateId);
+    // Save updated Poc document
     await poc.save();
 
-    // Save to Firebase Firestore with user details
-    await certificateRef.set({
-      userId: newUserId,
-      certificateId: newCertificateId,
-      mod_poc_id: mod_poc_id,
-      full_name: user.full_name,
-      rollno: user.rollno,
-      department: user.department,
-      college: user.college,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-
-    res.status(200).json({
-      message: "Certificate generated and saved to Firebase",
-      certificateId: newCertificateId,
-    });
+    // Return response based on single or bulk request
+    if (userIdsArray.length === 1) {
+      // Single certificate response (compatible with /add-certificate)
+      const result = results[0];
+      const error = errors[0];
+      if (result) {
+        return res.status(200).json({
+          message: result.message,
+          certificateId: result.certificateId,
+        });
+      } else {
+        return res.status(400).json({
+          message: error.message,
+        });
+      }
+    } else {
+      // Bulk certificate response
+      return res.status(200).json({
+        message: "Certificate generation completed",
+        results,
+        errors,
+      });
+    }
   } catch (error) {
     res.status(500).json({
       message: "Server error",
@@ -399,10 +465,6 @@ router.post("/add-certificate", async (req, res) => {
     });
   }
 });
-// Utility function to generate a 10-digit random certificate ID
-function generateRandomCertificateId() {
-  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-}
 
   // Retrieve Certificate ID using mod_poc_id
   router.get("/get-certificate/:pocId/:userId", async (req, res) => {
