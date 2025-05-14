@@ -10,6 +10,7 @@ import {
   CssBaseline,
   Dialog,
   DialogContent,
+  DialogActions,
   Divider,
   Fab,
   FormControl,
@@ -339,6 +340,7 @@ const CodingPage = () => {
   const [editorWidth, setEditorWidth] = useState(60);
   const [outputHeight, setOutputHeight] = useState(30);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [submitConfirmDialogOpen, setSubmitConfirmDialogOpen] = useState(false);
   const [fetchedTestCodingIds, setFetchedTestCodingIds] = useState([]);
   const [malpracticeCount, setMalpracticeCount] = useState(savedTestResult.warningCount || 0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -471,7 +473,7 @@ const CodingPage = () => {
   // Timer countdown and auto-submit
   useEffect(() => {
     if (!timer || timer <= 0 || hasSubmitted) {
-      if (timer <= 0 && !hasSubmitted) handleFinalSubmit();
+      if (timer <= 0 && !hasSubmitted) handleFinalSubmit(true);
       return;
     }
     timerRef.current = setInterval(() => {
@@ -1032,6 +1034,14 @@ const CodingPage = () => {
       return;
     }
 
+    // Show confirmation dialog unless it's a malpractice auto-submit
+    if (!isMalpractice) {
+      setSubmitConfirmDialogOpen(true);
+      setLoading(false);
+      setOpenProgressDialog(false);
+      return;
+    }
+
     try {
       // Construct resultData from updated testResult after compilation
       const resultData = {
@@ -1061,28 +1071,97 @@ const CodingPage = () => {
 
       setOutput((prev) => `${prev}\nSubmitting test for final evaluation...\n`);
       console.log("Submitting final test result:", resultData);
+      // Submit to backend
       await submitTestResult(resultData);
 
       // Clear localStorage for code submissions
       const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
       effectiveCodingIds.forEach((id) => localStorage.removeItem(`code_${id}`));
 
-
       setHasSubmitted(true);
-      navigate("/test-result", { state: { resultData } });
       setOutput((prev) => `${prev}\nTest submitted successfully!`);
       setSnackbarMessage("Test submitted successfully!");
       setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      // Navigate to test-result page
+      navigate("/test-result", { state: { resultData } });
     } catch (error) {
       console.error("Final submit error:", error);
       setOutput((prev) => `${prev}\nError submitting test: ${error.message}`);
       setSnackbarMessage(`Error during test submission: ${error.message}`);
       setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
       setOpenProgressDialog(false);
-      setSnackbarOpen(true);
     }
+  };
+
+  // Confirm final submission
+  const confirmFinalSubmit = async () => {
+    setSubmitConfirmDialogOpen(false);
+    setLoading(true);
+    setOpenProgressDialog(true);
+    setOutput("Processing results...\nSubmitting test for final evaluation...\n");
+
+    try {
+      const resultData = {
+        result_user_id: testResult.result_user_id || userId || "",
+        result_test_id: testResult.result_test_id || testId || "",
+        result_poc_id: testResult.result_poc_id || pocId || "",
+        result_score: testResult.result_score || 0,
+        result_total_score: testResult.result_total_score || 0,
+        codingAnswered: testResult.codingAnswered || 0,
+        codingCorrect: testResult.codingCorrect || 0,
+        codingIds: testResult.codingIds || [],
+        codingNotAnswered: testResult.codingNotAnswered || 0,
+        codingNotVisited: testResult.codingNotVisited || 0,
+        codingWrong: testResult.codingWrong || 0,
+        marked: testResult.marked || 0,
+        mcqAnswered: testResult.mcqAnswered || 0,
+        mcqCorrect: testResult.mcqCorrect || 0,
+        mcqNotAnswered: testResult.mcqNotAnswered || 0,
+        mcqNotVisited: testResult.mcqNotVisited || 0,
+        mcqWrong: testResult.mcqWrong || 0,
+        studentName: testResult.studentName || studentName || "",
+        testLanguage: testResult.testLanguage || "",
+        testName: testResult.testName || "",
+        warningCount: testResult.warningCount || 0,
+        codingResults: testResult.codingResults || [],
+      };
+
+      console.log("Submitting final test result:", resultData);
+      await submitTestResult(resultData);
+
+      const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
+      effectiveCodingIds.forEach((id) => localStorage.removeItem(`code_${id}`));
+
+      setHasSubmitted(true);
+      setOutput((prev) => `${prev}\nTest submitted successfully!`);
+      setSnackbarMessage("Test submitted successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      navigate("/test-result", { state: { resultData } });
+    } catch (error) {
+      console.error("Final submit error:", error);
+      setOutput((prev) => `${prev}\nError submitting test: ${error.message}`);
+      setSnackbarMessage(`Error during test submission: ${error.message}`);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setLoading(false);
+      setOpenProgressDialog(false);
+    }
+  };
+
+  // Cancel final submission
+  const cancelFinalSubmit = () => {
+    setSubmitConfirmDialogOpen(false);
+    setSnackbarMessage("Submission cancelled. You can continue coding.");
+    setSnackbarSeverity("info");
+    setSnackbarOpen(true);
   };
 
   // Handle navigation to the next program
@@ -1094,6 +1173,14 @@ const CodingPage = () => {
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
       const nextCodeId = effectiveCodingIds[testResult.currentCodingIndex + 1];
+      setTestResult((prev) => {
+        const updatedTestResult = {
+          ...prev,
+          currentCodingIndex: prev.currentCodingIndex + 1,
+        };
+        localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
+        return updatedTestResult;
+      });
       navigate(`/coding/${nextCodeId}`, {
         state: {
           ...testResult,
@@ -1115,6 +1202,14 @@ const CodingPage = () => {
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
       const nextCodeId = effectiveCodingIds[testResult.currentCodingIndex + 1];
+      setTestResult((prev) => {
+        const updatedTestResult = {
+          ...prev,
+          currentCodingIndex: prev.currentCodingIndex + 1,
+        };
+        localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
+        return updatedTestResult;
+      });
       navigate(`/coding/${nextCodeId}`, {
         state: {
           ...testResult,
@@ -1136,6 +1231,14 @@ const CodingPage = () => {
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex > 0) {
       const prevCodeId = effectiveCodingIds[testResult.currentCodingIndex - 1];
+      setTestResult((prev) => {
+        const updatedTestResult = {
+          ...prev,
+          currentCodingIndex: prev.currentCodingIndex - 1,
+        };
+        localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
+        return updatedTestResult;
+      });
       navigate(`/coding/${prevCodeId}`, {
         state: {
           ...testResult,
@@ -1181,6 +1284,41 @@ const CodingPage = () => {
             Processing your code...
           </Typography>
         </DialogContent>
+      </Dialog>
+      <Dialog open={submitConfirmDialogOpen} PaperProps={{ sx: { borderRadius: 3, bgcolor: "background.paper" } }}>
+        <DialogContent sx={{ p: 4 }}>
+          <Typography
+            variant="h6"
+            color="text.primary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important", mb: 2 }}
+          >
+            Are you sure you want to submit the test?
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+          >
+            This action will finalize your test and you won't be able to make further changes.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={cancelFinalSubmit}
+            variant="outlined"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+          >
+            Continue Coding
+          </Button>
+          <Button
+            onClick={confirmFinalSubmit}
+            variant="contained"
+            color="error"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+          >
+            Submit Test
+          </Button>
+        </DialogActions>
       </Dialog>
       <Snackbar
         open={snackbarOpen}
@@ -1398,38 +1536,6 @@ const CodingPage = () => {
                   }}
                 >
                   Run
-                </Button>
-                {!isLastProgram && (
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={handleNextProgram}
-                    disabled={loading}
-                    startIcon={<NavigateNextIcon />}
-                    size="small"
-                    sx={{
-                      fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                      px: { xs: 1, sm: 2 },
-                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                    }}
-                  >
-                    Next Program
-                  </Button>
-                )}
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => handleFinalSubmit()}
-                  disabled={loading || hasSubmitted}
-                  startIcon={<DoneIcon />}
-                  size="small"
-                  sx={{
-                    fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                    px: { xs: 1, sm: 2 },
-                    fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                  }}
-                >
-                  Submit Test
                 </Button>
               </Box>
             </Box>
@@ -1784,7 +1890,7 @@ const CodingPage = () => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center" }}>
-              <TerminalIcon sx={{ mr: 1, fontSize: { xs: 16, sm: 20 }, color: "#0c83c8" }} />
+            <TerminalIcon sx={{ mr: 1, fontSize: { xs: 16, sm: 20 }, color: "#fc7a46" }} />
               <Typography
                 variant="subtitle1"
                 fontWeight="medium"
@@ -1796,148 +1902,124 @@ const CodingPage = () => {
                 Output Console
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Tooltip title={outputMinimized ? "Expand" : "Collapse"}>
-                <IconButton size="small" onClick={toggleOutput}>
-                  {outputMinimized ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowUpIcon fontSize="small" />}
+            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
+              <Tooltip title={outputMinimized ? "Expand Output" : "Minimize Output"}>
+                <IconButton
+                  size="small"
+                  onClick={toggleOutput}
+                  aria-label={outputMinimized ? "Expand output console" : "Minimize output console"}
+                >
+                  {outputMinimized ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
             </Box>
           </Box>
           {showOutput && !outputMinimized && (
-            <Box sx={{ flex: 1, overflow: "auto", p: 1, bgcolor: alpha(theme.palette.background.default, 0.7) }}>
-              {output ? (
-                <Typography
-                  component="pre"
-                  sx={{
-                    m: 0,
-                    fontFamily: "'Fira Code', monospace",
-                    fontSize: { xs: 12, sm: 14 },
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {output.split("\n").map((line, index) => {
-                    let color = "text.primary";
-                    if (line.includes("Error") || line.includes("❌") || line.includes("failed")) {
-                      color = "error.main";
-                    } else if (line.includes("✅") || line.includes("passed")) {
-                      color = "success.main";
-                    }
-                    return (
-                      <Box component="span" key={index} sx={{ color, display: "block" }}>
-                        {line}
-                      </Box>
-                    );
-                  })}
-                </Typography>
-              ) : (
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "100%",
-                    opacity: 0.7,
-                  }}
-                >
-                  <OutputIcon sx={{ fontSize: { xs: 36, sm: 48 }, color: "text.secondary", mb: 1 }} />
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    align="center"
-                    sx={{
-                      fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                    }}
-                  >
-                    Run your code to see output here
-                  </Typography>
-                </Box>
-              )}
+            <Box
+              sx={{
+                flex: 1,
+                overflow: "auto",
+                p: 1,
+                bgcolor: mode === "dark" ? "#1e1e1e" : "#f5f5f5",
+                fontFamily: "'Fira Code', monospace",
+                fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}
+            >
+              {output || "Run your code to see the output here..."}
             </Box>
           )}
         </Box>
         <Box
           sx={{
-            p: 1,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            bgcolor: "background.paper",
+            p: 1,
             borderTop: 1,
             borderColor: "divider",
+            bgcolor: "background.paper",
           }}
         >
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
+            <Tooltip title="Back">
+              <IconButton size="small" onClick={handleBack}>
+                <ArrowBackIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Previous Program">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handlePrevious}
+                  disabled={isFirstProgram}
+                >
+                  <NavigateBeforeIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Next Program">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={handleNext}
+                  disabled={isLastProgram}
+                >
+                  <NavigateNextIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
+            {!isLastProgram && (
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleNextProgram}
+                startIcon={<NavigateNextIcon />}
+                size="small"
+                sx={{
+                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                  px: { xs: 1, sm: 2 },
+                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                }}
+              >
+                Next Program
+              </Button>
+            )}
             <Button
-              variant="outlined"
-              onClick={handleBack}
-              disabled={loading}
-              startIcon={<ArrowBackIcon />}
+              variant="contained"
+              color="error"
+              onClick={() => handleFinalSubmit()}
+              startIcon={<DoneIcon />}
+              size="small"
+              disabled={hasSubmitted}
               sx={{
                 fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                px: { xs: 1, sm: 2 },
                 fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
               }}
             >
-              Back
+              Submit Test
             </Button>
-            {!isFirstProgram && (              <Button
-                variant="outlined"
-                onClick={handlePrevious}
-                disabled={loading || !hasCodingProblems}
-                startIcon={<NavigateBeforeIcon />}
-                sx={{
-                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                }}
-              >
-                Previous
-              </Button>
-            )}
-            {!isLastProgram && (
-              <Button
-                variant="outlined"
-                onClick={handleNext}
-                disabled={loading || !hasCodingProblems}
-                startIcon={<NavigateNextIcon />}
-                sx={{
-                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                }}
-              >
-                Next
-              </Button>
-            )}
           </Box>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => handleFinalSubmit()}
-            disabled={loading || hasSubmitted}
-            startIcon={<DoneIcon />}
-            sx={{
-              fontSize: { xs: "0.65rem", sm: "0.75rem" },
-              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-            }}
-          >
-            Submit Test
-          </Button>
         </Box>
         {isMobile && (
           <Fab
-            color="primary"
+            color="secondary"
             onClick={() => setShowTestCases(!showTestCases)}
             sx={{
               position: "fixed",
-              bottom: 80,
+              bottom: 16,
               right: 16,
-              zIndex: 1300,
+              zIndex: 1000,
+              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
             }}
+            size="small"
             aria-label={showTestCases ? "Hide test cases" : "Show test cases"}
           >
-            {showTestCases ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
+            {showTestCases ? <KeyboardArrowDownIcon /> : <FormatListNumberedIcon />}
           </Fab>
         )}
       </Box>

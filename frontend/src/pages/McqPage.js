@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -135,6 +135,7 @@ const AnimatedButton = styled(Button)(({ theme }) => ({
 const McqPage = () => {
   const { testId } = useParams();
   const navigate = useNavigate();
+  const { state } = useLocation();
   const [testData, setTestData] = useState(null);
   const [mcqData, setMcqData] = useState([]);
   const [codingIds, setCodingIds] = useState([]);
@@ -170,29 +171,37 @@ const McqPage = () => {
 
         // Load user data
         const storedUser = localStorage.getItem("true");
+        let userData = {};
         if (storedUser) {
-          const user = JSON.parse(storedUser);
-          setStudentName(user.user.full_name);
-          setUserId(user.user.user_id);
-          setPocId(user.user.mod_poc_id?.mod_poc_id);
+          userData = JSON.parse(storedUser);
+          setStudentName(userData.user.full_name || "");
+          setUserId(userData.user.user_id || "");
+          setPocId(userData.user.mod_poc_id?.mod_poc_id || "");
         }
 
         // Fetch test data
         const test = await getTestById(testId);
         setTestData(test);
 
-        // Store coding IDs without shuffling
+        // Load coding IDs
         let codingIds = test.test_coding_id?.length ? test.test_coding_id : [];
-        localStorage.setItem("coding_ids", JSON.stringify(codingIds));
+        const savedCodingIds = JSON.parse(localStorage.getItem("coding_ids")) || [];
+        if (savedCodingIds.length > 0) {
+          codingIds = savedCodingIds; // Preserve existing coding IDs
+        } else {
+          localStorage.setItem("coding_ids", JSON.stringify(codingIds));
+        }
         setCodingIds(codingIds);
 
         // Fetch and shuffle MCQ data
         const mcqPromises = test.test_mcq_id.map((id) => getMcqById(id));
         const mcqResults = await Promise.all(mcqPromises);
-        const shuffledMcq = shuffleArray(mcqResults.map((mcq) => ({
-          ...mcq,
-          mcq_options: shuffleArray(mcq.mcq_options),
-        })));
+        const shuffledMcq = shuffleArray(
+          mcqResults.map((mcq) => ({
+            ...mcq,
+            mcq_options: shuffleArray(mcq.mcq_options),
+          }))
+        );
         setMcqData(shuffledMcq);
 
         // Load or initialize progress
@@ -211,24 +220,61 @@ const McqPage = () => {
 
         // Load or initialize timer
         const savedTimer = localStorage.getItem("test_timer");
-        const totalTime = (test.test_mcq_id.length * 60) + ((test.test_coding_id?.length || 0) * 600);
+        const totalTime = test.test_mcq_id.length * 60 + (test.test_coding_id?.length || 0) * 600;
         setTimer(savedTimer ? parseInt(savedTimer) : totalTime);
 
-        // Load or initialize test result
+        // Load or initialize test result, merging with navigation state and localStorage
         const savedResult = JSON.parse(localStorage.getItem("test_result")) || {};
-        setTestResult(savedResult);
+        const navigationResult = state || {};
+        const updatedResult = {
+          result_user_id: userData.user?.user_id || savedResult.result_user_id || navigationResult.result_user_id || "",
+          result_test_id: testId,
+          result_score: savedResult.result_score || navigationResult.result_score || 0,
+          result_total_score:
+            savedResult.result_total_score ||
+            navigationResult.result_total_score ||
+            test.test_mcq_id.length + (test.test_coding_id?.length || 0) * 10,
+          result_poc_id: userData.user?.mod_poc_id?.mod_poc_id || savedResult.result_poc_id || navigationResult.result_poc_id || "",
+          studentName: userData.user?.full_name || savedResult.studentName || navigationResult.studentName || "",
+          testName: test.test_name || savedResult.testName || navigationResult.testName || "",
+          testLanguage: test.test_language || savedResult.testLanguage || navigationResult.testLanguage || "",
+          codingIds: savedResult.codingIds || navigationResult.codingIds || codingIds,
+          codingAnswered: savedResult.codingAnswered || navigationResult.codingAnswered || 0,
+          codingNotAnswered:
+            savedResult.codingNotAnswered || navigationResult.codingNotAnswered || test.test_coding_id?.length || 0,
+          codingNotVisited:
+            savedResult.codingNotVisited || navigationResult.codingNotVisited || test.test_coding_id?.length || 0,
+          codingCorrect: savedResult.codingCorrect || navigationResult.codingCorrect || 0,
+          codingWrong: savedResult.codingWrong || navigationResult.codingWrong || 0,
+          codingResults: savedResult.codingResults || navigationResult.codingResults || [],
+          mcqAnswered: savedResult.mcqAnswered || navigationResult.mcqAnswered || 0,
+          mcqCorrect: savedResult.mcqCorrect || navigationResult.mcqCorrect || 0,
+          mcqWrong: savedResult.mcqWrong || navigationResult.mcqWrong || 0,
+          mcqNotAnswered: savedResult.mcqNotAnswered || navigationResult.mcqNotAnswered || 0,
+          mcqNotVisited: savedResult.mcqNotVisited || navigationResult.mcqNotVisited || test.test_mcq_id.length,
+          marked: savedResult.marked || navigationResult.marked || 0,
+          warningCount: savedResult.warningCount || navigationResult.warningCount || 0,
+          currentCodingIndex: savedResult.currentCodingIndex || navigationResult.currentCodingIndex || 0,
+        };
+        setTestResult(updatedResult);
+        localStorage.setItem("test_result", JSON.stringify(updatedResult));
 
         setIsInitialized(true);
       } catch (error) {
         console.error("Initialization error:", error);
-        setDialog({ open: true, type: "error", message: "Failed to load test data", onConfirm: () => navigate("/test-result") });
+        setDialog({
+          open: true,
+          type: "error",
+          message: "Failed to load test data",
+          onConfirm: () => navigate("/test-result"),
+        });
       } finally {
         setLoading(false);
       }
     };
 
     initializeTest();
-  }, [testId, navigate]);
+  }, [testId, navigate, state]);
 
   // Timer countdown
   useEffect(() => {
@@ -242,7 +288,7 @@ const McqPage = () => {
         localStorage.setItem("test_timer", newTime);
         return newTime;
       });
-    }, 1000);
+    }, 5000);
     return () => clearInterval(timerRef.current);
   }, [timer, isInitialized]);
 
@@ -253,7 +299,12 @@ const McqPage = () => {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
         console.log("Malpractice: Exited fullscreen");
-        setDialog({ open: true, type: "malpractice", message: "Fullscreen mode required. Test will be submitted.", onConfirm: handleSubmitTest });
+        setDialog({
+          open: true,
+          type: "malpractice",
+          message: "Fullscreen mode required. Test will be submitted.",
+          onConfirm: handleSubmitTest,
+        });
       }
     };
 
@@ -262,7 +313,12 @@ const McqPage = () => {
         console.log("Malpractice: Tab switched");
         setTimeout(() => {
           if (document.hidden) {
-            setDialog({ open: true, type: "malpractice", message: "Tab switching detected. Test will be submitted.", onConfirm: handleSubmitTest });
+            setDialog({
+              open: true,
+              type: "malpractice",
+              message: "Tab switching detected. Test will be submitted.",
+              onConfirm: handleSubmitTest,
+            });
           }
         }, 1000);
       }
@@ -271,13 +327,23 @@ const McqPage = () => {
     const preventCopyPaste = (e) => {
       e.preventDefault();
       console.log("Malpractice: Copy/paste attempted");
-      setDialog({ open: true, type: "malpractice", message: "Copy-paste is disabled. Test will be submitted.", onConfirm: handleSubmitTest });
+      setDialog({
+        open: true,
+        type: "malpractice",
+        message: "Copy-paste is disabled. Test will be submitted.",
+        onConfirm: handleSubmitTest,
+      });
     };
 
     const preventRightClick = (e) => {
       e.preventDefault();
       console.log("Malpractice: Right-click attempted");
-      setDialog({ open: true, type: "malpractice", message: "Right-click is disabled. Test will be submitted.", onConfirm: handleSubmitTest });
+      setDialog({
+        open: true,
+        type: "malpractice",
+        message: "Right-click is disabled. Test will be submitted.",
+        onConfirm: handleSubmitTest,
+      });
     };
 
     const preventDevTools = (e) => {
@@ -288,7 +354,12 @@ const McqPage = () => {
       ) {
         e.preventDefault();
         console.log("Malpractice: Dev tools attempted");
-        setDialog({ open: true, type: "malpractice", message: "Developer tools are disabled. Test will be submitted.", onConfirm: handleSubmitTest });
+        setDialog({
+          open: true,
+          type: "malpractice",
+          message: "Developer tools are disabled. Test will be submitted.",
+          onConfirm: handleSubmitTest,
+        });
       }
     };
 
@@ -305,7 +376,12 @@ const McqPage = () => {
         }
       } catch (error) {
         console.error("Fullscreen request failed:", error);
-        setDialog({ open: true, type: "malpractice", message: "Please enable fullscreen to continue. Test will be submitted.", onConfirm: handleSubmitTest });
+        setDialog({
+          open: true,
+          type: "malpractice",
+          message: "Please enable fullscreen to continue. Test will be submitted.",
+          onConfirm: handleSubmitTest,
+        });
       }
     };
 
@@ -350,27 +426,32 @@ const McqPage = () => {
       }
     });
 
+    // Merge with existing testResult to preserve coding fields
     const updatedResult = {
-      result_user_id: userId || "",
+      ...testResult,
+      result_user_id: userId || testResult.result_user_id || "",
       result_test_id: testId,
-      result_score: mcqScore,
+      result_score: mcqScore + (testResult.codingResults?.reduce((sum, res) => sum + res.score, 0) || 0),
       result_total_score: testData?.test_mcq_id.length + (testData?.test_coding_id?.length || 0) * 10,
-      result_poc_id: pocId || "",
-      studentName,
-      testName: testData?.test_name || "",
-      testLanguage: testData?.test_language || "",
-      codingIds,
-      codingAnswered: 0,
-      codingNotAnswered: testData?.test_coding_id?.length || 0,
-      codingNotVisited: testData?.test_coding_id?.length || 0,
-      codingCorrect: 0,
-      codingWrong: 0,
+      result_poc_id: pocId || testResult.result_poc_id || "",
+      studentName: studentName || testResult.studentName || "",
+      testName: testData?.test_name || testResult.testName || "",
+      testLanguage: testData?.test_language || testResult.testLanguage || "",
+      codingIds: testResult.codingIds || codingIds,
+      codingAnswered: testResult.codingAnswered || 0,
+      codingNotAnswered: testResult.codingNotAnswered || testData?.test_coding_id?.length || 0,
+      codingNotVisited: testResult.codingNotVisited || testData?.test_coding_id?.length || 0,
+      codingCorrect: testResult.codingCorrect || 0,
+      codingWrong: testResult.codingWrong || 0,
+      codingResults: testResult.codingResults || [],
       mcqAnswered: answeredCount,
       mcqCorrect: mcqScore,
       mcqWrong: wrongAnswersCount,
       mcqNotAnswered: notAnsweredCount,
       mcqNotVisited: notVisitedCount,
       marked: markedCount,
+      warningCount: testResult.warningCount || 0,
+      currentCodingIndex: testResult.currentCodingIndex || 0,
     };
 
     setTestResult(updatedResult);
@@ -381,9 +462,7 @@ const McqPage = () => {
   const handleOptionChange = (option) => {
     setProgress((prev) =>
       prev.map((item, index) =>
-        index === currentQuestion
-          ? { ...item, selected_option: option, visited: true }
-          : item
+        index === currentQuestion ? { ...item, selected_option: option, visited: true } : item
       )
     );
   };
@@ -392,9 +471,7 @@ const McqPage = () => {
   const handleMarkQuestion = () => {
     setProgress((prev) =>
       prev.map((item, index) =>
-        index === currentQuestion
-          ? { ...item, marked: !item.marked, visited: true }
-          : item
+        index === currentQuestion ? { ...item, marked: !item.marked, visited: true } : item
       )
     );
   };
@@ -402,9 +479,7 @@ const McqPage = () => {
   // Navigate to question
   const handleQuestionNavigation = (index) => {
     setProgress((prev) =>
-      prev.map((item, idx) =>
-        idx === index ? { ...item, visited: true } : item
-      )
+      prev.map((item, idx) => (idx === index ? { ...item, visited: true } : item))
     );
     setCurrentQuestion(index);
   };
@@ -426,7 +501,12 @@ const McqPage = () => {
       navigate("/test-result");
     } catch (error) {
       console.error("Submission error:", error);
-      setDialog({ open: true, type: "error", message: "Failed to submit test. Please try again.", onConfirm: () => setDialog({ open: false }) });
+      setDialog({
+        open: true,
+        type: "error",
+        message: "Failed to submit test. Please try again.",
+        onConfirm: () => setDialog({ open: false }),
+      });
     } finally {
       isSubmitting.current = false;
     }
@@ -508,9 +588,7 @@ const McqPage = () => {
           {dialog.type === "malpractice" ? "Malpractice Detected" : dialog.type === "error" ? "Error" : "Warning"}
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {dialog.message}
-          </DialogContentText>
+          <DialogContentText id="alert-dialog-description">{dialog.message}</DialogContentText>
         </DialogContent>
         <DialogActions>
           {dialog.type === "proceed" || dialog.type === "submit" ? (
@@ -552,7 +630,7 @@ const McqPage = () => {
               <Typography variant="body1" sx={{ mb: 3, fontSize: "1.1rem" }}>
                 {mcqData[currentQuestion]?.mcq_question}
               </Typography>
-              
+
               <RadioGroup
                 value={progress[currentQuestion]?.selected_option || ""}
                 onChange={(e) => handleOptionChange(e.target.value)}
@@ -578,7 +656,7 @@ const McqPage = () => {
                 >
                   {progress[currentQuestion]?.marked ? "Unmark" : "Mark for Review"}
                 </AnimatedButton>
-                
+
                 <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   {currentQuestion > 0 && !isLastQuestionAnswered && (
                     <AnimatedButton
@@ -620,7 +698,7 @@ const McqPage = () => {
               <Typography variant="h6" gutterBottom>
                 Question Palette
               </Typography>
-              
+
               <Box sx={{ mb: 2, display: "flex", flexWrap: "wrap" }}>
                 {progress.map((item, index) => (
                   <QuestionNumberChip
@@ -648,27 +726,19 @@ const McqPage = () => {
               <Box sx={{ mb: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                   <CheckIcon color="success" />
-                  <Typography variant="body2">
-                    Answered: {answeredCount}
-                  </Typography>
+                  <Typography variant="body2">Answered: {answeredCount}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                   <FlagIcon color="warning" />
-                  <Typography variant="body2">
-                    Marked: {markedCount}
-                  </Typography>
+                  <Typography variant="body2">Marked: {markedCount}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
                   <TimerIcon color="primary" />
-                  <Typography variant="body2">
-                    Not Answered: {notAnsweredCount}
-                  </Typography>
+                  <Typography variant="body2">Not Answered: {notAnsweredCount}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <ExitIcon color="disabled" />
-                  <Typography variant="body2">
-                    Not Visited: {notVisitedCount}
-                  </Typography>
+                  <Typography variant="body2">Not Visited: {notVisitedCount}</Typography>
                 </Box>
               </Box>
 
