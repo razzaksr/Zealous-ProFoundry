@@ -20,7 +20,6 @@ import OrganizationPage from "./pages/OrganizationPage";
 import ExpertPage from "./pages/ExpertPage";
 import McqAdminPage from "./pages/McqAdminPage";
 import TestAdminPage from "./pages/TestAdminPage";
-import OnlineCompiler from "./pages/CodingPage";
 import CodeList from "./pages/CodeList";
 import Add_Mcq from "./pages/Add_Mcq";
 import Add_Module from "./pages/Add_Module";
@@ -28,7 +27,12 @@ import Add_Organisation from "./pages/Add_Organisation";
 import Add_TestCase from "./pages/Add_Testcase";
 import Add_Coding from "./pages/Add_Coding";
 import Add_POC from "./pages/Add_Poc";
-import BulkCertificateGenerator from "./pages/BulkCertificateGenerator";
+import Codingpage from "./pages/Coding";
+import Testcase_page from "./pages/View_testcase";
+import Update_coding from "./pages/Update_coding";
+import UpdateTestModule from "./pages/Update_testmodule";
+import Update_Poc from "./pages/Update_Poc";
+
 
 const App = () => {
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -42,7 +46,6 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<ZealousSignIn />} />
-
         {isLoggedIn ? (
           isAdmin ? (
             // 🔐 Admin Routes
@@ -53,6 +56,8 @@ const App = () => {
               <Route path="/module" element={<ModulePage />} />
               <Route path="/organization" element={<OrganizationPage />} />
               <Route path="/expert" element={<ExpertPage />} />
+              <Route path="/codingpage" element={<Codingpage />} />
+              <Route path="/testcasepage" element={<Testcase_page />} />
               <Route path="/mcq-admin" element={<McqAdminPage />} />
               <Route path="/test" element={<TestAdminPage />} />
               <Route path="/add_mcq" element={<Add_Mcq />} />
@@ -61,7 +66,9 @@ const App = () => {
               <Route path="/add_testcase" element={<Add_TestCase />} />
               <Route path="/add_coding" element={<Add_Coding />} />
               <Route path="/add_poc" element={<Add_POC />} />
-              <Route path="/admin_certficate" element={<BulkCertificateGenerator />} />
+              <Route path="/update_coding" element={<Update_coding />} />
+              <Route path="/update_testmodule" element={<UpdateTestModule />} />
+              <Route path="/update_poc" element={<Update_Poc />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           ) : (
@@ -74,8 +81,8 @@ const App = () => {
               <Route path="/mcq/:testId" element={<McqPage />} />
               <Route path="/coding/:codeId" element={<CodingPage />} />
               <Route path="/test-result" element={<TestResult />} />
+              <Route path="/testresults" element={<TestResult />} />
               <Route path="/info" element={<InstructionsPage />} />
-              <Route path="/coding/:codeId" element={<OnlineCompiler />} />
               <Route path="/codelist" element={<CodeList />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>

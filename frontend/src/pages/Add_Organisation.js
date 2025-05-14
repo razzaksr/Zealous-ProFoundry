@@ -12,6 +12,7 @@ import {
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import dayjs from "dayjs";
+import Admin_Dashboard from "../components/Admin_dash";
 
 const Add_Organisation = () => {
   const [orgName, setOrgName] = React.useState("");
@@ -74,10 +75,12 @@ const Add_Organisation = () => {
   };
 
   return (
+   <>
+   <Admin_Dashboard />
     <Container
       maxWidth="sm"
       sx={{
-        minHeight: "100vh",
+        minHeight: "90vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -186,6 +189,7 @@ const Add_Organisation = () => {
         </Alert>
       </Snackbar>
     </Container>
+   </>
   );
 };
 

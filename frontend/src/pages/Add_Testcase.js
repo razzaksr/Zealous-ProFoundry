@@ -12,6 +12,7 @@ import {
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import Admin_Dashboard from "../components/Admin_dash";
 
 const Add_Testcase = () => {
   const [input, setInput] = React.useState("");
@@ -61,7 +62,9 @@ const Add_Testcase = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+    <>
+    <Admin_Dashboard />
+    <Container maxWidth="md" sx={{ minHeight: "90vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <Paper elevation={6} sx={{ width: "100%", overflow: "hidden", borderRadius: "16px" }}>
         {/* Header */}
         <Box sx={{ background: "linear-gradient(90deg, #3f51b5 0%, #5c6bc0 100%)", padding: "20px 24px", color: "white" }}>
@@ -151,6 +154,7 @@ const Add_Testcase = () => {
         </Alert>
       </Snackbar>
     </Container>
+    </>
   );
 };
 

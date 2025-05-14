@@ -189,10 +189,9 @@ export const fetchModuleName = async (modId) => {
 export const fetchAllPocs = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/poc_gateway/poc/read_all_poc`);
-    return response.data; 
+    return response;
   } catch (error) {
-    console.error("Error fetching all POCs:", error);
-    throw new Error("Failed to fetch POCs");
+    throw new Error('Failed to fetch POCs');
   }
 };
 

@@ -14,7 +14,7 @@ import {
 import CourseInfoCards from "../components/StudentDashboard/CourseInfoCards";
 import Dash from "../components/dash";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
 
 export default function StudentDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);

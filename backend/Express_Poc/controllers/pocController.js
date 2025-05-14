@@ -44,19 +44,94 @@ router.get('/get_poc_by_poc_id/:mod_poc_id', async (req, res) => {
 // update_poc
 router.put("/update_poc", async (req, res) => {
   try {
-    const { mod_poc_id, ...updateData } = req.body;
+    const { mod_poc_id } = req.body;
     if (!mod_poc_id) return res.status(400).json({ message: "mod_poc_id is required" });
 
-    const updatedPoc = await Poc.findOneAndUpdate({ mod_poc_id }, updateData, {
-      new: true,
-      runValidators: true,
-    });
+    // Get the existing POC document
+    const existingPoc = await Poc.findOne({ mod_poc_id });
+    if (!existingPoc) return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
 
-    if (!updatedPoc) return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
+    // Prepare update operations
+    const updateOperations = {};
+
+    // Handle each field specifically based on the schema
+    if (req.body.mod_id !== undefined) {
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.mod_id = req.body.mod_id;
+    }
+
+    if (req.body.mod_poc_name !== undefined) {
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.mod_poc_name = req.body.mod_poc_name;
+    }
+
+    if (req.body.mod_poc_role !== undefined) {
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.mod_poc_role = req.body.mod_poc_role;
+    }
+
+    if (req.body.mod_poc_email !== undefined) {
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.mod_poc_email = req.body.mod_poc_email;
+    }
+
+    if (req.body.mod_poc_mobile !== undefined) {
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.mod_poc_mobile = req.body.mod_poc_mobile;
+    }
+
+    if (req.body.poc_certificate !== undefined) {
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.poc_certificate = req.body.poc_certificate;
+    }
+
+    // Handle array fields - append instead of replace
+    if (req.body.mod_images && Array.isArray(req.body.mod_images) && req.body.mod_images.length > 0) {
+      updateOperations.$push = updateOperations.$push || {};
+      updateOperations.$push.mod_images = { $each: req.body.mod_images };
+    }
+
+    if (req.body.mod_tests && Array.isArray(req.body.mod_tests) && req.body.mod_tests.length > 0) {
+      updateOperations.$push = updateOperations.$push || {};
+      updateOperations.$push.mod_tests = { $each: req.body.mod_tests };
+    }
+
+    if (req.body.mod_users && Array.isArray(req.body.mod_users) && req.body.mod_users.length > 0) {
+      updateOperations.$push = updateOperations.$push || {};
+      updateOperations.$push.mod_users = { $each: req.body.mod_users };
+    }
+
+    if (req.body.attendance && Array.isArray(req.body.attendance) && req.body.attendance.length > 0) {
+      updateOperations.$push = updateOperations.$push || {};
+      updateOperations.$push.attendance = { $each: req.body.attendance };
+    }
+
+    // Handle certificates Map
+    if (req.body.certificates && typeof req.body.certificates === 'object') {
+      // For Maps, we need to set each key individually
+      Object.entries(req.body.certificates).forEach(([key, value]) => {
+        updateOperations.$set = updateOperations.$set || {};
+        updateOperations.$set[`certificates.${key}`] = value;
+      });
+    }
+
+    // Only perform update if there are operations to do
+    if (Object.keys(updateOperations).length === 0) {
+      return res.status(400).json({ message: "No valid update data provided" });
+    }
+
+    const updatedPoc = await Poc.findOneAndUpdate(
+      { mod_poc_id },
+      updateOperations,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     res.json(updatedPoc);
-  } catch (error) { 
-    res.status(400).json({ error: error.message }); 
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 

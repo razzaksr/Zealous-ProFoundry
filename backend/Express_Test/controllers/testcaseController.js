@@ -7,31 +7,23 @@ const TestCase = require("../models/TestCase");
 // ✅ Create TestCase
 router.post("/create_testCase", async (req, res) => {
   try {
-    const testCases = req.body;
+    const { testcase_input, testcase_output, testcase_tags } = req.body;
 
-    if (!Array.isArray(testCases) || testCases.length === 0) {
-      return res.status(400).json({ error: "Request body should be a non-empty array of test cases" });
+    if (!testcase_input || !testcase_output) {
+      return res.status(400).json({ error: "Input and output fields are required" });
     }
 
-    const newTestCases = testCases.map((testcase) => {
-      const { testcase_input, testcase_output, testcase_tags } = testcase;
-
-      if (!testcase_input || !testcase_output) {
-        throw new Error("Each test case must include input and output fields");
-      }
-
-      return new TestCase({
-        testcase_id: uuidv4(),
-        testcase_input,
-        testcase_output,
-        testcase_tags,
-      });
+    const newTestCase = new TestCase({
+      testcase_id: uuidv4(),
+      testcase_input,
+      testcase_output,
+      testcase_tags,
     });
 
-    await TestCase.insertMany(newTestCases);
-    res.status(201).json({ message: "Test cases created successfully", testCases: newTestCases });
+    await newTestCase.save();
+    res.status(201).json(newTestCase);
   } catch (error) {
-    console.error("Error creating test cases:", error);
+    console.error("Error creating test case:", error);
     res.status(500).json({ error: error.message });
   }
 });

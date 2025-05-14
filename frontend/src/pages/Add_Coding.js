@@ -12,6 +12,7 @@ import {
 
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import Admin_Dashboard from "../components/Admin_dash";
 
 const Add_Coding = () => {
   const [problemStatement, setProblemStatement] = React.useState("");
@@ -59,6 +60,8 @@ const Add_Coding = () => {
   };
 
   return (
+    <>
+    <Admin_Dashboard />
     <Container maxWidth="md" sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <Paper elevation={6} sx={{ width: "100%", overflow: "hidden", borderRadius: "16px" }}>
         {/* Header */}
@@ -141,6 +144,7 @@ const Add_Coding = () => {
         </Alert>
       </Snackbar>
     </Container>
+    </>
   );
 };
 

@@ -20,6 +20,7 @@ import {
 // If you don't have icons, you can remove them
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import Admin_Dashboard from "../components/Admin_dash";
 
 const Add_Mcq = () => {
   const [question, setQuestion] = React.useState("");
@@ -83,10 +84,12 @@ const Add_Mcq = () => {
   };
 
   return (
+   <>
+   <Admin_Dashboard />
     <Container 
       maxWidth="md" 
       sx={{
-        minHeight: "100vh",
+        minHeight: "30vh !important",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -345,6 +348,7 @@ const Add_Mcq = () => {
         </Alert>
       </Snackbar>
     </Container>
+   </>
   );
 };
 

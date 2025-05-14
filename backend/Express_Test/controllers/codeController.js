@@ -14,7 +14,7 @@ const handleError = (res, error, customMessage = "Server Error") => {
 router.post("/code", async (req, res) => {
   const { code_problem_statement, code_test_cases_id, code_tags } = req.body;
 
-  if (!code_problem_statement || !Array.isArray(code_test_cases_id) || code_test_cases_id.length === 0) {
+  if (!code_problem_statement || code_tags.length === 0) {
     return res.status(400).json({
       success: false,
       msg: "Invalid input: Problem statement and test cases are required",
@@ -54,7 +54,6 @@ router.post("/code", async (req, res) => {
     handleError(res, error);
   }
 });
-
 
 router.get("/get_allCodes", async (req, res) => {
     try {

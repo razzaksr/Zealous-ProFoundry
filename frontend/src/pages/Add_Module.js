@@ -12,6 +12,7 @@ import {
 import dayjs from "dayjs";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import Admin_Dashboard from "../components/Admin_dash";
 
 const Add_Module = () => {
   const [modName, setModName] = React.useState("");
@@ -71,6 +72,8 @@ const Add_Module = () => {
   };
 
   return (
+      <>
+      <Admin_Dashboard />
       <Container
         maxWidth="sm"
         sx={{
@@ -205,6 +208,7 @@ const Add_Module = () => {
           </Alert>
         </Snackbar>
       </Container>
+      </>
     
   );
 };

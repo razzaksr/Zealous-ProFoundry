@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { fetchAllExperts } from '../axios';
+import Admin_Dashboard from '../components/Admin_dash';
 
 const ExpertPage = () => {
   const [experts, setExperts] = useState([]);
@@ -41,6 +42,8 @@ const ExpertPage = () => {
   ];
 
   return (
+   <>
+   <Admin_Dashboard />
     <Box sx={{ padding: 4, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, fontWeight: 'bold' }}>
         Expert Management
@@ -78,6 +81,7 @@ const ExpertPage = () => {
         </Box>
       </Paper>
     </Box>
+   </>
   );
 };
 
