@@ -181,10 +181,10 @@ const McqPage = () => {
         const test = await getTestById(testId);
         setTestData(test);
 
-        // Shuffle and store coding IDs
-        let shuffledCodingIds = test.test_coding_id?.length ? shuffleArray(test.test_coding_id) : [];
-        localStorage.setItem("shuffled_coding_ids", JSON.stringify(shuffledCodingIds));
-        setCodingIds(shuffledCodingIds);
+        // Store coding IDs without shuffling
+        let codingIds = test.test_coding_id?.length ? test.test_coding_id : [];
+        localStorage.setItem("coding_ids", JSON.stringify(codingIds));
+        setCodingIds(codingIds);
 
         // Fetch and shuffle MCQ data
         const mcqPromises = test.test_mcq_id.map((id) => getMcqById(id));
@@ -448,7 +448,13 @@ const McqPage = () => {
       type: "proceed",
       message: "Once you proceed to the coding section, you cannot return to the MCQ section. Do you want to continue?",
       onConfirm: () => {
-        navigate(`/coding/${codingIds[0]}`);
+        navigate(`/coding/${codingIds[0]}`, {
+          state: {
+            ...testResult,
+            currentCodingIndex: 0,
+            codingIds,
+          },
+        });
         setDialog({ open: false });
       },
     });

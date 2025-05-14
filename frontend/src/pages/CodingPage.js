@@ -296,32 +296,29 @@ const CodingPage = () => {
   // Test context from localStorage or state
   const savedTestResult = JSON.parse(localStorage.getItem("test_result")) || {};
   const [testResult, setTestResult] = useState({
-    testMcqIds: savedTestResult.testMcqIds || state?.testMcqIds || [],
-    testCodingIds: savedTestResult.testCodingIds || state?.testCodingIds || [],
-    testTotalScore: savedTestResult.testTotalScore || state?.testTotalScore || 0,
-    mcqScore: savedTestResult.mcqScore || state?.mcqScore || 0,
-    testName: savedTestResult.testName || state?.testName || "",
-    testLanguage: savedTestResult.testLanguage || state?.testLanguage || "",
-    currentCodingIndex: savedTestResult.currentCodingIndex || state?.currentCodingIndex || 0,
-    codingResults: savedTestResult.codingResults || state?.codingResults || [],
+    result_user_id: savedTestResult.result_user_id || state?.result_user_id || "",
     codingAnswered: savedTestResult.codingAnswered || state?.codingAnswered || 0,
+    codingCorrect: savedTestResult.codingCorrect || state?.codingCorrect || 0,
+    codingIds: savedTestResult.codingIds || state?.codingIds || [],
     codingNotAnswered: savedTestResult.codingNotAnswered || state?.codingNotAnswered || 0,
     codingNotVisited: savedTestResult.codingNotVisited || state?.codingNotVisited || 0,
-    codingCorrect: savedTestResult.codingCorrect || state?.codingCorrect || 0,
     codingWrong: savedTestResult.codingWrong || state?.codingWrong || 0,
-    studentName: savedTestResult.studentName || state?.studentName || "",
+    marked: savedTestResult.marked || state?.marked || 0,
     mcqAnswered: savedTestResult.mcqAnswered || state?.mcqAnswered || 0,
     mcqCorrect: savedTestResult.mcqCorrect || state?.mcqCorrect || 0,
-    mcqWrong: savedTestResult.mcqWrong || state?.mcqWrong || 0,
     mcqNotAnswered: savedTestResult.mcqNotAnswered || state?.mcqNotAnswered || 0,
     mcqNotVisited: savedTestResult.mcqNotVisited || state?.mcqNotVisited || 0,
-    marked: savedTestResult.marked || state?.marked || 0,
-    warningCount: savedTestResult.warningCount || state?.warningCount || 0,
-    result_user_id: savedTestResult.result_user_id || state?.result_user_id || userId,
-    result_test_id: savedTestResult.result_test_id || state?.result_test_id || testId,
-    result_poc_id: savedTestResult.result_poc_id || state?.result_poc_id || pocId,
-
-    
+    mcqWrong: savedTestResult.mcqWrong || state?.mcqWrong || 0,
+    result_poc_id: savedTestResult.result_poc_id || state?.result_poc_id || "",
+    result_score: savedTestResult.result_score || state?.result_score || 0,
+    result_test_id: savedTestResult.result_test_id || state?.result_test_id || "",
+    result_total_score: savedTestResult.result_total_score || state?.result_total_score || 0,
+    studentName: savedTestResult.studentName || state?.studentName || "",
+    testLanguage: savedTestResult.testLanguage || state?.testLanguage || "",
+    testName: savedTestResult.testName || state?.testName || "",
+    currentCodingIndex: savedTestResult.currentCodingIndex || state?.currentCodingIndex || 0,
+    codingResults: savedTestResult.codingResults || state?.codingResults || [],
+    warningCount: savedTestResult.warningCount || 0,
   });
 
   // Component state
@@ -343,7 +340,7 @@ const CodingPage = () => {
   const [outputHeight, setOutputHeight] = useState(30);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [fetchedTestCodingIds, setFetchedTestCodingIds] = useState([]);
-  const [malpracticeCount, setMalpracticeCount] = useState(testResult.warningCount);
+  const [malpracticeCount, setMalpracticeCount] = useState(savedTestResult.warningCount || 0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const isDraggingRef = useRef(false);
@@ -381,16 +378,22 @@ const CodingPage = () => {
   // Fetch user data from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("true");
-    if (storedUser){
+    if (storedUser) {
       try {
         const user = JSON.parse(storedUser);
         setStudentName(user.user.full_name || "");
         setUserId(user.user.user_id || "");
         setPocId(user.user.mod_poc_id?.mod_poc_id || "");
-        setTestResult(prev => ({
-          ...prev,
-          studentName: user.user.full_name || prev.studentName,
-        }));
+        setTestResult((prev) => {
+          const updatedTestResult = {
+            ...prev,
+            studentName: user.user.full_name || prev.studentName,
+            result_user_id: user.user.user_id || prev.result_user_id,
+            result_poc_id: user.user.mod_poc_id?.mod_poc_id || prev.result_poc_id,
+          };
+          localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
+          return updatedTestResult;
+        });
       } catch (error) {
         console.error("Error parsing stored user data:", error);
         setSnackbarMessage("Invalid user data in localStorage.");
@@ -411,9 +414,11 @@ const CodingPage = () => {
       if (savedPayload) {
         try {
           const parsedPayload = JSON.parse(savedPayload);
-          setLanguage(parsedPayload.language ? Object.keys(languageApiMap).find(
-            key => languageApiMap[key] === parsedPayload.language
-          ) : "python");
+          setLanguage(
+            parsedPayload.language
+              ? Object.keys(languageApiMap).find((key) => languageApiMap[key] === parsedPayload.language)
+              : "python"
+          );
           setInput(parsedPayload.code || templates[language]);
         } catch (error) {
           console.error("Error parsing saved payload:", error);
@@ -439,13 +444,13 @@ const CodingPage = () => {
       try {
         const res = await getTestById(testId);
         setFetchedTestCodingIds(res.test_coding_id || []);
-        setTestResult(prev => {
+        setTestResult((prev) => {
           const updatedTestResult = {
             ...prev,
-            testCodingIds: res.test_coding_id || prev.testCodingIds,
+            codingIds: res.test_coding_id || prev.codingIds,
             testName: res.test_name || prev.testName,
             testLanguage: res.test_language || prev.testLanguage,
-            testTotalScore: (res.test_mcq_id?.length || 0) + (res.test_coding_id?.length || 0) * 10,
+            result_total_score: (res.test_mcq_id?.length || 0) + (res.test_coding_id?.length || 0) * 10,
           };
           localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
           return updatedTestResult;
@@ -484,7 +489,7 @@ const CodingPage = () => {
     const handleMalpractice = () => {
       setMalpracticeCount((prev) => {
         const newCount = prev + 1;
-        setTestResult(prevResult => {
+        setTestResult((prevResult) => {
           const updatedTestResult = {
             ...prevResult,
             warningCount: newCount,
@@ -817,9 +822,7 @@ const CodingPage = () => {
       }
 
       console.log("Fetching test cases:", code.code_test_cases_id);
-      const testCasePromises = code.code_test_cases_id.map((testcase_id) =>
-        fetchTestCaseById(testcase_id)
-      );
+      const testCasePromises = code.code_test_cases_id.map((testcase_id) => fetchTestCaseById(testcase_id));
       const responses = await Promise.all(testCasePromises);
       console.log("Fetched test cases:", responses);
 
@@ -858,7 +861,7 @@ const CodingPage = () => {
   }, [codeId]);
 
   // Compile and evaluate code
-  const compileAndEvaluate = async () => {
+  const compileAndEvaluate = async (currentCodeId, codeInput, codeLanguage, codeTestCases) => {
     setShowOutput(true);
     setOutputMinimized(false);
     setLoading(true);
@@ -866,7 +869,7 @@ const CodingPage = () => {
     setOutput("Running code against test cases...\n");
 
     try {
-      const formattedTestCases = testCases.map((testCase) => ({
+      const formattedTestCases = codeTestCases.map((testCase) => ({
         input: Array.isArray(testCase.testcase_input)
           ? testCase.testcase_input.join("\n")
           : testCase.testcase_input || "",
@@ -876,12 +879,12 @@ const CodingPage = () => {
       }));
 
       const submissionPayload = {
-        language: languageApiMap[language],
-        code: input,
+        language: languageApiMap[codeLanguage],
+        code: codeInput,
         testCases: formattedTestCases,
       };
 
-      localStorage.setItem(`code_${codeId}`, JSON.stringify(submissionPayload));
+      localStorage.setItem(`code_${currentCodeId}`, JSON.stringify(submissionPayload));
 
       console.log("Submitting payload to compiler:", submissionPayload);
       const { results } = await compileCode(submissionPayload);
@@ -901,8 +904,8 @@ const CodingPage = () => {
       const allPassed = results.length > 0 && results.every((res) => res.passed);
       const codingScore = allPassed ? 10 : 0;
 
-      const newCodingResult = { codeId, score: codingScore, total: 10 };
-      const existingIndex = testResult.codingResults.findIndex((result) => result.codeId === codeId);
+      const newCodingResult = { codeId: currentCodeId, score: codingScore, total: 10 };
+      const existingIndex = testResult.codingResults.findIndex((result) => result.codeId === currentCodeId);
       let updatedCodingResults;
       if (existingIndex !== -1) {
         updatedCodingResults = [...testResult.codingResults];
@@ -912,29 +915,25 @@ const CodingPage = () => {
       }
 
       const updatedCodingAnswered = updatedCodingResults.length;
-      const updatedCodingCorrect = updatedCodingResults.filter(r => r.score > 0).length;
-      const updatedCodingWrong = updatedCodingResults.filter(r => r.score === 0).length;
+      const updatedCodingCorrect = updatedCodingResults.filter((r) => r.score > 0).length;
+      const updatedCodingWrong = updatedCodingResults.filter((r) => r.score === 0).length;
       const updatedCodingNotAnswered = effectiveCodingIds.length - updatedCodingAnswered;
       const updatedCodingNotVisited = effectiveCodingIds.length - updatedCodingAnswered;
-      const res = await getTestById(testId);
-
 
       const updatedTestResult = {
         ...testResult,
-        
         codingResults: updatedCodingResults,
-        result_user_id: userId || "",
-        result_test_id: testId,
-        result_score: testResult.mcqScore + updatedCodingResults.reduce((sum, result) => sum + result.score, 0),
-        result_total_score: (res.test_mcq_id?.length || 0) + (res.test_coding_id?.length || 0) * 10,
-        result_poc_id: pocId || "",
+        result_user_id: userId || testResult.result_user_id,
+        result_test_id: testId || testResult.result_test_id,
+        result_score: testResult.mcqCorrect + updatedCodingResults.reduce((sum, result) => sum + result.score, 0),
+        result_total_score: testResult.result_total_score,
+        result_poc_id: pocId || testResult.result_poc_id,
         codingAnswered: updatedCodingAnswered,
         codingNotAnswered: updatedCodingNotAnswered,
         codingNotVisited: updatedCodingNotVisited,
         codingCorrect: updatedCodingCorrect,
         codingWrong: updatedCodingWrong,
-        warningCount: malpracticeCount,
-        studentName: studentName,
+        studentName: studentName || testResult.studentName,
       };
 
       setTestResult(updatedTestResult);
@@ -959,7 +958,57 @@ const CodingPage = () => {
   // Handle code run
   const handleRun = async (e) => {
     e.preventDefault();
-    await compileAndEvaluate();
+    await compileAndEvaluate(codeId, input, language, testCases);
+  };
+
+  // Compile all programs
+  const compileAllPrograms = async () => {
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
+    setLoading(true);
+    setOpenProgressDialog(true);
+    setOutput("Processing results...\nCompiling all programs...\n");
+
+    try {
+      for (const id of effectiveCodingIds) {
+        const savedPayload = localStorage.getItem(`code_${id}`);
+        let codeInput = templates[language];
+        let codeLanguage = language;
+        let codeTestCases = [];
+
+        // Fetch test cases for this code
+        const code = await fetchCodeById(id);
+        if (code.code_test_cases_id && code.code_test_cases_id.length > 0) {
+          const testCasePromises = code.code_test_cases_id.map((testcase_id) => fetchTestCaseById(testcase_id));
+          const responses = await Promise.all(testCasePromises);
+          codeTestCases = responses.filter((tc) => tc && tc.testcase_input && tc.testcase_output);
+        }
+
+        if (savedPayload) {
+          const parsedPayload = JSON.parse(savedPayload);
+          codeInput = parsedPayload.code || templates[language];
+          codeLanguage = Object.keys(languageApiMap).find((key) => languageApiMap[key] === parsedPayload.language) || language;
+        }
+
+        const success = await compileAndEvaluate(id, codeInput, codeLanguage, codeTestCases);
+        if (!success) {
+          setOutput((prev) => `${prev}\nFailed to compile program ${id}`);
+        }
+      }
+      setOutput((prev) => `${prev}\nAll programs compiled successfully!\n`);
+      setSnackbarMessage("All programs compiled successfully!");
+      setSnackbarSeverity("success");
+      return true;
+    } catch (error) {
+      console.error("Error compiling all programs:", error);
+      setOutput((prev) => `${prev}\nError compiling programs: ${error.message}`);
+      setSnackbarMessage("Error compiling all programs.");
+      setSnackbarSeverity("error");
+      return false;
+    } finally {
+      setLoading(false);
+      setOpenProgressDialog(false);
+      setSnackbarOpen(true);
+    }
   };
 
   // Handle final test submission
@@ -968,33 +1017,65 @@ const CodingPage = () => {
 
     setLoading(true);
     setOpenProgressDialog(true);
-    setOutput("Submitting test for final evaluation...\n");
+    setOutput("Processing results...\n");
     setShowOutput(true);
 
+    // Compile all programs first
+    const compileSuccess = await compileAllPrograms();
+    if (!compileSuccess) {
+      setOutput((prev) => `${prev}\nSubmission aborted due to compilation errors.`);
+      setSnackbarMessage("Failed to compile all programs. Please fix errors before submitting.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      setLoading(false);
+      setOpenProgressDialog(false);
+      return;
+    }
+
     try {
+      // Construct resultData from updated testResult after compilation
       const resultData = {
-        ...testResult,
-        result_user_id: userId || "",
-        result_test_id: testId,
-        result_score: testResult.mcqCorrect + testResult.codingResults.reduce((sum, result) => sum + result.score, 0),
-        result_poc_id: pocId || "",
-        warningCount: isMalpractice ? malpracticeCount : testResult.warningCount,
-        studentName: studentName,
+        result_user_id: testResult.result_user_id || userId || "",
+        result_test_id: testResult.result_test_id || testId || "",
+        result_poc_id: testResult.result_poc_id || pocId || "",
+        result_score: testResult.result_score || 0,
+        result_total_score: testResult.result_total_score || 0,
+        codingAnswered: testResult.codingAnswered || 0,
+        codingCorrect: testResult.codingCorrect || 0,
+        codingIds: testResult.codingIds || [],
+        codingNotAnswered: testResult.codingNotAnswered || 0,
+        codingNotVisited: testResult.codingNotVisited || 0,
+        codingWrong: testResult.codingWrong || 0,
+        marked: testResult.marked || 0,
+        mcqAnswered: testResult.mcqAnswered || 0,
+        mcqCorrect: testResult.mcqCorrect || 0,
+        mcqNotAnswered: testResult.mcqNotAnswered || 0,
+        mcqNotVisited: testResult.mcqNotVisited || 0,
+        mcqWrong: testResult.mcqWrong || 0,
+        studentName: testResult.studentName || studentName || "",
+        testLanguage: testResult.testLanguage || "",
+        testName: testResult.testName || "",
+        warningCount: isMalpractice ? malpracticeCount : testResult.warningCount || 0,
+        codingResults: testResult.codingResults || [],
       };
 
+      setOutput((prev) => `${prev}\nSubmitting test for final evaluation...\n`);
       console.log("Submitting final test result:", resultData);
       await submitTestResult(resultData);
 
-      effectiveCodingIds.forEach(id => localStorage.removeItem(`code_${id}`));
+      // Clear localStorage for code submissions
+      const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
+      effectiveCodingIds.forEach((id) => localStorage.removeItem(`code_${id}`));
 
 
       setHasSubmitted(true);
       navigate("/test-result", { state: { resultData } });
+      setOutput((prev) => `${prev}\nTest submitted successfully!`);
       setSnackbarMessage("Test submitted successfully!");
       setSnackbarSeverity("success");
     } catch (error) {
       console.error("Final submit error:", error);
-      setOutput(`Error submitting test: ${error.message}`);
+      setOutput((prev) => `${prev}\nError submitting test: ${error.message}`);
       setSnackbarMessage(`Error during test submission: ${error.message}`);
       setSnackbarSeverity("error");
     } finally {
@@ -1007,10 +1088,10 @@ const CodingPage = () => {
   // Handle navigation to the next program
   const handleNextProgram = async () => {
     saveSubmissionPayload();
-    const success = await compileAndEvaluate();
+    const success = await compileAndEvaluate(codeId, input, language, testCases);
     if (!success) return;
 
-    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.testCodingIds;
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
       const nextCodeId = effectiveCodingIds[testResult.currentCodingIndex + 1];
       navigate(`/coding/${nextCodeId}`, {
@@ -1022,20 +1103,16 @@ const CodingPage = () => {
       setSnackbarMessage("Compiled and moved to next program.");
       setSnackbarSeverity("info");
       setSnackbarOpen(true);
-    } else {
-      setSnackbarMessage("This is the last program.");
-      setSnackbarSeverity("info");
-      setSnackbarOpen(true);
     }
   };
 
   // Handle navigation to the next problem
   const handleNext = async () => {
     saveSubmissionPayload();
-    const success = await compileAndEvaluate();
+    const success = await compileAndEvaluate(codeId, input, language, testCases);
     if (!success) return;
 
-    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.testCodingIds;
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
       const nextCodeId = effectiveCodingIds[testResult.currentCodingIndex + 1];
       navigate(`/coding/${nextCodeId}`, {
@@ -1053,10 +1130,10 @@ const CodingPage = () => {
   // Handle navigation to the previous problem
   const handlePrevious = async () => {
     saveSubmissionPayload();
-    const success = await compileAndEvaluate();
+    const success = await compileAndEvaluate(codeId, input, language, testCases);
     if (!success) return;
 
-    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.testCodingIds;
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex > 0) {
       const prevCodeId = effectiveCodingIds[testResult.currentCodingIndex - 1];
       navigate(`/coding/${prevCodeId}`, {
@@ -1085,16 +1162,15 @@ const CodingPage = () => {
   };
 
   // Determine effective coding IDs
-  const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.testCodingIds;
+  const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
   const hasCodingProblems = effectiveCodingIds.length > 0;
+  const isFirstProgram = testResult.currentCodingIndex === 0;
+  const isLastProgram = testResult.currentCodingIndex >= effectiveCodingIds.length - 1;
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Dialog
-        open={openProgressDialog}
-        PaperProps={{ sx: { borderRadius: 3, bgcolor: "background.paper" } }}
-      >
+      <Dialog open={openProgressDialog} PaperProps={{ sx: { borderRadius: 3, bgcolor: "background.paper" } }}>
         <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2, p: 4 }}>
           <CircularProgress sx={{ color: "#0c83c8" }} />
           <Typography
@@ -1247,9 +1323,7 @@ const CodingPage = () => {
             </FormControl>
             <FormGroup>
               <FormControlLabel
-                control={
-                  <MaterialUISwitch sx={{ m: { xs: 0.5, sm: 1 } }} checked={mode === "dark"} onChange={toggleTheme} />
-                }
+                control={<MaterialUISwitch sx={{ m: { xs: 0.5, sm: 1 } }} checked={mode === "dark"} onChange={toggleTheme} />}
                 label=""
               />
             </FormGroup>
@@ -1325,21 +1399,23 @@ const CodingPage = () => {
                 >
                   Run
                 </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  onClick={handleNextProgram}
-                  disabled={loading}
-                  startIcon={<NavigateNextIcon />}
-                  size="small"
-                  sx={{
-                    fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                    px: { xs: 1, sm: 2 },
-                    fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                  }}
-                >
-                  Next Program
-                </Button>
+                {!isLastProgram && (
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={handleNextProgram}
+                    disabled={loading}
+                    startIcon={<NavigateNextIcon />}
+                    size="small"
+                    sx={{
+                      fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                      px: { xs: 1, sm: 2 },
+                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                    }}
+                  >
+                    Next Program
+                  </Button>
+                )}
                 <Button
                   variant="contained"
                   color="error"
@@ -1454,11 +1530,7 @@ const CodingPage = () => {
                     onClick={() => setShowTestCases(!showTestCases)}
                     aria-label={showTestCases ? "Collapse test cases" : "Expand test cases"}
                   >
-                    {showTestCases ? (
-                      <KeyboardArrowUpIcon fontSize="small" />
-                    ) : (
-                      <KeyboardArrowDownIcon fontSize="small" />
-                    )}
+                    {showTestCases ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
                   </IconButton>
                 ) : (
                   <Tooltip title={testCasesCollapsed ? "Expand" : "Collapse"}>
@@ -1467,11 +1539,7 @@ const CodingPage = () => {
                       onClick={toggleTestCases}
                       aria-label={testCasesCollapsed ? "Expand test cases" : "Collapse test cases"}
                     >
-                      {testCasesCollapsed ? (
-                        <KeyboardArrowLeftIcon fontSize="small" />
-                      ) : (
-                        <KeyboardArrowRightIcon fontSize="small" />
-                      )}
+                      {testCasesCollapsed ? <KeyboardArrowLeftIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
                     </IconButton>
                   </Tooltip>
                 )}
@@ -1585,9 +1653,7 @@ const CodingPage = () => {
                                   }}
                                 >
                                   <strong>Input:</strong>{" "}
-                                  {Array.isArray(tc.testcase_input)
-                                    ? tc.testcase_input.join(", ")
-                                    : tc.testcase_input || "N/A"}
+                                  {Array.isArray(tc.testcase_input) ? tc.testcase_input.join(", ") : tc.testcase_input || "N/A"}
                                 </Typography>
                               )}
                               <Typography
@@ -1733,11 +1799,7 @@ const CodingPage = () => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <Tooltip title={outputMinimized ? "Expand" : "Collapse"}>
                 <IconButton size="small" onClick={toggleOutput}>
-                  {outputMinimized ? (
-                    <KeyboardArrowDownIcon fontSize="small" />
-                  ) : (
-                    <KeyboardArrowUpIcon fontSize="small" />
-                  )}
+                  {outputMinimized ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowUpIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
             </Box>
@@ -1821,68 +1883,62 @@ const CodingPage = () => {
             >
               Back
             </Button>
-            <Button
-              variant="outlined"
-              onClick={handlePrevious}
-              disabled={testResult.currentCodingIndex === 0 || loading || !hasCodingProblems}
-              startIcon={<NavigateBeforeIcon />}
-              sx={{
-                fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-              }}
-            >
-              Previous
-            </Button>
+            {!isFirstProgram && (              <Button
+                variant="outlined"
+                onClick={handlePrevious}
+                disabled={loading || !hasCodingProblems}
+                startIcon={<NavigateBeforeIcon />}
+                sx={{
+                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                }}
+              >
+                Previous
+              </Button>
+            )}
+            {!isLastProgram && (
+              <Button
+                variant="outlined"
+                onClick={handleNext}
+                disabled={loading || !hasCodingProblems}
+                startIcon={<NavigateNextIcon />}
+                sx={{
+                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                }}
+              >
+                Next
+              </Button>
+            )}
           </Box>
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-            }}
-          >
-            Program {hasCodingProblems ? testResult.currentCodingIndex + 1 : 1} of {effectiveCodingIds.length || 1}
-          </Typography>
           <Button
-            variant="outlined"
-            onClick={handleNext}
-            disabled={testResult.currentCodingIndex >= effectiveCodingIds.length - 1 || loading || !hasCodingProblems}
-            endIcon={<NavigateNextIcon />}
+            variant="contained"
+            color="error"
+            onClick={() => handleFinalSubmit()}
+            disabled={loading || hasSubmitted}
+            startIcon={<DoneIcon />}
             sx={{
               fontSize: { xs: "0.65rem", sm: "0.75rem" },
               fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
             }}
           >
-            Next
+            Submit Test
           </Button>
         </Box>
         {isMobile && (
-          <Box sx={{ position: "fixed", bottom: 16, right: 16, zIndex: 1000, display: "flex", gap: 1 }}>
-            <Fab
-              color="primary"
-              aria-label="run"
-              onClick={handleRun}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={20} color="inherit" /> : <PlayArrowIcon />}
-            </Fab>
-            <Fab
-              color="secondary"
-              aria-label="next-program"
-              onClick={handleNextProgram}
-              disabled={loading}
-            >
-              <NavigateNextIcon />
-            </Fab>
-            <Fab
-              color="error"
-              aria-label="submit-test"
-              onClick={() => handleFinalSubmit()}
-              disabled={loading || hasSubmitted}
-            >
-              <DoneIcon />
-            </Fab>
-          </Box>
+          <Fab
+            color="primary"
+            onClick={() => setShowTestCases(!showTestCases)}
+            sx={{
+              position: "fixed",
+              bottom: 80,
+              right: 16,
+              zIndex: 1300,
+            }}
+            aria-label={showTestCases ? "Hide test cases" : "Show test cases"}
+          >
+            {showTestCases ? <KeyboardArrowDownIcon /> : <KeyboardArrowUpIcon />}
+          </Fab>
         )}
       </Box>
     </ThemeProvider>
