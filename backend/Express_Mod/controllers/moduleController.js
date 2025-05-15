@@ -13,15 +13,15 @@ router.post("/add_module", async (req, res) => {
   }
 });
 
-// Get All Modules
-router.get("/get_all_module", async (req, res) => {
-  try {
-    const modules = await Module.find();
-    res.json(modules);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+  // Get All Modules
+  router.get("/get_all_module", async (req, res) => {
+    try {
+      const modules = await Module.find();
+      res.json(modules);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
 // Get Module by ID
 router.get("/get_module_by_id/:id", async (req, res) => {

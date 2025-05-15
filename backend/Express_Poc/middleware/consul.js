@@ -6,7 +6,7 @@ dotenv.config();
 const CONSUL_SERVICE_ID = process.env.CONSUL_SERVICE_ID;
 const CONSUL_SERVICE_NAME = process.env.CONSUL_SERVICE_NAME ;
 const CONSUL_HOST = process.env.CONSUL_HOST;
-const CONSUL_PORT =  6000;
+const CONSUL_PORT = parseInt(process.env.PORT, 10);
 
 
 // register expert service in consul discovery server

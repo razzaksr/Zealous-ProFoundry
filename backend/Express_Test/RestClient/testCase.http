@@ -1,5 +1,5 @@
 ### Create a Test Id and Post the testCase
-POST http://localhost:8000/testcase/create_testCase
+POST http://localhost:8082/testcase/create_testCase
 Content-Type: application/json
 
 [
@@ -56,16 +56,16 @@ Content-Type: application/json
       ]
 
 ### Read all the testCase 
-GET http://localhost:8000/testcase/get_all_testCases
+GET http://localhost:8082/testcase/get_all_testCases
 
 ### Get the testCase 
-GET http://localhost:8000/testcase/get_testcases_by_tag/Ccoding2
+GET http://localhost:8082/testcase/get_testcases_by_tag/Ccoding2
 
 ### Read the testCase by ID
-GET http://localhost:8000/testcase/get_testCase_id/dcb40000-a33a-420f-bd9d-109ccbacc132
+GET http://localhost:8082/testcase/get_testCase_id/dcb40000-a33a-420f-bd9d-109ccbacc132
 
 ### update the TestCase Using 
-PUT http://localhost:8000/testcase/update_testCase
+PUT http://localhost:8082/testcase/update_testCase
 Content-Type: application/json
 
 {
@@ -76,4 +76,4 @@ Content-Type: application/json
 }
 
 #### Delete the TestCase 
-DELETE http://localhost:8000/testcase/delete_testCase/8fdd98c0-6746-4c88-8419-b92cc8c61ecd
+DELETE http://localhost:8082/testcase/delete_testCase/8fdd98c0-6746-4c88-8419-b92cc8c61ecd

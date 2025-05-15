@@ -11,7 +11,7 @@ const handleError = (res, error, customMessage = "Server Error") => {
     res.status(500).json({ success: false, msg: customMessage });
 };
 
-router.post("/code", async (req, res) => {
+router.post("/add_code", async (req, res) => {
   const { code_problem_statement, code_test_cases_id, code_tags } = req.body;
 
   if (!code_problem_statement || code_tags.length === 0) {

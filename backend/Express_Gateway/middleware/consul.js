@@ -7,7 +7,7 @@ const consul = new Consul();
 const CONSUL_SERVICE_ID = process.env.CONSUL_SERVICE_ID;
 const CONSUL_SERVICE_NAME = process.env.CONSUL_SERVICE_NAME;
 const CONSUL_HOST = process.env.CONSUL_HOST;
-const CONSUL_PORT = process.env.PORT || 4000; // Use API Gateway port
+const CONSUL_PORT = parseInt(process.env.PORT, 10);
 
 // Register API Gateway in Consul
 consul.agent.service.register(

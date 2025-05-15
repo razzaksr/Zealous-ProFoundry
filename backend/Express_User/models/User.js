@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     },
     rollno: {
         type: String,
-        unique: true
+        default: null
     },
     email: {
         type: String,
@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    mobile_no: {
+        type: String,
+        default: null 
+    },
     status: {
         type: Boolean,        // true = active, false = inactive
         default: true,
@@ -37,13 +41,14 @@ const userSchema = new mongoose.Schema({
     admin: {
         type: Boolean,        // true = admin, false = normal user
         default: false,
-
     },
     user_last_login: {
         type: Date
-      }
-      
+    }
 });
+
+// Create partial index for unique rollno only when it's not null
+userSchema.index({ rollno: 1 }, { unique: true, partialFilterExpression: { rollno: { $type: 'string' } } });
 
 const User = mongoose.model('User', userSchema);
 module.exports = User;

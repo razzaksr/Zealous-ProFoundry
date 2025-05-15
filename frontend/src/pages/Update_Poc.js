@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Tooltip, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Tooltip,
   Chip,
   Dialog,
   DialogTitle,
@@ -22,8 +22,7 @@ import {
   Divider
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { fetchAllPocs, fetchAllUsers, fetchAllModules, fetchAllTests } from '../axios';
-import axios from 'axios';
+import { fetchAllPocs, fetchAllUsers, fetchAllModules, fetchAllTests, updatePoc } from '../axios';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import CloseIcon from '@mui/icons-material/Close';
@@ -36,7 +35,7 @@ const Update_Poc = () => {
   const [modules, setModules] = useState([]);
   const [tests, setTests] = useState([]);
   const [users, setUsers] = useState([]);
-  
+
   // State for loading
   const [loading, setLoading] = useState({
     pocs: true,
@@ -44,22 +43,22 @@ const Update_Poc = () => {
     tests: true,
     users: true
   });
-  
+
   // State for selections
   const [selectedPocIds, setSelectedPocIds] = useState([]);
   const [selectedModuleIds, setSelectedModuleIds] = useState([]);
   const [selectedTestIds, setSelectedTestIds] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
-  
+
   // State for update operation
   const [updateLoading, setUpdateLoading] = useState(false);
-  
+
   // State for dialogs
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [detailsDialogTitle, setDetailsDialogTitle] = useState('');
   const [detailsDialogContent, setDetailsDialogContent] = useState([]);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-  
+
   // State for notifications
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -187,7 +186,7 @@ const Update_Poc = () => {
       setSnackbarOpen(true);
       return;
     }
-  
+
     // Prepare the test objects array
     const currentDate = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
     const testUpdates = selectedTestIds.map(testId => {
@@ -197,12 +196,12 @@ const Update_Poc = () => {
         assigned_date: currentDate
       };
     });
-  
+
     // Prepare update data - start with just the POC ID
     const updateData = {
       mod_poc_id: selectedPoc.mod_poc_id,
     };
-  
+
     // Only add mod_id if a module is selected
     if (selectedModuleIds.length > 0) {
       const selectedModule = modules.find(m => m._id === selectedModuleIds[0]);
@@ -210,12 +209,12 @@ const Update_Poc = () => {
         updateData.mod_id = selectedModule.mod_id;
       }
     }
-  
+
     // Only add mod_tests if there are tests to update
     if (testUpdates.length > 0) {
       updateData.mod_tests = testUpdates;
     }
-  
+
     // Only add mod_users if there are users to update
     if (selectedUserIds.length > 0) {
       updateData.mod_users = selectedUserIds.map(userId => {
@@ -223,23 +222,23 @@ const Update_Poc = () => {
         return user?.user_id || userId;
       });
     }
-  
+
     console.log('Update data:', updateData);
-  
+
     // Send update request
     setUpdateLoading(true);
     setPreviewDialogOpen(false);
-    
+
     try {
-      const response = await axios.put('http://localhost:4000/poc_gateway/poc/update_poc', updateData);
-      
+      const response = await updatePoc(updateData);
+
       setSnackbarMessage('POC updated successfully');
       setSnackbarSeverity('success');
-      
+
       // Refresh POCs data to show updated data
       const updatedPocsResponse = await fetchAllPocs();
       setPocs(updatedPocsResponse.data);
-      
+
       // Clear selections
       setSelectedPocIds([]);
       setSelectedModuleIds([]);
@@ -254,6 +253,7 @@ const Update_Poc = () => {
       setSnackbarOpen(true);
     }
   };
+
   // POC DataGrid columns
   const columnsForPocs = [
     { field: 'mod_poc_name', headerName: 'Name', width: 150 },
@@ -352,21 +352,21 @@ const Update_Poc = () => {
         );
       }
     },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
+    {
+      field: 'status',
+      headerName: 'Status',
       width: 120,
       renderCell: (params) => (
-        <Chip 
-          label={params.value || 'Unknown'} 
+        <Chip
+          label={params.value || 'Unknown'}
           color={params.value === 'enabled' ? 'success' : 'default'}
           size="small"
         />
       )
     },
-    { 
-      field: 'test_id', 
-      headerName: 'Test ID', 
+    {
+      field: 'test_id',
+      headerName: 'Test ID',
       width: 300,
       flex: 1.5,
       renderCell: (params) => (
@@ -390,7 +390,7 @@ const Update_Poc = () => {
   const dataGridSx = {
     '& .MuiDataGrid-columnHeaders': {
       backgroundColor: '#1565c0',
-      color: 'white', 
+      color: 'white',
       fontWeight: 'bold',
       fontSize: '16px',
     },
@@ -410,7 +410,7 @@ const Update_Poc = () => {
 
   return (
     <>
-    <Admin_Dashboard />
+      <Admin_Dashboard />
       {/* POC Management */}
       <Box sx={{ padding: 4, backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
         <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, fontWeight: 'bold' }}>
@@ -476,7 +476,7 @@ const Update_Poc = () => {
         <Typography variant="h4" gutterBottom align="center" sx={{ mb: 4, fontWeight: 'bold' }}>
           Test Management Dashboard
         </Typography>
-        
+
         <Paper elevation={3} sx={{ p: 2, mb: 4, borderRadius: '16px' }}>
           <Typography variant="h6" sx={{ mb: 2 }}>Tests</Typography>
           <Box sx={{ width: '100%' }}>
@@ -550,15 +550,15 @@ const Update_Poc = () => {
           <DialogContentText paragraph>
             Please review the following changes before updating the POC:
           </DialogContentText>
-          
+
           {/* Selected POC */}
           <Typography variant="h6" gutterBottom>Selected POC</Typography>
           {selectedPocIds.length === 1 ? (
             <List dense>
               {pocs.filter(poc => poc._id === selectedPocIds[0]).map(poc => (
                 <ListItem key={poc._id}>
-                  <ListItemText 
-                    primary={poc.mod_poc_name} 
+                  <ListItemText
+                    primary={poc.mod_poc_name}
                     secondary={`ID: ${poc.mod_poc_id} | Role: ${poc.mod_poc_role} | Email: ${poc.mod_poc_email}`}
                   />
                 </ListItem>
@@ -567,17 +567,17 @@ const Update_Poc = () => {
           ) : (
             <Alert severity="warning">No POC selected</Alert>
           )}
-          
+
           <Divider sx={{ my: 2 }} />
-          
+
           {/* Selected Module */}
           <Typography variant="h6" gutterBottom>Selected Module</Typography>
           {selectedModuleIds.length === 1 ? (
             <List dense>
               {modules.filter(mod => mod._id === selectedModuleIds[0]).map(mod => (
                 <ListItem key={mod._id}>
-                  <ListItemText 
-                    primary={mod.mod_name} 
+                  <ListItemText
+                    primary={mod.mod_name}
                     secondary={`ID: ${mod.mod_id} | Technology: ${mod.mod_tech} | Duration: ${mod.mod_duration}`}
                   />
                 </ListItem>
@@ -586,17 +586,17 @@ const Update_Poc = () => {
           ) : (
             <Alert severity="info">No module selected</Alert>
           )}
-          
+
           <Divider sx={{ my: 2 }} />
-          
+
           {/* Selected Tests */}
           <Typography variant="h6" gutterBottom>Selected Tests ({selectedTestIds.length})</Typography>
           {selectedTestIds.length > 0 ? (
             <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
               {tests.filter(test => selectedTestIds.includes(test._id)).map(test => (
                 <ListItem key={test._id}>
-                  <ListItemText 
-                    primary={test.test_name} 
+                  <ListItemText
+                    primary={test.test_name}
                     secondary={`ID: ${test.test_id} | Language: ${test.test_language} | Score: ${test.test_total_score}`}
                   />
                 </ListItem>
@@ -605,17 +605,17 @@ const Update_Poc = () => {
           ) : (
             <Alert severity="info">No tests selected</Alert>
           )}
-          
+
           <Divider sx={{ my: 2 }} />
-          
+
           {/* Selected Users */}
           <Typography variant="h6" gutterBottom>Selected Users ({selectedUserIds.length})</Typography>
           {selectedUserIds.length > 0 ? (
             <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
               {users.filter(user => selectedUserIds.includes(user._id)).map(user => (
                 <ListItem key={user._id}>
-                  <ListItemText 
-                    primary={user.full_name} 
+                  <ListItemText
+                    primary={user.full_name}
                     secondary={`ID: ${user.user_id} | Email: ${user.email} | Dept: ${user.department}`}
                   />
                 </ListItem>
@@ -627,10 +627,10 @@ const Update_Poc = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePreviewDialog}>Cancel</Button>
-          <Button 
-            onClick={handleUpdatePoc} 
-            variant="contained" 
-            color="primary" 
+          <Button
+            onClick={handleUpdatePoc}
+            variant="contained"
+            color="primary"
             disabled={updateLoading || selectedPocIds.length !== 1}
           >
             {updateLoading ? <CircularProgress size={24} sx={{ mr: 1 }} /> : null}
@@ -671,16 +671,16 @@ const Update_Poc = () => {
       </Dialog>
 
       {/* Snackbar notification */}
-      <Snackbar 
-        open={snackbarOpen} 
-        autoHideDuration={4000} 
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbarOpen(false)} 
-          severity={snackbarSeverity} 
-          variant="filled" 
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
           sx={{ width: '100%' }}
         >
           {snackbarMessage}

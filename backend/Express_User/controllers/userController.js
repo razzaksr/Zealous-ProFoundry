@@ -93,7 +93,22 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Create a new User
+// Generate password for non-admin users if empty
+const generatePassword = (full_name, mobile_no) => {
+  // First 4 letters of full_name (lowercase)
+  let namePart = (full_name || "").toLowerCase().slice(0, 4);
+  if (namePart.length < 4) {
+    namePart = namePart.padEnd(4, namePart[0] || "a"); // Pad with first letter or 'a'
+  }
+
+  // Last 4 digits of mobile_no
+  const digits = (mobile_no || "").replace(/\D/g, ""); // Extract digits
+  const mobilePart = digits.slice(-4).padStart(4, "0"); // Last 4 digits, pad with zeros if needed
+
+  return namePart + mobilePart;
+};
+
+// Single user creation
 router.post("/add_user", async (req, res) => {
   const {
     full_name,
@@ -101,25 +116,34 @@ router.post("/add_user", async (req, res) => {
     college,
     rollno,
     email,
-    password,
+    password: rawPassword,
+    mobile_no,
     status,
-    admin
+    admin,
   } = req.body;
 
-  // Validate required fields for admin vs normal user
-  if (!full_name || !email || !password) {
-    return res.status(400).json({ msg: "Full name, email, and password are required" });
+  // Validate required fields
+  if (!full_name || !email) {
+    return res.status(400).json({ msg: "Full name and email are required" });
   }
 
-  // If it's not admin, validate department, college, rollno
-  if (!admin) {
+  if (admin) {
+    if (!rawPassword) {
+      return res.status(400).json({ msg: "Password is required for admin users" });
+    }
+  } else {
     if (!department || !college || !rollno) {
-      return res.status(400).json({ msg: "Department, college, and roll number are required for non-admin users" });
+      return res
+        .status(400)
+        .json({ msg: "Department, college, and roll number are required for non-admin users" });
+    }
+    if (!rawPassword && !mobile_no) {
+      return res.status(400).json({ msg: "Mobile number is required for non-admin users when password is empty" });
     }
   }
 
   try {
-    // Build query for uniqueness check
+    // Check for existing user
     const query = [{ email }];
     if (rollno) query.push({ rollno });
 
@@ -128,28 +152,148 @@ router.post("/add_user", async (req, res) => {
       return res.status(400).json({ msg: "Email or Roll Number already exists" });
     }
 
+    // Generate or use provided password
+    const finalPassword = !rawPassword && !admin ? generatePassword(full_name, mobile_no) : rawPassword;
+
     // Hash the password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(finalPassword, salt);
 
     const newUser = new User({
       full_name,
       email,
       password: hashedPassword,
+      mobile_no: mobile_no || null,
       department: department || "",
       college: college || "",
-      rollno: rollno || null,  // <-- Fix here
+      rollno: rollno || null,
       status: status !== undefined ? status : true,
       admin: admin === true,
     });
 
     const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
+    // Return plain password and requested fields in response
+    res.status(201).json({
+      full_name: savedUser.full_name,
+      email: savedUser.email,
+      plain_password: finalPassword,
+      department: savedUser.department,
+      college: savedUser.college,
+      rollno: savedUser.rollno,
+    });
   } catch (error) {
-    res.status(500).json({ msg: "Server Error", error });
+    console.error("Error in add_user:", error);
+    res.status(500).json({ msg: "Server Error", error: error.message });
   }
 });
 
+// Bulk user creation
+router.post("/bulk_add_users", async (req, res) => {
+  const users = req.body; // Expect array of user objects
+
+  if (!Array.isArray(users) || users.length === 0) {
+    return res.status(400).json({ msg: "Users array is required and cannot be empty" });
+  }
+
+  const results = {
+    successes: [],
+    failures: [],
+  };
+
+  try {
+    for (const user of users) {
+      const {
+        full_name,
+        department,
+        college,
+        rollno,
+        email,
+        password: rawPassword,
+        mobile_no,
+        status,
+        admin = false, // Default to false
+      } = user;
+
+      // Validate required fields
+      if (!full_name || !email) {
+        results.failures.push({ email: email || "unknown", msg: "Full name and email are required" });
+        continue;
+      }
+
+      if (admin) {
+        if (!rawPassword) {
+          results.failures.push({ email: email || "unknown", msg: "Password is required for admin users" });
+          continue;
+        }
+      } else {
+        if (!department || !college || !rollno) {
+          results.failures.push({
+            email: email || "unknown",
+            msg: "Department, college, and roll number are required for non-admin users",
+          });
+          continue;
+        }
+        if (!rawPassword && !mobile_no) {
+          results.failures.push({
+            email: email || "unknown",
+            msg: "Mobile number is required for non-admin users when password is empty",
+          });
+          continue;
+        }
+      }
+
+      // Check for existing user
+      const query = [{ email }];
+      if (rollno) query.push({ rollno });
+
+      const existingUser = await User.findOne({ $or: query });
+      if (existingUser) {
+        results.failures.push({ email, msg: "Email or Roll Number already exists" });
+        continue;
+      }
+
+      // Generate or use provided password
+      const finalPassword = !rawPassword && !admin ? generatePassword(full_name, mobile_no) : rawPassword;
+
+      // Hash the password
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(finalPassword, salt);
+
+      const newUser = new User({
+        full_name,
+        email,
+        password: hashedPassword,
+        mobile_no: mobile_no || null,
+        department: department || "",
+        college: college || "",
+        rollno: rollno || null,
+        status: status !== undefined ? status : true,
+        admin: admin === true,
+      });
+
+      const savedUser = await newUser.save();
+      // Include requested fields in success response
+      results.successes.push({
+        full_name: savedUser.full_name,
+        email: savedUser.email,
+        plain_password: finalPassword,
+        department: savedUser.department,
+        college: savedUser.college,
+        rollno: savedUser.rollno,
+      });
+    }
+
+    // Return results
+    res.status(200).json({
+      msg: "Bulk user creation completed",
+      successes: results.successes,
+      failures: results.failures,
+    });
+  } catch (error) {
+    console.error("Error in bulk_add_users:", error);
+    res.status(500).json({ msg: "Server Error", error: error.message });
+  }
+});
 
 // Get all Users
 router.get("/read_all_users", async (req, res) => {

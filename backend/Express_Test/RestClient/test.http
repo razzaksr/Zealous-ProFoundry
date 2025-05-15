@@ -1,5 +1,5 @@
 ### Create Test
-POST http://localhost:8000/test/create
+POST http://localhost:8082/test/create
 Content-Type: application/json
 
 {
@@ -24,22 +24,22 @@ Content-Type: application/json
 ###
 
 ### Get All Tests
-GET http://localhost:8000/test/all
+GET http://localhost:8082/test/all
 
 ###
 
 ### Get Only Active Tests (auto-disables expired tests after 24 hrs)
-GET http://localhost:8000/test/active
+GET http://localhost:8082/test/active
 
 ###
 
 ### Get Test by ID
-GET http://localhost:8000/test/get_by_test_id/7fb99966-8e32-4481-9f54-50bcf7e33e50
+GET http://localhost:8082/test/get_by_test_id/7fb99966-8e32-4481-9f54-50bcf7e33e50
 
 ###
 
 ### Update Test (Add MCQ & Coding Test IDs)
-PUT http://localhost:8000/test/update
+PUT http://localhost:8082/test/update
 Content-Type: application/json
 
 {
@@ -51,7 +51,7 @@ Content-Type: application/json
 ###
 
 ### Toggle Test Status to ACTIVE (sets activeAt timestamp)
-PUT http://localhost:8000/test/toggle_status
+PUT http://localhost:8082/test/toggle_status
 Content-Type: application/json
 
 {
@@ -62,7 +62,7 @@ Content-Type: application/json
 ###
 
 ### Toggle Test Status to DISABLED (clears activeAt)
-PUT http://localhost:8000/test/toggle_status
+PUT http://localhost:8082/test/toggle_status
 Content-Type: application/json
 
 {
@@ -73,12 +73,12 @@ Content-Type: application/json
 ###
 
 ### Delete Test
-DELETE http://localhost:8000/test/delete/11571180-691a-4b62-b126-43e000b98479
+DELETE http://localhost:8082/test/delete/11571180-691a-4b62-b126-43e000b98479
 
 ###
 
 ### Remove MCQ from Test
-PUT http://localhost:8000/test/remove_mcq_from_test
+PUT http://localhost:8082/test/remove_mcq_from_test
 Content-Type: application/json
 
 {

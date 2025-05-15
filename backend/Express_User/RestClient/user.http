@@ -1,5 +1,5 @@
 ### Create User
-POST http://localhost:7000/user/add_user
+POST http://localhost:8081/user/add_user
 Content-Type: application/json
 
 {
@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### Create Admin
-POST http://localhost:7000/user/add_user
+POST http://localhost:8081/user/add_user
 Content-Type: application/json
 
 {
@@ -23,7 +23,7 @@ Content-Type: application/json
 }
 
 ### Login User
-POST http://localhost:7000/user/login
+POST http://localhost:8081/user/login
 Content-Type: application/json
 
 {
@@ -32,19 +32,19 @@ Content-Type: application/json
 }
 
 ### Get All Users
-GET http://localhost:7000/user/read_all_users
+GET http://localhost:8081/user/read_all_users
 
 ### Get User by ID
-GET http://localhost:7000/user/get_user_by_id/45003e3b-9ada-40a7-8e8e-4a10252cd6b1
+GET http://localhost:8081/user/get_user_by_id/45003e3b-9ada-40a7-8e8e-4a10252cd6b1
 ### Get User only user ID
-GET http://localhost:7000/user/user-ids
+GET http://localhost:8081/user/user-ids
 
 ### GET USER ID BY ROLL NO
-GET http://localhost:7000/user/get_user_id_by_rollno/23IT017
+GET http://localhost:8081/user/get_user_id_by_rollno/23IT017
 
 
 ### Get Bulk User by Roll No 
-POST http://localhost:7000/user/users/bulk 
+POST http://localhost:8081/user/users/bulk 
 Content-Type: application/json
 
 {
@@ -108,7 +108,7 @@ Content-Type: application/json
   ]
 }
 ### Update User
-PUT http://localhost:7000/user/update_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
+PUT http://localhost:8081/user/update_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
 Content-Type: application/json
 
 {
@@ -118,7 +118,7 @@ Content-Type: application/json
 }
 
 ### Update User Last Login
-PUT http://localhost:7000/user/update_last_login/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+PUT http://localhost:8081/user/update_last_login/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
 Content-Type: application/json
 
 {
@@ -126,7 +126,7 @@ Content-Type: application/json
 }
 
 ### Update User Status
-PUT http://localhost:7000/user/update_user_status/2a1a2103-a192-4811-9f42-12e65a6c6e3a
+PUT http://localhost:8081/user/update_user_status/2a1a2103-a192-4811-9f42-12e65a6c6e3a
 Content-Type: application/json
 
 {
@@ -135,5 +135,5 @@ Content-Type: application/json
 
 
 ### Delete User
-DELETE http://localhost:7000/user/delete_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
+DELETE http://localhost:8081/user/delete_user/b9a1c3c6-b074-49ef-86e6-b73de4305f1c
 

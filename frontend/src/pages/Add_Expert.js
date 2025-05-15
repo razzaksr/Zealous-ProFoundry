@@ -10,54 +10,49 @@ import {
   Alert,
 } from "@mui/material";
 import Admin_Dashboard from "../components/Admin_dash";
-import { addPOC } from "../axios";
+import { addExpert } from "../axios";
 
-const Add_POC = () => {
-  const [pocName, setPocName] = useState("");
-  const [pocRole, setPocRole] = useState("");
-  const [pocEmail, setPocEmail] = useState("");
-  const [pocMobile, setPocMobile] = useState("");
+const Add_Expert = () => {
+  const [expertName, setExpertName] = useState("");
+  const [expertMobile, setExpertMobile] = useState("");
+  const [expertRole, setExpertRole] = useState("");
+  const [expertProfile, setExpertProfile] = useState("");
+
   const [openSuccess, setOpenSuccess] = useState(false);
   const [openError, setOpenError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("Please fill all fields correctly.");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async () => {
-    if (!pocName || !pocRole || !pocEmail || !pocMobile) {
-      setErrorMessage("Please fill all required fields.");
+    if (!expertName || !expertMobile || !expertRole || !expertProfile) {
+      setErrorMessage("Please fill in all required fields.");
       setOpenError(true);
       return;
     }
 
     const payload = {
-      mod_poc_name: pocName,
-      mod_poc_role: pocRole,
-      mod_poc_email: pocEmail,
-      mod_poc_mobile: pocMobile,
-      mod_images: [],
-      mod_tests: [],
-      mod_users: [],
-      attendance: [],
-      poc_certificate: null,
-      certificates: {},
+      mod_expert_name: expertName,
+      mod_expert_mobile: expertMobile,
+      mod_expert_role: expertRole,
+      mod_expert_profile: expertProfile,
     };
 
     try {
-      const data = await addPOC(payload);
-      console.log("POC added:", data);
+      const data = await addExpert(payload);
+      console.log("Expert added:", data);
       setOpenSuccess(true);
       handleClear();
     } catch (err) {
-      console.error("Error adding POC:", err.message || err);
-      setErrorMessage(err.message || "Failed to add POC. Please try again.");
+      console.error("Error adding expert:", err);
+      setErrorMessage(err.error || "Failed to add expert.");
       setOpenError(true);
     }
   };
 
   const handleClear = () => {
-    setPocName("");
-    setPocRole("");
-    setPocEmail("");
-    setPocMobile("");
+    setExpertName("");
+    setExpertMobile("");
+    setExpertRole("");
+    setExpertProfile("");
   };
 
   return (
@@ -68,55 +63,50 @@ const Add_POC = () => {
           <Box
             sx={{
               p: 3,
-              background: "linear-gradient(90deg, #3f51b5, #5c6bc0)",
+              background: "linear-gradient(90deg, #009688, #26a69a)",
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
               color: "white",
             }}
           >
             <Typography variant="h5" fontWeight={600}>
-              Add POC
+              Add Expert
             </Typography>
             <Typography variant="subtitle2">
-              Enter Point of Contact information
+              Enter Expert Information
             </Typography>
           </Box>
 
           <Box sx={{ p: 3 }}>
             <TextField
               fullWidth
-              label="POC Name"
-              variant="outlined"
-              value={pocName}
-              onChange={(e) => setPocName(e.target.value)}
+              label="Expert Name"
+              value={expertName}
+              onChange={(e) => setExpertName(e.target.value)}
               sx={{ mb: 2 }}
               required
             />
             <TextField
               fullWidth
-              label="POC Role"
-              variant="outlined"
-              value={pocRole}
-              onChange={(e) => setPocRole(e.target.value)}
+              label="Expert Mobile"
+              value={expertMobile}
+              onChange={(e) => setExpertMobile(e.target.value)}
               sx={{ mb: 2 }}
               required
             />
             <TextField
               fullWidth
-              label="POC Email"
-              variant="outlined"
-              type="email"
-              value={pocEmail}
-              onChange={(e) => setPocEmail(e.target.value)}
+              label="Expert Role"
+              value={expertRole}
+              onChange={(e) => setExpertRole(e.target.value)}
               sx={{ mb: 2 }}
               required
             />
             <TextField
               fullWidth
-              label="POC Mobile"
-              variant="outlined"
-              value={pocMobile}
-              onChange={(e) => setPocMobile(e.target.value)}
+              label="Expert Profile"
+              value={expertProfile}
+              onChange={(e) => setExpertProfile(e.target.value)}
               sx={{ mb: 2 }}
               required
             />
@@ -132,14 +122,14 @@ const Add_POC = () => {
           </Box>
         </Paper>
 
-        {/* Snackbar Alerts */}
         <Snackbar
           open={openSuccess}
           autoHideDuration={3000}
           onClose={() => setOpenSuccess(false)}
         >
-          <Alert severity="success">POC added successfully!</Alert>
+          <Alert severity="success">Expert added successfully!</Alert>
         </Snackbar>
+
         <Snackbar
           open={openError}
           autoHideDuration={3000}
@@ -152,4 +142,4 @@ const Add_POC = () => {
   );
 };
 
-export default Add_POC;
+export default Add_Expert;

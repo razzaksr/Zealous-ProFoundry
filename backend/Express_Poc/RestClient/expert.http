@@ -1,5 +1,5 @@
 ### CREATE EXPERT
-POST http://localhost:6000/expert/add_expert
+POST http://localhost:8084/expert/add_expert
 Content-Type: application/json
 
 {
@@ -10,13 +10,13 @@ Content-Type: application/json
 }
 
 ### GET EXPERT
-GET http://localhost:6000/expert/read_all_experts
+GET http://localhost:8084/expert/read_all_experts
 
 ### GET EXPERT by mod_expert_id
-GET http://localhost:6000/expert/get_expert/b090b958-c180-42aa-b611-8de2356b7ace
+GET http://localhost:8084/expert/get_expert/b090b958-c180-42aa-b611-8de2356b7ace
 
 ### Update Expert by mod_expert_id
-PUT http://localhost:6000/expert/update_expert
+PUT http://localhost:8084/expert/update_expert
 Content-Type: application/json
 
 {
@@ -30,7 +30,7 @@ Content-Type: application/json
 }
 
 ### Update poc_id separately by mod_expert_id 
-PUT http://localhost:6000/expert/update_poc
+PUT http://localhost:8084/expert/update_poc
 Content-Type: application/json
 
 {
@@ -39,7 +39,7 @@ Content-Type: application/json
 }
 
 ### Update mod_id separately by mod_expert_id 
-PUT http://localhost:6000/expert/update_mod
+PUT http://localhost:8084/expert/update_mod
 Content-Type: application/json
 
 {
@@ -49,8 +49,8 @@ Content-Type: application/json
 
 
 ### Delete an Expert by mod_expert_id
-DELETE http://localhost:6000/expert/delete_expert/b090b958-c180-42aa-b611-8de2356b7ace
+DELETE http://localhost:8084/expert/delete_expert/b090b958-c180-42aa-b611-8de2356b7ace
 
 ### GET EXPERT NAME BY MOD_ID
-GET http://localhost:6000/expert/get_expert_name/6503caf1-fb75-4640-99f2-d6a529b71205
+GET http://localhost:8084/expert/get_expert_name/6503caf1-fb75-4640-99f2-d6a529b71205
 

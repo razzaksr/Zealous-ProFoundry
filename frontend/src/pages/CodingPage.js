@@ -42,8 +42,6 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveIcon from "@mui/icons-material/Save";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
-import OutputIcon from "@mui/icons-material/Output";
-import DoneIcon from "@mui/icons-material/Done";
 import TerminalIcon from "@mui/icons-material/Terminal";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -52,6 +50,8 @@ import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DoneIcon from "@mui/icons-material/Done";
+
 import { fetchCodeById, fetchTestCaseById, compileCode, submitTestResult, getTestById } from "../axios";
 
 // Language mapping for backend
@@ -806,7 +806,7 @@ const CodingPage = () => {
     setSnackbarOpen(true);
   };
 
-  // Fetch code and test cases
+  // Fetch code and test cases with graceful error handling
   const fetchCodeAndTestCases = async (id) => {
     try {
       setLoading(true);
@@ -817,14 +817,21 @@ const CodingPage = () => {
 
       if (!code.code_test_cases_id || code.code_test_cases_id.length === 0) {
         setTestCases([]);
-        setSnackbarMessage("No test cases found for this problem.");
+        setSnackbarMessage("No test cases found for this problem. Proceeding with default template.");
         setSnackbarSeverity("warning");
         setSnackbarOpen(true);
         return;
       }
 
       console.log("Fetching test cases:", code.code_test_cases_id);
-      const testCasePromises = code.code_test_cases_id.map((testcase_id) => fetchTestCaseById(testcase_id));
+      const testCasePromises = code.code_test_cases_id.map(async (testcase_id) => {
+        try {
+          return await fetchTestCaseById(testcase_id);
+        } catch (err) {
+          console.error(`Error fetching test case ${testcase_id}:`, err);
+          return null; // Return null for failed test cases
+        }
+      });
       const responses = await Promise.all(testCasePromises);
       console.log("Fetched test cases:", responses);
 
@@ -832,15 +839,17 @@ const CodingPage = () => {
       setTestCases(validTestCases);
 
       if (validTestCases.length === 0) {
-        setSnackbarMessage("No valid test cases retrieved.");
+        setTestCases([{ testcase_input: "", testcase_output: "" }]); // Default empty test case
+        setSnackbarMessage("No valid test cases retrieved. Using default empty test case.");
         setSnackbarSeverity("warning");
         setSnackbarOpen(true);
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setOutput(`Error fetching problem: ${err.message}`);
+      setTestCases([{ testcase_input: "", testcase_output: "" }]); // Default empty test case
+      setOutput(`Error fetching problem: ${err.message}. Proceeding with default template.`);
       setShowOutput(true);
-      setSnackbarMessage(`Error fetching problem: ${err.message}`);
+      setSnackbarMessage(`Error fetching problem: ${err.message}. Continuing with default template.`);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     } finally {
@@ -883,7 +892,7 @@ const CodingPage = () => {
       const submissionPayload = {
         language: languageApiMap[codeLanguage],
         code: codeInput,
-        testCases: formattedTestCases,
+        testCases: formattedTestCases.length > 0 ? formattedTestCases : [{ input: "", expectedOutput: "" }],
       };
 
       localStorage.setItem(`code_${currentCodeId}`, JSON.stringify(submissionPayload));
@@ -947,8 +956,8 @@ const CodingPage = () => {
     } catch (error) {
       console.error("Compile error:", error);
       setOutput(`Error running code: ${error.message}`);
-      setSnackbarMessage("Error during code compilation.");
-      setSnackbarSeverity("error");
+      setSnackbarMessage("Error during code compilation. Proceeding anyway.");
+      setSnackbarSeverity("warning");
       return false;
     } finally {
       setLoading(false);
@@ -963,12 +972,14 @@ const CodingPage = () => {
     await compileAndEvaluate(codeId, input, language, testCases);
   };
 
-  // Compile all programs
+  // Compile all programs with error tolerance
   const compileAllPrograms = async () => {
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     setLoading(true);
     setOpenProgressDialog(true);
     setOutput("Processing results...\nCompiling all programs...\n");
+
+    let compilationErrors = 0;
 
     try {
       for (const id of effectiveCodingIds) {
@@ -978,34 +989,51 @@ const CodingPage = () => {
         let codeTestCases = [];
 
         // Fetch test cases for this code
-        const code = await fetchCodeById(id);
-        if (code.code_test_cases_id && code.code_test_cases_id.length > 0) {
-          const testCasePromises = code.code_test_cases_id.map((testcase_id) => fetchTestCaseById(testcase_id));
-          const responses = await Promise.all(testCasePromises);
-          codeTestCases = responses.filter((tc) => tc && tc.testcase_input && tc.testcase_output);
+        try {
+          const code = await fetchCodeById(id);
+          if (code.code_test_cases_id && code.code_test_cases_id.length > 0) {
+            const testCasePromises = code.code_test_cases_id.map(async (testcase_id) => {
+              try {
+                return await fetchTestCaseById(testcase_id);
+              } catch (err) {
+                console.error(`Error fetching test case ${testcase_id}:`, err);
+                return null;
+              }
+            });
+            const responses = await Promise.all(testCasePromises);
+            codeTestCases = responses.filter((tc) => tc && tc.testcase_input && tc.testcase_output);
+          }
+        } catch (err) {
+          console.error(`Error fetching code ${id}:`, err);
+          codeTestCases = [{ testcase_input: "", testcase_output: "" }]; // Default empty test case
         }
 
         if (savedPayload) {
-          const parsedPayload = JSON.parse(savedPayload);
-          codeInput = parsedPayload.code || templates[language];
-          codeLanguage = Object.keys(languageApiMap).find((key) => languageApiMap[key] === parsedPayload.language) || language;
+          try {
+            const parsedPayload = JSON.parse(savedPayload);
+            codeInput = parsedPayload.code || templates[language];
+            codeLanguage = Object.keys(languageApiMap).find((key) => languageApiMap[key] === parsedPayload.language) || language;
+          } catch (error) {
+            console.error(`Error parsing saved payload for code ${id}:`, error);
+          }
         }
 
         const success = await compileAndEvaluate(id, codeInput, codeLanguage, codeTestCases);
         if (!success) {
+          compilationErrors++;
           setOutput((prev) => `${prev}\nFailed to compile program ${id}`);
         }
       }
-      setOutput((prev) => `${prev}\nAll programs compiled successfully!\n`);
-      setSnackbarMessage("All programs compiled successfully!");
-      setSnackbarSeverity("success");
-      return true;
+      setOutput((prev) => `${prev}\nCompilation completed with ${compilationErrors} error(s).\n`);
+      setSnackbarMessage(`Compilation completed with ${compilationErrors} error(s).`);
+      setSnackbarSeverity(compilationErrors > 0 ? "warning" : "success");
+      return true; // Always return true to allow submission
     } catch (error) {
       console.error("Error compiling all programs:", error);
       setOutput((prev) => `${prev}\nError compiling programs: ${error.message}`);
-      setSnackbarMessage("Error compiling all programs.");
-      setSnackbarSeverity("error");
-      return false;
+      setSnackbarMessage("Error compiling all programs. Proceeding with submission.");
+      setSnackbarSeverity("warning");
+      return true; // Allow submission despite errors
     } finally {
       setLoading(false);
       setOpenProgressDialog(false);
@@ -1022,17 +1050,8 @@ const CodingPage = () => {
     setOutput("Processing results...\n");
     setShowOutput(true);
 
-    // Compile all programs first
-    const compileSuccess = await compileAllPrograms();
-    if (!compileSuccess) {
-      setOutput((prev) => `${prev}\nSubmission aborted due to compilation errors.`);
-      setSnackbarMessage("Failed to compile all programs. Please fix errors before submitting.");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-      setLoading(false);
-      setOpenProgressDialog(false);
-      return;
-    }
+    // Compile all programs, but don't abort on failure
+    await compileAllPrograms();
 
     // Show confirmation dialog unless it's a malpractice auto-submit
     if (!isMalpractice) {
@@ -1043,7 +1062,7 @@ const CodingPage = () => {
     }
 
     try {
-      // Construct resultData from updated testResult after compilation
+      // Construct resultData from updated testResult
       const resultData = {
         result_user_id: testResult.result_user_id || userId || "",
         result_test_id: testResult.result_test_id || testId || "",
@@ -1167,8 +1186,7 @@ const CodingPage = () => {
   // Handle navigation to the next program
   const handleNextProgram = async () => {
     saveSubmissionPayload();
-    const success = await compileAndEvaluate(codeId, input, language, testCases);
-    if (!success) return;
+    await compileAndEvaluate(codeId, input, language, testCases);
 
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
@@ -1196,8 +1214,7 @@ const CodingPage = () => {
   // Handle navigation to the next problem
   const handleNext = async () => {
     saveSubmissionPayload();
-    const success = await compileAndEvaluate(codeId, input, language, testCases);
-    if (!success) return;
+    await compileAndEvaluate(codeId, input, language, testCases);
 
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
@@ -1225,8 +1242,7 @@ const CodingPage = () => {
   // Handle navigation to the previous problem
   const handlePrevious = async () => {
     saveSubmissionPayload();
-    const success = await compileAndEvaluate(codeId, input, language, testCases);
-    if (!success) return;
+    await compileAndEvaluate(codeId, input, language, testCases);
 
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     if (testResult.currentCodingIndex > 0) {
@@ -1837,60 +1853,56 @@ const CodingPage = () => {
               </Box>
             )}
             {!isMobile && testCasesCollapsed && (
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", p: 1, height: "100%" }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "text.secondary",
-                    fontSize: "0.75rem",
-                    fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                    writingMode: "vertical-rl",
-                    transform: "rotate(180deg)",
-                    mt: 2,
-                  }}
-                >
-                  Problem & Test Cases ({testCases.length})
-                </Typography>
-              </Box>
-            )}
-          </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
+              <Tooltip title="Expand Test Cases">
+                <IconButton size="small" onClick={toggleTestCases}>
+                  <KeyboardArrowLeftIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                  writingMode: "vertical-rl",
+                  transform: "rotate(180deg)",
+                }}
+              >
+                Test Cases
+              </Typography>
+            </Box>
+          )}
         </Box>
+      </Box>
+      {/* Output Console */}
+      {showOutput && (
         <Box
           sx={{
-            height: outputMinimized ? "auto" : `${outputHeight}%`,
+            height: outputMinimized ? "40px" : `${outputHeight}%`,
+            maxHeight: outputMinimized ? "40px" : "50%",
+            borderTop: 1,
+            borderColor: "divider",
+            bgcolor: "background.paper",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            borderTop: 1,
-            borderColor: "divider",
             transition: "height 0.2s ease-out",
           }}
         >
-          {!outputMinimized && (
-            <Box
-              ref={outputDividerRef}
-              sx={{
-                height: 8,
-                backgroundColor: theme.palette.divider,
-                cursor: "row-resize",
-                "&:hover": { backgroundColor: "#0c83c8" },
-              }}
-              onMouseDown={handleOutputMouseDown}
-            />
-          )}
           <Box
             sx={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               p: 1,
-              borderBottom: showOutput && !outputMinimized ? 1 : 0,
+              borderBottom: outputMinimized ? 0 : 1,
               borderColor: "divider",
               bgcolor: "background.paper",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center" }}>
-            <TerminalIcon sx={{ mr: 1, fontSize: { xs: 16, sm: 20 }, color: "#fc7a46" }} />
+              <TerminalIcon sx={{ mr: 1, fontSize: { xs: 16, sm: 20 }, color: "#0c83c8" }} />
               <Typography
                 variant="subtitle1"
                 fontWeight="medium"
@@ -1912,119 +1924,125 @@ const CodingPage = () => {
                   {outputMinimized ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
                 </IconButton>
               </Tooltip>
-            </Box>
-          </Box>
-          {showOutput && !outputMinimized && (
-            <Box
-              sx={{
-                flex: 1,
-                overflow: "auto",
-                p: 1,
-                bgcolor: mode === "dark" ? "#1e1e1e" : "#f5f5f5",
-                fontFamily: "'Fira Code', monospace",
-                fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              {output || "Run your code to see the output here..."}
-            </Box>
-          )}
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            p: 1,
-            borderTop: 1,
-            borderColor: "divider",
-            bgcolor: "background.paper",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
-            <Tooltip title="Back">
-              <IconButton size="small" onClick={handleBack}>
-                <ArrowBackIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Previous Program">
-              <span>
+              <Tooltip title="Close Output">
                 <IconButton
                   size="small"
-                  onClick={handlePrevious}
-                  disabled={isFirstProgram}
+                  onClick={() => setShowOutput(false)}
+                  aria-label="Close output console"
                 >
-                  <NavigateBeforeIcon fontSize="small" />
+                  <KeyboardArrowDownIcon fontSize="small" />
                 </IconButton>
-              </span>
-            </Tooltip>
-            <Tooltip title="Next Program">
-              <span>
-                <IconButton
-                  size="small"
-                  onClick={handleNext}
-                  disabled={isLastProgram}
-                >
-                  <NavigateNextIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
+              </Tooltip>
+            </Box>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
-            {!isLastProgram && (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleNextProgram}
-                startIcon={<NavigateNextIcon />}
-                size="small"
+          {!outputMinimized && (
+            <>
+              <Box
+                ref={outputDividerRef}
                 sx={{
-                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                  px: { xs: 1, sm: 2 },
-                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                  height: 8,
+                  backgroundColor: theme.palette.divider,
+                  cursor: "row-resize",
+                  "&:hover": { backgroundColor: "#0c83c8" },
+                }}
+                onMouseDown={handleOutputMouseDown}
+              />
+              <Box
+                sx={{
+                  flex: 1,
+                  overflow: "auto",
+                  p: 1,
+                  bgcolor: mode === "dark" ? "#1e1e1e" : "#f5f5f5",
+                  fontFamily: "'Fira Code', monospace",
+                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                  color: mode === "dark" ? "#d4d4d4" : "#333",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                 }}
               >
-                Next Program
-              </Button>
-            )}
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handleFinalSubmit()}
-              startIcon={<DoneIcon />}
-              size="small"
-              disabled={hasSubmitted}
-              sx={{
-                fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                px: { xs: 1, sm: 2 },
-                fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-              }}
-            >
-              Submit Test
-            </Button>
-          </Box>
+                {output || "Run your code to see the output here..."}
+              </Box>
+            </>
+          )}
         </Box>
-        {isMobile && (
-          <Fab
-            color="secondary"
-            onClick={() => setShowTestCases(!showTestCases)}
+      )}
+      {/* Navigation and Submission Controls */}
+      <Box
+        sx={{
+          p: { xs: 1, sm: 1.5 },
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+          flexWrap: "wrap",
+          gap: 1,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
+          <Tooltip title="Back to Test">
+            <IconButton size="small" onClick={handleBack}>
+              <ArrowBackIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handlePrevious}
+            disabled={isFirstProgram || loading}
+            startIcon={<NavigateBeforeIcon />}
             sx={{
-              position: "fixed",
-              bottom: 16,
-              right: 16,
-              zIndex: 1000,
+              fontSize: { xs: "0.65rem", sm: "0.75rem" },
               fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
             }}
-            size="small"
-            aria-label={showTestCases ? "Hide test cases" : "Show test cases"}
           >
-            {showTestCases ? <KeyboardArrowDownIcon /> : <FormatListNumberedIcon />}
-          </Fab>
-        )}
+            Previous
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleNext}
+            disabled={isLastProgram || loading}
+            endIcon={<NavigateNextIcon />}
+            sx={{
+              fontSize: { xs: "0.65rem", sm: "0.75rem" },
+              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+            }}
+          >
+            Next
+          </Button>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: { xs: "0.65rem", sm: "0.75rem" },
+              color: "text.secondary",
+              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+            }}
+          >
+            Program {testResult.currentCodingIndex + 1} of {effectiveCodingIds.length || 1}
+          </Typography>
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            onClick={() => handleFinalSubmit()}
+            disabled={loading || hasSubmitted}
+            startIcon={<DoneIcon />}
+            sx={{
+              fontSize: { xs: "0.65rem", sm: "0.75rem" },
+              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+            }}
+          >
+            Submit Test
+          </Button>
+        </Box>
       </Box>
-    </ThemeProvider>
-  );
+    </Box>
+  </ThemeProvider>
+);
 };
 
 export default CodingPage;

@@ -1,5 +1,5 @@
 ### Create MCQ
-POST http://localhost:4000/mcq_gateway/mcq/add_mcq
+POST http://localhost:8086/mcq_gateway/mcq/add_mcq
 Content-Type: application/json
 
 [
@@ -66,13 +66,13 @@ Content-Type: application/json
   ]
 
 ### Get All MCQs
-GET http://localhost:4000/mcq_gateway/mcq/get_all_mcqs
+GET http://localhost:8086/mcq_gateway/mcq/get_all_mcqs
 
 ### Get  MCQ  by id
-GET http://localhost:4000/mcq_gateway/mcq/get_mcq/0453498a-cae3-4646-984a-098a9a0746de
+GET http://localhost:8086/mcq_gateway/mcq/get_mcq/0453498a-cae3-4646-984a-098a9a0746de
 
 ### Update MCQ  
-PUT http://localhost:4000/mcq_gateway/mcq/update_mcq
+PUT http://localhost:8086/mcq_gateway/mcq/update_mcq
 Content-Type: application/json
 
 {
@@ -84,11 +84,11 @@ Content-Type: application/json
 }
 
 ### Delete MCQ
-DELETE http://localhost:4000/mcq_gateway/mcq/delete_mcq/dcedaa95-7985-476e-9252-8a043efc343a
+DELETE http://localhost:8086/mcq_gateway/mcq/delete_mcq/dcedaa95-7985-476e-9252-8a043efc343a
 
 
 ### Submit Result to External Service via Consul
-POST http://localhost:4000/mcq_gateway/mcq/submit_result
+POST http://localhost:8086/mcq_gateway/mcq/submit_result
 Content-Type: application/json
 
 {
@@ -101,10 +101,10 @@ Content-Type: application/json
 
 
 #### GET MCQ ID ONLY
-GET http://localhost:4000/mcq_gateway/mcq/mcq/ids
+GET http://localhost:8086/mcq_gateway/mcq/mcq/ids
 
 ### Send Test Data to post_data_analytics
-POST http://localhost:4000/mcq_gateway/mcq/post_data_analytics
+POST http://localhost:8086/mcq_gateway/mcq/post_data_analytics
 Content-Type: application/json
 
 

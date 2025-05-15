@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = "http://localhost:8086";
 // const BASE_URL = "http://98.81.207.64:4000";
 
 
@@ -377,5 +377,160 @@ export const fetchOrGenerateCertificates = async (pocId, userIds) => {
       : error.response?.data?.message || error.message;
     console.error(`Error fetching/generating certificate(s) for poc ${pocId}, user(s) ${userIds}:`, error);
     throw new Error(errorMessage);
+  }
+};
+
+// Add a new module
+export const addModule = async (moduleData) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/modules_gateway/modules/add_module`, moduleData);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Add a new POC
+export const addPOC = async (pocData) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/poc_gateway/poc/add_poc`, pocData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to add POC" };
+  }
+};
+
+// Add a new expert
+export const addExpert = async (expertData) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/expert_gateway/expert/add_expert`, expertData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (err) {
+    throw err.response?.data || { error: "Failed to add expert" };
+  }
+};
+
+// Add a new Coding problem
+
+export const createCodeProblem = async (problemStatement, tags) => {
+  const payload = {
+    code_problem_statement: problemStatement,
+    code_test_cases_id: [],
+    code_tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+  };
+
+  const response = await axios.post(`${BASE_URL}/coding_gateway/coding/add_code`, payload, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  return response.data;
+};
+
+// Add a new Testcase
+export const createTestCase = async (payload) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/testcase_gateway/testcase/create_testCase`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.error || error.message || "Unknown error occurred";
+    throw new Error(message);
+  }
+};
+
+// Get all Code
+export const fetchAllCodes = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/coding_gateway/coding/get_allCodes`);
+    return response.data;
+  } catch (error) {
+    console.error("Fetch codes error:", error);
+    throw error;
+  }
+};
+
+// Update test API call
+export const updateTest = async (testData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/testcase_gateway/test/update`, testData);
+    return response.data;
+  } catch (error) {
+    console.error("Update test error:", error);
+    throw error;
+  }
+};
+
+// Add users
+export const addUser = async (userData) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/user_gateway/user/add_user`, userData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("addUser response:", response);
+    return response;
+  } catch (error) {
+    console.error("addUser error:", error.response || error.message);
+    throw error;
+  }
+};
+
+// Bulk add users
+export const bulkAddUsers = async (users) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/user_gateway/user/bulk_add_users`, users, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log("bulkAddUsers response:", response);
+    return response;
+  } catch (error) {
+    console.error("bulkAddUsers error:", error.response || error.message);
+    throw error;
+  }
+};
+
+// Update Poc
+
+export const updatePoc = async (updateData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/poc_gateway/poc/update_poc`, updateData);
+    return response;
+  } catch (error) {
+    console.error('Error updating POC:', error);
+    throw error;
+  }
+};
+
+// Update expert
+export const updateExpert = async (updateData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/expert_gateway/expert/update_expert`, updateData);
+    return response;
+  } catch (error) {
+    console.error('Error updating expert:', error);
+    throw error;
+  }
+};
+
+
+// Update organization
+export const updateOrganization = async (updateData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/organization_gateway/organization/update_org_by_id`, updateData);
+    return response;
+  } catch (error) {
+    console.error('Error updating organization:', error);
+    throw error;
   }
 };

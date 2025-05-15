@@ -18,8 +18,7 @@ import {
   Snackbar,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
-import { fetchAllTests, fetchAllMcqs } from "../axios";
-import axios from "axios";
+import { fetchAllTests, fetchAllCodes, fetchAllMcqs, updateTest } from "../axios";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -86,11 +85,9 @@ const UpdateTestModule = () => {
 
     const fetchCodes = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:8000/coding/get_allCodes"
-        );
-        console.log("Codes Response:", response);
-        const codesArray = response.data.codes || [];
+        const response = await fetchAllCodes();
+        console.log("Codes Full Response:", response);
+        const codesArray = response.data?.codes || response.codes || [];
         if (!Array.isArray(codesArray)) {
           console.error("Codes data is not an array:", codesArray);
           setCodes([]);
@@ -175,72 +172,62 @@ const UpdateTestModule = () => {
     setSelectedTestForUpdate(null);
   };
 
-const handleUpdateTest = async (test) => {
-  if (!test || !test.test_id) {
-    setSnackbarMessage("No test selected for update");
-    setSnackbarSeverity("error");
-    setSnackbarOpen(true);
-    return;
-  }
-
-  setSelectedTestForUpdate(test);
-  setUpdating(true);
-
-  try {
-    // Append selected MCQs to the test
-    const selectedMcqIdsToUpdate = mcqs
-      .filter((mcq) => selectedMcqIds.includes(mcq._id))
-      .map((mcq) => mcq.mcq_id);
-
-    const selectedCodingIdsToUpdate = codes
-      .filter((code) => selectedCodeIds.includes(code.id))
-      .map((code) => code.code_id);
-
-    // Perform the update with arrays of IDs directly (no $each)
-    const response = await axios.put(
-      "http://localhost:8000/test/update",
-      {
-        test_id: test.test_id,
-        mcq_id: selectedMcqIdsToUpdate,  // Directly send the array
-        coding_test_id: selectedCodingIdsToUpdate,  // Directly send the array
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    console.log("Update response:", response.data);
-    setSnackbarMessage("Test updated successfully!");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
-
-    // Refresh tests data
-    const refreshResponse = await fetchAllTests();
-    const testData = refreshResponse.data?.tests || refreshResponse.data || [];
-    if (Array.isArray(testData)) {
-      setTests(testData);
-    } else {
-      setTests([]);
+  const handleUpdateTest = async (test) => {
+    if (!test || !test.test_id) {
+      setSnackbarMessage("No test selected for update");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      return;
     }
 
-    // Close dialog after successful update
-    setDetailsDialogOpen(false);
-    setSelectedTestForUpdate(null);
-  } catch (error) {
-    console.error("Error updating test:", error);
-    setSnackbarMessage(
-      `Update failed: ${error.response?.data?.msg || error.message}`
-    );
-    setSnackbarSeverity("error");
-    setSnackbarOpen(true);
-  } finally {
-    setUpdating(false);
-  }
-};
+    setSelectedTestForUpdate(test);
+    setUpdating(true);
 
+    try {
+      // Append selected MCQs to the test
+      const selectedMcqIdsToUpdate = mcqs
+        .filter((mcq) => selectedMcqIds.includes(mcq._id))
+        .map((mcq) => mcq.mcq_id);
 
+      const selectedCodingIdsToUpdate = codes
+        .filter((code) => selectedCodeIds.includes(code.id))
+        .map((code) => code.code_id);
+
+      // Perform the update with arrays of IDs
+      const response = await updateTest({
+        test_id: test.test_id,
+        mcq_id: selectedMcqIdsToUpdate,
+        coding_test_id: selectedCodingIdsToUpdate,
+      });
+
+      console.log("Update response:", response.data);
+      setSnackbarMessage("Test updated successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+
+      // Refresh tests data
+      const refreshResponse = await fetchAllTests();
+      const testData = refreshResponse.data?.tests || refreshResponse.data || [];
+      if (Array.isArray(testData)) {
+        setTests(testData);
+      } else {
+        setTests([]);
+      }
+
+      // Close dialog after successful update
+      setDetailsDialogOpen(false);
+      setSelectedTestForUpdate(null);
+    } catch (error) {
+      console.error("Error updating test:", error);
+      setSnackbarMessage(
+        `Update failed: ${error.response?.data?.msg || error.message}`
+      );
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const handleNextClick = () => {
     console.log("Next button clicked! Opening details dialog.");
@@ -498,7 +485,7 @@ const handleUpdateTest = async (test) => {
               sx={{
                 "& .MuiDataGrid-columnHeaders": {
                   backgroundColor: "#1565c0",
-                  color: "white", // Changed to white for better contrast
+                  color: "white",
                   fontWeight: "bold",
                   fontSize: "16px",
                 },
@@ -535,7 +522,7 @@ const handleUpdateTest = async (test) => {
               sx={{
                 "& .MuiDataGrid-columnHeaders": {
                   backgroundColor: "#1565c0",
-                  color: "white", // Changed to white for better contrast
+                  color: "white",
                   fontWeight: "bold",
                   fontSize: "16px",
                 },
@@ -572,7 +559,7 @@ const handleUpdateTest = async (test) => {
               sx={{
                 "& .MuiDataGrid-columnHeaders": {
                   backgroundColor: "#1565c0",
-                  color: "white", // Changed to white for better contrast
+                  color: "white",
                   fontWeight: "bold",
                   fontSize: "16px",
                 },

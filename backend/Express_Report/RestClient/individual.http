@@ -1,4 +1,4 @@
-POST http://localhost:9000/individual/post-individual
+POST http://localhost:8083/individual/post-individual
 Content-Type: application/json
 
 {
@@ -15,10 +15,10 @@ Content-Type: application/json
 }
 
 ###
-GET http://localhost:9000/individual/get-all-individual
+GET http://localhost:8083/individual/get-all-individual
 
 ###
-PUT http://localhost:9000/individual/update-individual
+PUT http://localhost:8083/individual/update-individual
 Content-Type: application/json
 
 {
@@ -35,4 +35,4 @@ Content-Type: application/json
 ###
 ### delete by student id and date ###
 ###
-DELETE http://localhost:9000/individual/delete-individual-by-stuid-day/STU13/3
+DELETE http://localhost:8083/individual/delete-individual-by-stuid-day/STU13/3

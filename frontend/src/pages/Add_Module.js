@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import Admin_Dashboard from "../components/Admin_dash";
+import { addModule } from "../axios"; 
 
 const Add_Module = () => {
   const [modName, setModName] = React.useState("");
@@ -29,7 +30,6 @@ const Add_Module = () => {
       return;
     }
 
-    // Parse the date strings to dayjs objects for formatting
     const formattedStartDate = dayjs(startDate).format("DD/MM/YYYY");
     const formattedEndDate = dayjs(endDate).format("DD/MM/YYYY");
     const mod_duration = `${formattedStartDate} - ${formattedEndDate}`;
@@ -37,24 +37,15 @@ const Add_Module = () => {
     const payload = {
       mod_name: modName,
       mod_tech: modTech,
-      mod_duration: mod_duration,
+      mod_duration,
     };
 
     try {
-      const response = await fetch("http://localhost:5000/modules/add_module", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) throw new Error("Failed to create module");
-
+      await addModule(payload); 
       setOpenSuccess(true);
       handleClear();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error adding module:", error);
       setOpenError(true);
     }
   };
@@ -72,7 +63,7 @@ const Add_Module = () => {
   };
 
   return (
-      <>
+    <>
       <Admin_Dashboard />
       <Container
         maxWidth="sm"
@@ -118,29 +109,17 @@ const Add_Module = () => {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                sx={{ 
-                  width: "50%", 
-                  "& .MuiOutlinedInput-root": { borderRadius: "8px" } 
-                }}
+                InputLabelProps={{ shrink: true }}
+                sx={{ width: "50%", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
               />
               <TextField
                 label="To Date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                InputProps={{
-                  inputProps: { min: startDate }
-                }}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                sx={{ 
-                  width: "50%", 
-                  "& .MuiOutlinedInput-root": { borderRadius: "8px" } 
-                }}
+                InputProps={{ inputProps: { min: startDate } }}
+                InputLabelProps={{ shrink: true }}
+                sx={{ width: "50%", "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
               />
             </Box>
 
@@ -208,8 +187,7 @@ const Add_Module = () => {
           </Alert>
         </Snackbar>
       </Container>
-      </>
-    
+    </>
   );
 };
 

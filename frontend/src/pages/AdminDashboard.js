@@ -39,7 +39,6 @@ import {
 } from '@mui/icons-material';
 import Admin_Dashboard from '../components/Admin_dash.js';
 
-
 // Custom styled components
 const StyledSearch = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -182,7 +181,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // Original buttons data
+  // Original buttons data with Add User added
   const allButtons = [
     { label: 'POC', path: '/poc', type: 'View' },
     { label: 'User', path: '/user', type: 'View' },
@@ -193,16 +192,25 @@ export default function AdminDashboard() {
     { label: 'Expert', path: '/expert', type: 'View' },
     { label: 'MCQ', path: '/mcq-admin', type: 'View' },
     { label: 'Test', path: '/test', type: 'View' },
+  
+    // ADD action items
     { label: 'MCQ', path: '/add_mcq', type: 'Add' },
     { label: 'Module', path: '/add_module', type: 'Add' },
     { label: 'Organisation', path: '/add_organisation', type: 'Add' },
     { label: 'TestCase', path: '/add_testcase', type: 'Add' },
     { label: 'Coding', path: '/add_coding', type: 'Add' },
     { label: 'POC', path: '/add_poc', type: 'Add' },
+    { label: 'Expert', path: '/add_expert', type: 'Add' },
+    { label: 'User', path: '/add_user', type: 'Add' }, // New Add User action
+  
+    // UPDATE action items
     { label: 'Coding', path: '/update_coding', type: 'Update' },
     { label: 'Test Module', path: '/update_testmodule', type: 'Update' },
     { label: 'POC', path: '/update_poc', type: 'Update' },
+    { label: 'Expert', path: '/update_expert', type: 'Update' },
+    { label: 'Organization', path: '/update_organization', type: 'Update' }, 
   ];
+  
 
   // Filter items based on search and active tab
   const filteredButtons = allButtons.filter(button => {

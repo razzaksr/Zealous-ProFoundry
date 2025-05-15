@@ -1,5 +1,5 @@
 ### Create MCQ
-POST http://localhost:8000/mcq/add_mcq
+POST http://localhost:8082/mcq/add_mcq
 Content-Type: application/json
 
 [
@@ -65,13 +65,13 @@ Content-Type: application/json
     }
   ]
 ### Get All MCQs
-GET http://localhost:8000/mcq/get_all_mcqs
+GET http://localhost:8082/mcq/get_all_mcqs
 
 ### Get a Single MCQ by ID
-GET http://localhost:8000/mcq/get_mcq/dcedaa95-7985-476e-9252-8a043efc343a
+GET http://localhost:8082/mcq/get_mcq/dcedaa95-7985-476e-9252-8a043efc343a
 
 ### Update MCQ
-PUT http://localhost:8000/mcq/update_mcq
+PUT http://localhost:8082/mcq/update_mcq
 Content-Type: application/json
 
 {
@@ -83,10 +83,10 @@ Content-Type: application/json
 }
 
 ### Delete MCQ
-DELETE http://localhost:8000/mcq/delete_mcq/dcedaa95-7985-476e-9252-8a043efc343a
+DELETE http://localhost:8082/mcq/delete_mcq/dcedaa95-7985-476e-9252-8a043efc343a
 
 ### Submit Result to External Service via Consul
-POST http://localhost:8000/mcq/submit_result
+POST http://localhost:8082/mcq/submit_result
 Content-Type: application/json
 
 {
@@ -100,7 +100,7 @@ Content-Type: application/json
 
 
 ### Submit Test Result
-POST http://localhost:8000/mcq/submit_result
+POST http://localhost:8082/mcq/submit_result
 Content-Type: application/json
 
 {
@@ -113,14 +113,14 @@ Content-Type: application/json
 
 
 #### GET MCQ ID ONLY
-GET http://localhost:8000/mcq/mcq/ids
+GET http://localhost:8082/mcq/mcq/ids
 
 #### GET MCQ ID ONLY by tags
-GET http://localhost:8000/mcq/get_mcqs_by_tags/C
+GET http://localhost:8082/mcq/get_mcqs_by_tags/C
 
 
 ### Send Test Data to post_data_analytics
-POST http://localhost:8000/mcq/post_data_analytics
+POST http://localhost:8082/mcq/post_data_analytics
 Content-Type: application/json
 
 

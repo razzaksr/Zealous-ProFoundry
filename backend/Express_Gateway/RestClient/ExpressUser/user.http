@@ -1,28 +1,51 @@
 ### Create User
-POST http://localhost:4000/user_gateway/user/add_user
+POST http://localhost:8086/user_gateway/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "janj",
-  "department": "AI&DS",
+  "full_name": "Keserthana",
+  "department": "AsI&DS",
   "college": "Muthayammal Engineering College",
-  "rollno": "22ad0821",
-  "email": "janj@gmail.com",
-  "password": "0000"
+  "rollno": "22AD078",
+  "email": "keerSVVSVthsssana@gmail.com",
+  "mobile_no": "+919876543210"
 }
 
+### Create User in Bulk
+POST http://localhost:8086/user_gateway/user/bulk_add_users
+Content-Type: application/json
+
+[
+  {
+    "full_name": "Keerthana",
+    "department": "AI&DS",
+    "college": "Muthayammal Engineering College",
+    "rollno": "22AD078",
+    "email": "keerthana@gmail.com",
+    "mobile_no": "+919876543210"
+  },
+  {
+    "full_name": "John Doe",
+    "department": "CSE",
+    "college": "Example University",
+    "rollno": "22CS123",
+    "email": "john.doe@gmail.com",
+    "mobile_no": "+919876543210"
+  }
+]
+
 ### Create Admin
-POST http://localhost:4000/user_gateway/user/add_user
+POST http://localhost:8086/user_gateway/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "selva",
-  "email": "selva12@gmail.com",
-  "password": "0000",
+  "full_name": "Zealoudds Tech Corp",
+  "email": "revddchus@zealoustechcorp.com",
+  "password": "Zactacademy@2013",
   "admin": true
 }
 ### Login User
-POST http://localhost:4000/user_gateway/user/login
+POST http://localhost:8086/user_gateway/user/login
 Content-Type: application/json
 
 {
@@ -32,14 +55,14 @@ Content-Type: application/json
 
 
 ### Get All Users
-GET http://localhost:4000/user_gateway/user/read_all_users
+GET http://localhost:8086/user_gateway/user/read_all_users
 
 ### Get User by ID
-GET http://localhost:4000/user_gateway/user/get_user_by_id/717150b2-2a19-45e8-9c24-69d93b4751c2
+GET http://localhost:8086/user_gateway/user/get_user_by_id/717150b2-2a19-45e8-9c24-69d93b4751c2
 
 
 ### Update User
-PUT http://localhost:4000/user_gateway/user/update_user/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+PUT http://localhost:8086/user_gateway/user/update_user/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
 Content-Type: application/json
 
 {
@@ -49,7 +72,7 @@ Content-Type: application/json
 }
 
 ### Update User Last Login
-PUT http://localhost:4000/user_gateway/user/update_last_login/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+PUT http://localhost:8086/user_gateway/user/update_last_login/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
 Content-Type: application/json
 
 {
@@ -57,9 +80,9 @@ Content-Type: application/json
 }
 
 ### Delete User
-DELETE http://localhost:4000/user_gateway/user/delete_user/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
+DELETE http://localhost:8086/user_gateway/user/delete_user/b7062a63-5ed2-4ae6-b499-0bdcdda0d7fa
 
 
 ###############
-GET http://localhost:4000/health
+GET http://localhost:8086/health
 

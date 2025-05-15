@@ -1,15 +1,15 @@
 ### Create a coding_gateway/Coding data
-POST http://localhost:4000/coding_gateway/coding/code
+POST http://localhost:8086/coding_gateway/coding/add_code
 Content-Type: application/json
 
 {
-  "code_problem_statement": "Write a function to find the factorial of a number.",
+  "code_problem_statement": "Write a functionvdv to find the factorial of a number.",
   "code_test_cases": ["testCaseObjectId1", "testCaseObjectId2"],
   "code_tags": ["math", "recursion", "factorial"]
 }
 
 ### Get All Codes
-GET http://localhost:4000/coding_gateway/coding/get_allCodes
+GET http://localhost:8086/coding_gateway/coding/get_allCodes
 
 
 ### Get code details by id
@@ -17,7 +17,7 @@ GET   ea1d62fa-cb64-483e-8d39-01e71628ae99
 
 
 ### Update the Code
-PUT http://localhost:4000/coding_gateway/coding/update_code
+PUT http://localhost:8086/coding_gateway/coding/update_code
 Content-Type: application/json
 
 {
@@ -26,10 +26,10 @@ Content-Type: application/json
 }
 
 ### Delete a code
-DELETE http://localhost:4000/coding_gateway/coding/delete_code/47f8f519-d7ca-4bbc-ac06-191b5611e445
+DELETE http://localhost:8086/coding_gateway/coding/delete_code/47f8f519-d7ca-4bbc-ac06-191b5611e445
 
 ###############
-POST http://localhost:4000/coding_gateway/coding/compiler
+POST http://localhost:8086/coding_gateway/coding/compiler
 Content-Type: application/json
 
 {

@@ -1,5 +1,5 @@
 ### Create a Test Id and Post the testCase
-POST http://localhost:4000/testcase_gateway/testcase/create_testCase
+POST http://localhost:8086/testcase_gateway/testcase/create_testCase
 Content-Type: application/json
 
 {
@@ -10,13 +10,13 @@ Content-Type: application/json
 
 
 ### Read all the testCase  
-GET http://localhost:4000/testcase_gateway/testcase/get_all_testCases
+GET http://localhost:8086/testcase_gateway/testcase/get_all_testCases
 
 ### Read the testCase by ID
-GET http://localhost:4000/testcase_gateway/testcase/get_testCase_id/e4a43d55-1b38-40e5-90a2-d56df0d8d774
+GET http://localhost:8086/testcase_gateway/testcase/get_testCase_id/e4a43d55-1b38-40e5-90a2-d56df0d8d774
 
 ### update the TestCase Using 
-PUT http://localhost:4000/testcase_gateway/testcase/update_testCase
+PUT http://localhost:8086/testcase_gateway/testcase/update_testCase
 Content-Type: application/json
 
 {
@@ -27,4 +27,4 @@ Content-Type: application/json
 }
 
 #### Delete the TestCase 
-DELETE http://localhost:4000/testcase_gateway/testcase/delete_testCase/e7ac540c-3fcc-41c7-9551-618b9641066b
+DELETE http://localhost:8086/testcase_gateway/testcase/delete_testCase/e7ac540c-3fcc-41c7-9551-618b9641066b

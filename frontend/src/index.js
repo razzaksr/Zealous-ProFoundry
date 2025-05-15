@@ -32,6 +32,10 @@ import Testcase_page from "./pages/View_testcase";
 import Update_coding from "./pages/Update_coding";
 import UpdateTestModule from "./pages/Update_testmodule";
 import Update_Poc from "./pages/Update_Poc";
+import Add_Expert from "./pages/Add_Expert";
+import Add_User from "./pages/Add_User";
+import Update_Expert from "./pages/Update_Expert";
+import Update_Organization from "./pages/Update_Organization";
 
 
 const App = () => {
@@ -65,10 +69,14 @@ const App = () => {
               <Route path="/add_organisation" element={<Add_Organisation />} />
               <Route path="/add_testcase" element={<Add_TestCase />} />
               <Route path="/add_coding" element={<Add_Coding />} />
+              <Route path="/add_expert" element={<Add_Expert />} />
               <Route path="/add_poc" element={<Add_POC />} />
+              <Route path="/add_user" element={<Add_User />} />
               <Route path="/update_coding" element={<Update_coding />} />
               <Route path="/update_testmodule" element={<UpdateTestModule />} />
               <Route path="/update_poc" element={<Update_Poc />} />
+              <Route path="/update_expert" element={<Update_Expert />} />
+              <Route path="/update_organization" element={<Update_Organization />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           ) : (
