@@ -8,7 +8,8 @@ const testSchema = new mongoose.Schema({
   result_mcq_score: { type: Number, default: 0 },
   result_coding_score: { type: Number, default: 0 },
   scored_mark: { type: Number, default: 0 },
-  total_mark: { type: Number, default: 0 }
+  total_mark: { type: Number, default: 0 },
+ 
 }, { _id: false });
 
 // Subdocument schema for details

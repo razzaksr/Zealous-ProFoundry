@@ -5,35 +5,37 @@ Content-Type: application/json
  
   "module_id": "863662d6-7565-4ba7-aaa5-5ecc9d6cae9e",
   "module_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
-  "user_id": "33efe780-035e-4f52-87cb-6ed3262eba0a",
+  "user_id": "71dd0f23-9c6d-4f03-ab37-a454f90fdac5",
   "org_id":"2112040a-a6ac-4148-a32b-a358dd5176a0",
-  "result_test_id": "TEST001",
-  "date":"08/04/2025",
-  "result_mcq_score": 9,
-  "result_coding_score": 17,
-  "total_mark": 30
+  "result_test_id": "b2b727d1-f034-4636-9a28-b6cd84d07043",
+  "date":"28/03/2025",
+  "result_mcq_score": 42,
+  "result_coding_score": 0,
+  "total_mark": 50
 }
 ###
 ###
 
+### POST Individual Test Data
 POST http://localhost:9000/individual/post-individual
 Content-Type: application/json
 
-
 {
-  "module_name": "WEB Development",
-  "module_id": "6503cafsxsxsf1-fhggukglb75-4640-99f2-d6a529b71205",
-  "org_id":"2112040a-a6ac-4148-a32b-a358dd5176a0",
-  "college_name": "",
-  "module_poc_name": "John Doe",
-  "module_poc_id": "poc-001",
-  "module_duration": "21/02/2025 - 25/02/2025",
-  "user_id": "717150b2-2a19-45e8-9c24-69d93b4751c2",
-  "result_test_id": "test-123",
-  "date": "22/02/2025",
-  "result_mcq_score": 8,
-  "result_coding_score": 18,
-  "total_mark": 30
+  "module_name": "Java Basics",
+  "user_name": "Visvak Sena",
+  "module_id": "mod123",
+  "org_id": "org456",
+  "college_name": "Mec",
+  "module_poc_name": "Dr. Ram Kumar",
+  "module_poc_id": "poc789",
+  "module_duration": "01/05/2025 - 31/05/2025",
+  "user_id": "user001",
+  "result_test_id": "test3789",
+  "date": "11/05/2025",
+  "result_mcq_score": 15,
+  "result_coding_score": 25,
+  "total_mark": 50,
+  "aggregate_score": 50
 }
 
 
@@ -48,17 +50,16 @@ GET http://localhost:9000/individual/get-by-report-id/759e1c10-bb0e-4a18-8926-8d
 GET http://localhost:9000/individual/get-user-details-by-user-id/717150b2-2a19-45e8-9c24-69d93b4751c2
 
 
-### get poc by using mod_id
+### get poc by using poc_id
 ###
 GET http://localhost:9000/individual/get_poc_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
 
 //getting org name by org_id
 ###
-GET http://localhost:9000/individual/get_org_by_org_id/ef433e21-f92a-4235-aaa9-4b157b67bbc2
+GET http://localhost:9000/individual/get_org_by_org_id/2112040a-a6ac-4148-a32b-a358dd5176a0
 
 ###getting mod id from express_mod by using mod_id
-GET http://localhost:9000/individual/get-by-mod-id_express_mod/6503caf1-fb75-4640-99f2-d6a529b71205
-
+GET http://localhost:9000/individual/get-by-mod-id_express_mod/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
 ###
 GET http://localhost:9000/individual/get-all-individual
 

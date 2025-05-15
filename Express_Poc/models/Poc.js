@@ -17,6 +17,7 @@ const PointOfContactSchema = new mongoose.Schema({
   role: { type: String, required: false },
   email: { type: String, required: false },
   contact: { type: String, required: false },
+  test_details:  {type: [String], default: [],},
   
   summary: { type: [SummarySchema], required: false }
 }, { _id: false });
@@ -34,6 +35,7 @@ const ExpertDetailsSchema = new mongoose.Schema({
 const ReportSchema = new mongoose.Schema({
   title: { type: String, required: false },
   background: { type: String, required: false },
+  address:{ type: String, required: false },
   mod_id: { type: String, required: false },
   mod_poc_id: { type: String, required: false },
   schedule: { type: String, required: false },
@@ -41,7 +43,8 @@ const ReportSchema = new mongoose.Schema({
   scopeOfTheTraining: { type: String, required: false },
   pointOfContact: { type: PointOfContactSchema, required: false },
   expertDetails: { type: ExpertDetailsSchema, required: false }, // changed to object
-  totalStrength: { type: Number, required: false }
+  totalStrength: { type: Number, required: false },
+  student_ranking:{type: [String], default: [],},
 }, { _id: false });
 
 // Final Poc Schema

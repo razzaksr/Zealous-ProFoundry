@@ -273,33 +273,44 @@ router.get('/get_poc_report_by_poc_id/:mod_poc_id', async (req, res) => {
   try {
     const { mod_poc_id } = req.params;
 
+    // Find only the report section from the document
     const poc = await Poc.findOne(
       { mod_poc_id },
       {
-        mod_poc_name: 0,
-        mod_poc_role: 0,
-        mod_poc_email: 0,
-        mod_poc_mobile: 0,
-        mod_images: 0,
-        mod_tests: 0,
-        mod_users: 0,
-        attendance: 0,
-        poc_certificate: 0,
-        _id: 0, // Optional: exclude MongoDB ObjectId
-        __v: 0  // Optional: exclude version key
+        "report": 1,
+        _id: 0
       }
     );
 
-    if (!poc) {
-      return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
+    // Check if POC exists
+    if (!poc || !poc.report) {
+      return res.status(404).json({ message: `POC with ID ${mod_poc_id} or report not found` });
     }
 
-    res.status(200).json(poc);
+    // Return full report
+    res.status(200).json({
+      report: {
+        title: poc.report.title || "",
+        background: poc.report.background || "",
+        address: poc.report.address || "",
+        mod_id: poc.report.mod_id || "",
+        mod_poc_id: poc.report.mod_poc_id || "",
+        schedule: poc.report.schedule || "",
+        totalStrength:poc.report.totalStrength || "",
+        executiondates: poc.report.executiondates || "",
+        scopeOfTheTraining: poc.report.scopeOfTheTraining || "",
+        pointOfContact: poc.report.pointOfContact || {},
+        expertDetails: poc.report.expertDetails || {},
+        totalStrength: poc.report.totalStrength || 0,
+        student_ranking: poc.report.student_ranking || [],
+        summmary:poc.report.summary || [],
+      }
+    });
   } catch (error) {
+    console.error("Error fetching POC report:", error);
     res.status(500).json({ message: "Error fetching report", error: error.message });
   }
 });
-
 
 //get
  router.get("/get-by-mod-id/:mod_id", async (req, res) => {
@@ -348,6 +359,33 @@ router.get("/get_expert_using_poc/:mod_poc_id", async (req, res) => {
     res.status(500).json({ error: "Unexpected error", details: err.message });
   }
 });
+/// GET TEST NAME 
+router.get("/get_test_name/:mod_tests", async (req, res) => {
+  const { mod_tests } = req.params;
+
+  try {
+    const result = await consul.catalog.service.nodes('Express_Test');
+
+    if (!result || result.length === 0) {
+      return res.status(404).json({ error: "Express_test service not found in Consul" });
+    }
+
+    const service = result[0];
+    const serviceAddress = service.Address || 'localhost';
+    const servicePort = service.ServicePort;
+
+    const response = await axios.get(`http://${serviceAddress}:${servicePort}/test/get_by_test_id/${mod_tests}`);
+
+    // Extract and send only the test_name
+    const { test_name } = response.data;
+    res.json({ test_name });
+
+  } catch (err) {
+    console.error("Error fetching test by ID:", err.message);
+    res.status(500).json({ error: "Unexpected error", details: err.message });
+  }
+});
+
 
 
 
@@ -383,10 +421,10 @@ const formatExecutionDates = (start, end) => {
 
 router.put('/generate_report/:mod_poc_id', async (req, res) => {
   const { mod_poc_id } = req.params;
-  const { summary, title, background, scopeOfTheTraining, totalStrength, company } = req.body;
+  const { summary, title, background,address,scopeOfTheTraining, totalStrength, company, email, student_ranking } = req.body;
 
   try {
-    // Fetch the Express_Poc service details from Consul
+    // 1. Fetch POC service info
     const pocService = await consul.catalog.service.nodes("Express_Poc");
     if (!pocService || pocService.length === 0) {
       return res.status(404).json({ error: "Express_Poc service not found in Consul" });
@@ -394,7 +432,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
     const serviceAddress = pocService[0].Address;
     const servicePort = pocService[0].ServicePort;
 
-    // 1. Fetch the POC details
+    // 2. Get POC data
     const pocUrl = `http://${serviceAddress}:${servicePort}/poc/get_poc/${mod_poc_id}`;
     const pocResponse = await axios.get(pocUrl);
     const poc = pocResponse.data;
@@ -403,29 +441,29 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
       return res.status(404).json({ error: "POC not found" });
     }
 
-    const { mod_id, mod_poc_name, mod_poc_role, mod_poc_email, mod_poc_mobile } = poc;
+    const { mod_id, mod_poc_name, mod_poc_role, mod_poc_email, mod_poc_mobile, mod_tests } = poc;
 
-    // 2. Fetch Module Info
+    // 3. Get Module data
     const modService = await consul.catalog.service.nodes("Express_Mod");
     if (!modService || modService.length === 0) {
       return res.status(404).json({ error: "Express_Mod service not found in Consul" });
     }
     const modServiceAddress = modService[0].Address;
     const modServicePort = modService[0].ServicePort;
+
     const modUrl = `http://${modServiceAddress}:${modServicePort}/modules/get_module_by_id/${mod_id}`;
     const modResponse = await axios.get(modUrl);
     const modData = modResponse.data;
 
-    // 3. Process dates from module data
+    // 4. Format dates
     const [start, end] = modData.mod_duration.split(" - ");
     const executiondates = formatExecutionDates(start, end);
-
     const startDate = moment(start, "DD/MM/YYYY");
     const endDate = moment(end, "DD/MM/YYYY");
     const durationDays = endDate.diff(startDate, "days") + 1;
     const schedule = `${durationDays} ${durationDays === 1 ? "day" : "days"}`;
 
-    // 4. Expert info — manually set company from req.body
+    // 5. Get Expert details
     const expertUrl = `http://${serviceAddress}:${servicePort}/poc/get_expert_using_poc/${mod_poc_id}`;
     const expertResponse = await axios.get(expertUrl);
     const expertData = expertResponse.data;
@@ -433,42 +471,90 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
     const expertDetails = {
       name: expertData.mod_expert_name || "N/A",
       role: expertData.mod_expert_role || "N/A",
-      company: company || expertData.mod_expert_company || "N/A" // manually provided company
+      company: company || expertData.mod_expert_company || "N/A",
+      email: email || expertData.mod_expert_email || "N/A",
+      contact: expertData.mod_expert_mobile || "N/A"
     };
 
-    // 5. Point of contact
+    // 6. Fetch test names from mod_tests
+    let test_details = [];
+
+    if (mod_tests && Object.keys(mod_tests).length > 0) {
+      const testService = await consul.catalog.service.nodes("Express_Test");
+      if (!testService || testService.length === 0) {
+        return res.status(404).json({ error: "Express_Test service not found in Consul" });
+      }
+    
+      const testServiceAddress = testService[0].Address;
+      const testServicePort = testService[0].ServicePort;
+    
+      // Extract test IDs properly
+      const testIds = Object.values(mod_tests).map(test => test.test_id);
+    
+      for (const testId of testIds) {
+        if (!testId) {
+          console.warn(`Skipping invalid test ID:`, testId);
+          continue;
+        }
+    
+        try {
+          const response = await axios.get(`http://${testServiceAddress}:${testServicePort}/test/get_by_test_id/${testId}`);
+          if (response.data && response.data.test_name) {
+            test_details.push(response.data.test_name);
+          }
+        } catch (err) {
+          console.error(`Failed to fetch test name for test ID ${testId}:`, err.message);
+        }
+      }
+    }
+    
+    console.log("Fetched Test Details:", test_details);
+    
+    
+
+    // 7. Create Point of Contact block
     const pointOfContact = {
       name: mod_poc_name || "N/A",
       role: mod_poc_role || "N/A",
       email: mod_poc_email || "N/A",
       contact: mod_poc_mobile || "N/A",
+      test_details: [...test_details],
       summary: summary || []
     };
+  
 
-    // 6. Update the POC report
+    // ----------------------
+    // 8. Process update
+    // ----------------------
+
+    let updateFields = {};
+
+    if (student_ranking) {
+      const processedStudentRanking = Array.isArray(student_ranking) ? student_ranking : [student_ranking];
+      updateFields['report.student_ranking'] = processedStudentRanking;
+    }
+
+    if (summary || title || background ||address || scopeOfTheTraining || totalStrength || company || email) {
+      updateFields['report.title'] = title;
+      updateFields['report.background'] = background;
+      updateFields['report.address'] = address;
+      updateFields['report.mod_id'] = mod_id;
+      updateFields['report.mod_poc_id'] = mod_poc_id;
+      updateFields['report.schedule'] = schedule;
+      updateFields['report.executiondates'] = executiondates;
+      updateFields['report.scopeOfTheTraining'] = scopeOfTheTraining;
+      updateFields['report.expertDetails'] = expertDetails;
+      updateFields['report.pointOfContact'] = pointOfContact;
+      updateFields['report.totalStrength'] = Number(totalStrength) || 0;
+    }
+
     const updated = await Poc.findOneAndUpdate(
       { mod_poc_id },
-      {
-        $set: {
-          report: {
-            title,
-            background,
-            mod_id,
-            mod_poc_id,
-            schedule,
-            executiondates,
-            scopeOfTheTraining,
-            expertDetails,
-            pointOfContact,
-            totalStrength: Number(totalStrength) || 0
- // manually provided
-          },
-        },
-      },
+      { $set: updateFields },
       { new: true }
     );
 
-    // 7. Return the data
+    // 9. Return result
     res.status(200).json({
       message: "Report generated successfully",
       reportData: {
@@ -477,7 +563,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
           mod_poc_name,
           mod_poc_role,
           mod_poc_email,
-          mod_poc_mobile
+          mod_poc_mobile,
         },
         moduleDetails: modData,
         expertDetails,
@@ -485,6 +571,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
         userCount: totalStrength || "N/A"
       }
     });
+
   } catch (err) {
     console.error("Error generating report:", err.message);
     res.status(500).json({
@@ -493,6 +580,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
     });
   }
 });
+
 
 
 // Add this new endpoint to your backend
