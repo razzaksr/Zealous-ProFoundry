@@ -10,6 +10,12 @@ const Coding = require("./controllers/codeController");
 const consul = require("./middleware/consul");
 
 const app = express();
+
+app.get('/', (req, res) => {
+    res.send('Express Test running');
+});
+
+
 const port = process.env.PORT;
 
 //  Middleware

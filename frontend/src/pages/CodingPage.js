@@ -51,7 +51,6 @@ import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DoneIcon from "@mui/icons-material/Done";
-
 import { fetchCodeById, fetchTestCaseById, compileCode, submitTestResult, getTestById } from "../axios";
 
 // Language mapping for backend
@@ -2024,6 +2023,22 @@ const CodingPage = () => {
           >
             Program {testResult.currentCodingIndex + 1} of {effectiveCodingIds.length || 1}
           </Typography>
+          {!isLastProgram && (
+            <Button
+              variant="contained"
+              color="primary"
+              size="small"
+              onClick={handleNextProgram}
+              disabled={loading}
+              endIcon={<NavigateNextIcon />}
+              sx={{
+                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+              }}
+            >
+              Next Program
+            </Button>
+          )}
           <Button
             variant="contained"
             color="error"

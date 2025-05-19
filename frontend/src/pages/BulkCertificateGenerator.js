@@ -22,7 +22,7 @@ import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import { createRoot } from "react-dom/client";
 import { QRCodeCanvas } from "qrcode.react";
-import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Fixed typo
+import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Fixed typo in path
 import DigiSign from "../assests/DigiSign.png"; // Adjust path
 import { getUserById, getModuleById, fetchAggregateScores, fetchOrGenerateCertificates, fetchAllPocs, fetchPocById } from "../axios";
 
@@ -49,7 +49,6 @@ const CertificateTemplate = ({ forwardedRef, certificateId, userDetails, moduleD
         textAlign: "center",
       }}
     >
-      {/* Inline background for debugging */}
       <img
         src={BackgroundImg}
         alt="Background"
@@ -62,7 +61,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId, userDetails, moduleD
           zIndex: -1,
           objectFit: "cover",
         }}
-        onError={(e) => console.error("Failed to load inline background image:", e, BackgroundImg)}
+        onError={(e) => console.error("Failed to load background image:", e, BackgroundImg)}
       />
       <h2 style={{ fontSize: "46px", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
       <p style={{ fontSize: "16px", fontStyle: "italic" }}>
@@ -209,10 +208,12 @@ const BulkCertificateGenerator = () => {
     const fetchPocs = async () => {
       try {
         const pocData = await fetchAllPocs();
-        console.log("Fetched POCs:", pocData); // Debug
-        setPocs(pocData || []);
+        console.log("Fetched POCs:", pocData.data); // Debug
+        setPocs(Array.isArray(pocData.data) ? pocData.data : []);
       } catch (error) {
+        console.error("Failed to fetch POCs:", error);
         setError("Failed to fetch POCs: " + error.message);
+        setPocs([]);
       }
     };
     fetchPocs();
@@ -238,10 +239,10 @@ const BulkCertificateGenerator = () => {
             const scoreData = await fetchAggregateScores(selectedPocId, userId);
             return {
               id: userId,
-              full_name: userDetails.full_name,
-              rollno: userDetails.rollno,
-              department: userDetails.department,
-              college: userDetails.college,
+              full_name: userDetails.full_name || "Unknown",
+              rollno: userDetails.rollno || "Unknown",
+              department: userDetails.department || "Unknown",
+              college: userDetails.college || "Unknown",
               aggregate_score: scoreData.response?.average_percentage?.toFixed(2) || "0.00",
             };
           } catch (error) {
@@ -264,6 +265,7 @@ const BulkCertificateGenerator = () => {
         }
         setUsers(userData.filter(u => !u.error));
       } catch (error) {
+        console.error("Failed to fetch POC users:", error);
         setError("Failed to fetch POC users: " + error.message);
       } finally {
         setLoading(false);
@@ -295,7 +297,6 @@ const BulkCertificateGenerator = () => {
     setCertificateErrors([]);
 
     try {
-      // Fetch or generate certificate IDs
       console.log("Generating certificates for POC:", selectedPocId, "Users:", selectedUserIds); // Debug
       const { results, errors } = await fetchOrGenerateCertificates(selectedPocId, selectedUserIds);
       console.log("Certificate results:", results, "Errors:", errors); // Debug
@@ -323,11 +324,9 @@ const BulkCertificateGenerator = () => {
           continue;
         }
 
-        // Fetch module and score data
         const moduleDetails = await getModuleById(modId);
         const scoreData = await fetchAggregateScores(pocId, userId);
 
-        // Generate certificate canvas
         const { canvas, background } = await generateCertificateCanvas(
           certificateId,
           user,
@@ -335,7 +334,6 @@ const BulkCertificateGenerator = () => {
           scoreData.response
         );
 
-        // Add to PDF
         const imgData = canvas.toDataURL("image/jpeg", 0.8); // JPEG with 80% quality
         console.log(`Canvas data URL size for ${certificateId}: ${(imgData.length * 0.75 / 1024 / 1024).toFixed(2)} MB`); // Debug
         if (i > 0) {
@@ -350,7 +348,6 @@ const BulkCertificateGenerator = () => {
         throw new Error("Some certificates failed to generate");
       }
 
-      // Save and open PDF
       const filename = `Certificates_${selectedPocId}.pdf`;
       pdf.save(filename);
       const pdfBlob = pdf.output("blob");

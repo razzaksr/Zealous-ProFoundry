@@ -23,7 +23,7 @@ import axios from "axios";
 import CloseIcon from "@mui/icons-material/Close";
 import CodeIcon from "@mui/icons-material/Code";
 import BugReportIcon from "@mui/icons-material/BugReport";
-import Admin_Dashboard from "../components/Admin_dash";
+import Admin_Dashboard from "../components/AdminDash";
 
 const Update_coding = () => {
   const [codeRows, setCodeRows] = useState([]);

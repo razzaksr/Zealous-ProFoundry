@@ -12,7 +12,7 @@ import {
 import dayjs from "dayjs";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import Admin_Dashboard from "../components/Admin_dash";
+import Admin_Dashboard from "../components/AdminDash";
 import { addModule } from "../axios"; 
 
 const Add_Module = () => {

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const BASE_URL = "http://localhost:8086";
-// const BASE_URL = "http://98.81.207.64:4000";
+// const BASE_URL = "https://vw47nbtx-8086.inc1.devtunnels.ms";
 
 
 // Sign-in API call
@@ -184,6 +184,17 @@ export const fetchModuleName = async (modId) => {
     }
   };
 
+  // FETCH CERTIFICATE STATUS BYY POC ID
+  export const fetchPocCertStatus = async (pocId) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_cert_status/${pocId}`);
+      return response.data.cert_status;
+    } catch (error) {
+      console.error("Error fetching POC certificate status:", error);
+      throw error.response?.data?.message || error.message;
+    }
+  };
+  
 // FETCH ALL POC
 
 export const fetchAllPocs = async () => {
@@ -532,5 +543,72 @@ export const updateOrganization = async (updateData) => {
   } catch (error) {
     console.error('Error updating organization:', error);
     throw error;
+  }
+};
+
+// Create Organiztion 
+export const createOrg = async (orgData) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/organization_gateway/organization/create_org`, orgData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating organization:', error);
+    throw error.response?.data?.message || 'Failed to create organization';
+  }
+};
+
+// Fetch all student data
+export const fetchStudents = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/individual_gateway/individual/get-all-individual`);
+    return response.data;
+  } catch (err) {
+    throw new Error("Failed to fetch student data");
+  }
+};
+
+// Send student rankings to the server
+export const sendStudentRankings = async (pocId, studentNames) => {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/poc_gateway/poc/generate_report/${pocId}`,
+      { student_ranking: studentNames }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error("Error sending student rankings");
+  }
+};
+
+// Fetch attendance data by module ID and POC ID
+export const fetchAttendanceData = async (module_id, module_poc_id) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/attendance_gateway/attendance/get-by-module-id-and-module-poc-id`, {
+      module_id,
+      module_poc_id
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch attendance data");
+  }
+};
+
+// Fetch POC report by POC ID
+export const fetchPocReportById = async (mod_poc_id) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/poc_gateway/poc/get_poc_report_by_poc_id/${mod_poc_id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to fetch report details");
+  }
+};
+
+// Generate/update report by POC ID
+export const generateReport = async (mod_poc_id, reportData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/poc_gateway/poc/generate_report/${mod_poc_id}`, reportData);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.error || "Something went wrong during submission");
   }
 };

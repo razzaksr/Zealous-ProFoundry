@@ -8,6 +8,11 @@ const expert = require("./controllers/expertController");
 const consul = require("./middleware/consul");
 
 const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Express Poc running');
+});
+
 const PORT = process.env.PORT ;
 
 // Middleware

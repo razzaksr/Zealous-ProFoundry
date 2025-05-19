@@ -37,7 +37,7 @@ import {
   Notifications,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
-import Admin_Dashboard from '../components/Admin_dash.js';
+import Admin_Dashboard from '../components/AdminDash.js';
 
 // Custom styled components
 const StyledSearch = styled('div')(({ theme }) => ({
@@ -208,7 +208,12 @@ export default function AdminDashboard() {
     { label: 'Test Module', path: '/update_testmodule', type: 'Update' },
     { label: 'POC', path: '/update_poc', type: 'Update' },
     { label: 'Expert', path: '/update_expert', type: 'Update' },
-    { label: 'Organization', path: '/update_organization', type: 'Update' }, 
+    { label: 'Organization', path: '/update_organization', type: 'Update' },
+    { label: 'Certficate', path: '/bulk_certficate', type: 'Update' }, // New Update User action 
+
+        //Report Side Cards
+        { label: 'Report And PieChart Gen', path: '/reportAndPieGen', type: 'Add' },
+        { label: 'Report Generation', path: '/reportGen', type: 'Add' },
   ];
   
 

@@ -7,6 +7,11 @@ const user = require("./controllers/userController");
 const consul = require("./middleware/consul");
 
 const app = express();
+app.get('/', (req, res) => {
+  res.send('Express User running');
+});
+
+
 const PORT = process.env.PORT ;
 
 // Middleware

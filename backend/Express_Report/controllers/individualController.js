@@ -156,4 +156,15 @@ router.delete("/delete-test/:user_id/:result_test_id", async (req, res) => {
   }
 });
 
+router.get("/get-by-report-id/:report_id", async (req, res) => {
+  try {
+    const report = await Individual.findOne({ report_id: req.params.report_id });
+    if (!report) return res.status(404).json({ error: "No reports found for this user." });
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;

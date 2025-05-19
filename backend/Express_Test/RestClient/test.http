@@ -55,8 +55,8 @@ PUT http://localhost:8082/test/toggle_status
 Content-Type: application/json
 
 {
-  "test_id": "1b5318ce-feb7-462c-a97e-565e7bc0576f",
-  "status": "disabled"
+  "test_id": "14ccc540-e9bc-434d-960b-d31712f18ba3",
+  "status": "active"
 }
 
 ###

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Box, Typography ,Paper} from "@mui/material";
 import axios from "axios";
-import Admin_Dashboard from "../components/Admin_dash";
+import Admin_Dashboard from "../components/AdminDash";
 
 const Codingpage = () => {
   const [rows, setRows] = useState([]);

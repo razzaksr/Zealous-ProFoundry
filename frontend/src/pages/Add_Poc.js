@@ -9,7 +9,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import Admin_Dashboard from "../components/Admin_dash";
+import Admin_Dashboard from "../components/AdminDash";
 import { addPOC } from "../axios";
 
 const Add_POC = () => {

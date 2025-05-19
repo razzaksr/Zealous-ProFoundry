@@ -12,9 +12,8 @@ import {
   fetchTestsToday,
 } from "../axios";
 import CourseInfoCards from "../components/StudentDashboard/CourseInfoCards";
-import Dash from "../components/dash";
+import Dash from "../components/StudentDashboard/dash";
 import { useNavigate } from "react-router-dom";
-
 
 export default function StudentDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -26,11 +25,10 @@ export default function StudentDashboard() {
   const [expertName, setExpertName] = useState("Loading...");
   const [moduleName, setModuleName] = useState("Loading...");
   const [orgName, setOrgName] = useState("Loading...");
-  const [todayTestId, setTodayTestId] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [hasTakenTest, setHasTakenTest] = useState(false);
-  const [courseProgress, setCourseProgress] = useState(0);
   const [testIds, setTestIds] = useState([]);
+  const [testStatuses, setTestStatuses] = useState({}); // { testId: boolean }
+  const [userId, setUserId] = useState(null);
+  const [courseProgress, setCourseProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -84,7 +82,7 @@ export default function StudentDashboard() {
     }
   }, []);
 
-  const fetchDashboardData = async (userId) => {
+  const fetchDashboardData = async (userId, modId, modPocId) => {
     try {
       setIsLoading(true);
 
@@ -125,38 +123,38 @@ export default function StudentDashboard() {
 
       const tests = testsData.test_ids || [];
       if (tests.length > 0) {
-        const testIdsArray = tests;
-        console.log("Test IDs for today:", testIdsArray);
+        console.log("Test IDs for today:", tests);
+        setTestIds(tests);
 
-        setTestIds(testIdsArray);
-        const firstTestId = testIdsArray[0];
-        setTodayTestId(firstTestId);
-        await checkTestTaken(userId, firstTestId);
+        // Check status for all tests
+        const statusPromises = tests.map(async (testId) => {
+          try {
+            const result = await checkIfTestTaken(userId, testId);
+            console.log(`Check Test Response for ${testId}:`, result);
+            return { testId, hasTaken: result.length > 0 };
+          } catch (error) {
+            console.error(`Error checking test status for ${testId}:`, error);
+            return { testId, hasTaken: false };
+          }
+        });
+
+        const statuses = await Promise.all(statusPromises);
+        const statusMap = statuses.reduce((acc, { testId, hasTaken }) => {
+          acc[testId] = hasTaken;
+          return acc;
+        }, {});
+        setTestStatuses(statusMap);
+        console.log("Test statuses:", statusMap);
       } else {
         console.warn("No tests available for today");
-        setTodayTestId(null);
+        setTestIds([]);
+        setTestStatuses({});
       }
     } catch (testError) {
       console.error("Failed to fetch today's tests:", testError);
       setError("Failed to load today's tests");
-      setTodayTestId(null);
-    }
-  };
-
-  const checkTestTaken = async (userId, testId) => {
-    if (!userId || !testId) {
-      console.warn("Missing userId or testId:", { userId, testId });
-      setHasTakenTest(false);
-      return;
-    }
-
-    try {
-      const result = await checkIfTestTaken(userId, testId);
-      console.log("Check Test Response:", result);
-      setHasTakenTest(result.length > 0);
-    } catch (error) {
-      console.error("Error checking test status:", error);
-      setHasTakenTest(false);
+      setTestIds([]);
+      setTestStatuses({});
     }
   };
 
@@ -308,18 +306,24 @@ export default function StudentDashboard() {
   };
 
   const handleTestModuleClick = () => {
-    if (!todayTestId) {
-      console.warn("No test ID available");
+    if (testIds.length === 0) {
+      console.warn("No test IDs available");
       alert("No tests are scheduled for today. Please check back tomorrow or contact your coordinator.");
       return;
     }
 
-    if (hasTakenTest) {
-      alert("You have already taken today's test.");
-    } else {
-      console.log("Navigating to test:", todayTestId);
-      navigate(`/test-intro/${todayTestId}`);
+    // Check if all tests are taken
+    const allTestsTaken = testIds.every((testId) => testStatuses[testId] === true);
+    if (allTestsTaken) {
+      console.log("All tests completed for today");
+      alert("You have completed all tests scheduled for today.");
+      return;
     }
+
+    // Find the first uncompleted test
+    const firstUncompletedTestId = testIds.find((testId) => !testStatuses[testId]);
+    console.log("Navigating to test:", firstUncompletedTestId);
+    navigate(`/test-intro/${firstUncompletedTestId}`);
   };
 
   if (isLoading) {
@@ -333,6 +337,8 @@ export default function StudentDashboard() {
       </div>
     );
   }
+
+  const allTestsTaken = testIds.length > 0 && testIds.every((testId) => testStatuses[testId] === true);
 
   return (
     <div style={styles.container}>
@@ -355,7 +361,7 @@ export default function StudentDashboard() {
               <div style={styles.buttonContainer}>
                 <button
                   style={{
-                    backgroundColor: !todayTestId || hasTakenTest ? "#cccccc" : "#0c80c3",
+                    backgroundColor: testIds.length === 0 || allTestsTaken ? "#cccccc" : "#0c80c3",
                     color: "white",
                     border: "none",
                     borderRadius: "8px",
@@ -364,19 +370,19 @@ export default function StudentDashboard() {
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    cursor: !todayTestId || hasTakenTest ? "not-allowed" : "pointer",
+                    cursor: testIds.length === 0 || allTestsTaken ? "not-allowed" : "pointer",
                     transition: "all 0.3s ease",
                   }}
                   onClick={handleTestModuleClick}
-                  disabled={!todayTestId || hasTakenTest}
+                  disabled={testIds.length === 0 || allTestsTaken}
                   onMouseOver={(e) => {
-                    if (todayTestId && !hasTakenTest) {
+                    if (testIds.length > 0 && !allTestsTaken) {
                       e.currentTarget.style.backgroundColor = "#fc7a46";
                       e.currentTarget.style.transform = "translateY(-2px)";
                     }
                   }}
                   onMouseOut={(e) => {
-                    if (todayTestId && !hasTakenTest) {
+                    if (testIds.length > 0 && !allTestsTaken) {
                       e.currentTarget.style.backgroundColor = "#0c83c8";
                       e.currentTarget.style.transform = "translateY(0)";
                     }
@@ -400,8 +406,7 @@ export default function StudentDashboard() {
                     transition: "all 0.3s ease",
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "rgba(255, 255, 255, 0.1)";
+                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
                     e.currentTarget.style.transform = "translateY(-2px)";
                   }}
                   onMouseOut={(e) => {

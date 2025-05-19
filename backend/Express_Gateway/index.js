@@ -7,10 +7,16 @@ const consul = require('./middleware/consul'); // Import the Consul registration
 
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT;
 
 
 app.use(cors());
+
+
+app.get('/', (req, res) => {
+    res.send('Express Gateway running');
+});
+
 
 // Health Check Route for Consul
 app.get('/health', (req, res) => {

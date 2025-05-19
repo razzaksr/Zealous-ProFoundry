@@ -288,7 +288,7 @@ const McqPage = () => {
         localStorage.setItem("test_timer", newTime);
         return newTime;
       });
-    }, 5000);
+    }, 1000);
     return () => clearInterval(timerRef.current);
   }, [timer, isInitialized]);
 

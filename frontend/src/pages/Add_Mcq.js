@@ -20,7 +20,7 @@ import {
 // If you don't have icons, you can remove them
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import Admin_Dashboard from "../components/Admin_dash";
+import Admin_Dashboard from "../components/AdminDash";
 
 const Add_Mcq = () => {
   const [question, setQuestion] = React.useState("");

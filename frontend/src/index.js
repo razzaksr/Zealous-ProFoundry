@@ -13,10 +13,10 @@ import CodingPage from "./pages/CodingPage";
 import McqPage from "./pages/McqPage";
 import InstructionsPage from "./pages/Info";
 import AdminDashboard from "./pages/AdminDashboard";
-import PocPage from "./pages/PocPage";
+import PocPage from "./pages/View_Poc";
 import UserPage from "./pages/UserPage";
 import ModulePage from "./pages/ModulePage";
-import OrganizationPage from "./pages/OrganizationPage";
+import OrganizationPage from "./pages/View_Organization";
 import ExpertPage from "./pages/ExpertPage";
 import McqAdminPage from "./pages/McqAdminPage";
 import TestAdminPage from "./pages/TestAdminPage";
@@ -36,6 +36,11 @@ import Add_Expert from "./pages/Add_Expert";
 import Add_User from "./pages/Add_User";
 import Update_Expert from "./pages/Update_Expert";
 import Update_Organization from "./pages/Update_Organization";
+import BulkCertificateGenerator from "./pages/BulkCertificateGenerator";
+import ClassPerformance from "./pages/reportAndPieGen";
+import ColumnChart from "./pages/columnChart";
+import AttendanceAnalytics from "./pages/attendanceComponent";
+import TrainingForm from "./pages/report_gen";
 
 
 const App = () => {
@@ -65,6 +70,7 @@ const App = () => {
               <Route path="/mcq-admin" element={<McqAdminPage />} />
               <Route path="/test" element={<TestAdminPage />} />
               <Route path="/add_mcq" element={<Add_Mcq />} />
+              <Route path="/bulk_certficate" element={<BulkCertificateGenerator />} />
               <Route path="/add_module" element={<Add_Module />} />
               <Route path="/add_organisation" element={<Add_Organisation />} />
               <Route path="/add_testcase" element={<Add_TestCase />} />
@@ -77,6 +83,10 @@ const App = () => {
               <Route path="/update_poc" element={<Update_Poc />} />
               <Route path="/update_expert" element={<Update_Expert />} />
               <Route path="/update_organization" element={<Update_Organization />} />
+              <Route path="/reportAndPieGen" element={<ClassPerformance />} />
+              <Route path="/student/:report_id" element={<ColumnChart />} />
+              <Route path="/attendance" element={<AttendanceAnalytics />} />
+              <Route path="/reportGen" element={<TrainingForm />} />
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           ) : (
@@ -91,7 +101,7 @@ const App = () => {
               <Route path="/test-result" element={<TestResult />} />
               <Route path="/testresults" element={<TestResult />} />
               <Route path="/info" element={<InstructionsPage />} />
-              <Route path="/codelist" element={<CodeList />} />
+              <Route path="/codelist" element={<CodeList />} />.
               <Route path="*" element={<Navigate to="/landing" />} />
             </>
           )

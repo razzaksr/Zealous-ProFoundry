@@ -2,7 +2,9 @@ const Consul = require('consul');
 const dotenv = require('dotenv');
 
 dotenv.config();
-const consul = new Consul();
+// const consul = new Consul({host: 'consul-e0hq.onrender.com', port:443, secure: true , promisify: true});
+const consul = new Consul()
+
 
 const CONSUL_SERVICE_ID = process.env.CONSUL_SERVICE_ID;
 const CONSUL_SERVICE_NAME = process.env.CONSUL_SERVICE_NAME;

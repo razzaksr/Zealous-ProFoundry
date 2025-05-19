@@ -13,6 +13,10 @@ const overallRoutes = require("./controllers/overallController");
 
 // ✅ Initialize Express App
 const app = express();
+app.get('/', (req, res) => {
+  res.send('Express Report running');
+});
+
 
 app.use(cors());
 app.use(express.json());

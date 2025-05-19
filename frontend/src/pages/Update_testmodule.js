@@ -22,7 +22,7 @@ import { fetchAllTests, fetchAllCodes, fetchAllMcqs, updateTest } from "../axios
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ListAltIcon from "@mui/icons-material/ListAlt";
 import CloseIcon from "@mui/icons-material/Close";
-import Admin_Dashboard from "../components/Admin_dash";
+import Admin_Dashboard from "../components/AdminDash";
 
 const UpdateTestModule = () => {
   const [tests, setTests] = useState([]);

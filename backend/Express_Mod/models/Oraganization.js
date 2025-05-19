@@ -7,7 +7,7 @@ const OrganizationSchema = new mongoose.Schema({
   org_address: { type: String, required: true },
   org_email: { type: String, required: true, unique: true },
   org_contact: { type: String, required: true },
-  org_associated_date: { type: Date, default: Date.now },
+  org_associated_date: { type: String},
   mod_id: [{ type: String }] 
 });
 

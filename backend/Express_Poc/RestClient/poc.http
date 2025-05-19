@@ -3,17 +3,17 @@ POST http://localhost:8084/poc/add_poc
 Content-Type: application/json
 
 {
-    "mod_poc_name": "vetri",
+    "mod_poc_name": "vetvs dvvdri",
     "mod_poc_role": "AP",
-    "mod_poc_email": "vetri@gmail.com",
-    "mod_poc_mobile": "26283847784"
+    "mod_poc_email": "vetrscscssvsi@gmail.com",
+    "mod_poc_mobile": "26213283847784"
 }
 
 ### Get all POCs
 GET http://localhost:8084/poc/read_all_poc
 
 ### Get POC by mod_poc_id
-GET http://localhost:8084/poc/get_poc_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
+GET http://localhost:8084/poc/get_poc_by_poc_id/b4021b93-8384-4607-8b59-58c66fdd794d
 
 ### Get POC ID AND MOD ID BY USER ID
 GET http://localhost:8084/poc/mod_id_poc_id/528f7cb8-0bfe-4366-a98d-831719ec53e6
@@ -23,9 +23,9 @@ PUT http://localhost:8084/poc/update_poc
 Content-Type: application/json
 
 {
-    "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+    "mod_poc_id": "028621b4-d508-4eae-8a6f-07a4df9f9f32",
     "poc_certificate": {
-    "cert_id": "CET/WP/",
+    "cert_id": "CET/DEMO/",
     "cert_status": true
   }
 }
@@ -35,7 +35,7 @@ PUT http://localhost:8084/poc/update_mod_field
 Content-Type: application/json
 
 {
-    "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+    "mod_poc_id": "028621b4-d508-4eae-8a6f-07a4df9f9f32",
     "mod_users": [
         "717150b2-2a19-45e8-9c24-69d93b4751c2",
         "528f7cb8-0bfe-4366-a98d-831719ec53e6",
@@ -54,10 +54,10 @@ PUT http://localhost:8084/poc/update_test
 Content-Type: application/json
 
 {
-    "mod_poc_id": "9ccefe74-f80c-4427-804e-827a61d7619a",
+    "mod_poc_id": "b4021b93-8384-4607-8b59-58c66fdd794d",
     "test_id": [
-        { "test_id": "b2b727d1-f034-4636-9a28-b6cd84d07043", "assigned_date": "10/04/2025" },
-        { "test_id": "7213c219-3295-462d-b6cf-e35e3ee03a75", "assigned_date": "09/04/2025" }
+        { "test_id": "14ccc540-e9bc-434d-960b-d31712f18ba3", "assigned_date": "19/05/2025" },
+        { "test_id": "7fb99966-8e32-4481-9f54-50bcf7e33e50", "assigned_date": "19/05/2025" }       
     ]
 }
 
@@ -65,7 +65,7 @@ Content-Type: application/json
 DELETE http://localhost:8084/poc/delete_test/57b7bb55-a49e-4065-b38d-fbd13c396d2b
 
 ### Delete a POC
-DELETE http://localhost:8084/poc/delete_poc/8ddcfe54-c282-4ce1-80d2-21cab5ec7819
+DELETE http://localhost:8084/poc/delete_poc/028621b4-d508-4eae-8a6f-07a4df9f9f32
 
 ### Get mod_id by user_id
 GET http://localhost:8084/poc/mod_by_user/9ccefe74-f80c-4427-804e-827a61d7619a
@@ -74,10 +74,13 @@ GET http://localhost:8084/poc/mod_by_user/9ccefe74-f80c-4427-804e-827a61d7619a
 GET http://localhost:8084/poc/mod_and_poc/717150b2-2a19-45e8-9c24-69d93b4751c2
 
 ### Get today's test IDs from a specific POC
-GET http://localhost:8084/poc/tests_today/9ccefe74-f80c-4427-804e-827a61d7619a
+GET http://localhost:8084/poc/tests_today/b4021b93-8384-4607-8b59-58c66fdd794d
 
 ### Get test IDs from a POC up to today's date
-GET http://localhost:8084/poc/tests_till_today/9ccefe74-f80c-4427-804e-827a61d7619a
+GET http://localhost:8084/poc/tests_till_today/b4021b93-8384-4607-8b59-58c66fdd794d
+
+### Get Report by mod_poc_id
+GET http://localhost:8084/poc/get_poc_report_by_poc_id/9ccefe74-f80c-4427-804e-827a61d7619a
 
 ### Get all test with poc IDs
 GET http://localhost:8084/poc/get_all_tests/9ccefe74-f80c-4427-804e-827a61d7619a
@@ -87,8 +90,8 @@ POST http://localhost:8084/poc/generate-certificates
 Content-Type: application/json
 
 {
-  "mod_poc_id": "dd13e5af-a777-4ce5-9a3d-8ee1b2502958",
-  "userIds": "89810ab1-72b2-444e-8c7a-d8c9b6fe0039"
+  "mod_poc_id": "b4021b93-8384-4607-8b59-58c66fdd794d",
+  "userIds": "406907d4-6ce0-46c7-8aea-222ec7193160"
 }
 
 ### Create a Certficcate in poc using bulk user id  
@@ -96,10 +99,10 @@ POST http://localhost:8084/poc/generate-certificates
 Content-Type: application/json
 
 {
-  "mod_poc_id": "dd13e5af-a777-4ce5-9a3d-8ee1b2502958",
+  "mod_poc_id": "b4021b93-8384-4607-8b59-58c66fdd794d",
     "userIds": [
-        "528f7cb8-0bfe-4366-a98d-831719ec53e6",
-        "2a1a2103-a192-4811-9f42-12e65a6c6e3a"
+        "406907d4-6ce0-46c7-8aea-222ec7193160",
+        "55ff31f6-a739-4fbe-8c1b-da6ff7e569e6"
     ]
 }
 

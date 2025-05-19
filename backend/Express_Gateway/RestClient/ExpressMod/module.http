@@ -12,7 +12,7 @@ Content-Type: application/json
 GET http://localhost:8086/modules_gateway/modules/get_all_module
 
 ### Get Module by ID
-  GET http://localhost:8086/modules_gateway/modules/get_module_by_id/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
+GET http://localhost:8086/modules_gateway/modules/get_module_by_id/863662d6-7565-4ba7-aaa5-5ecc9d6cae9e
 
 ### Update Module
 PUT http://localhost:8086/modules_gateway/modules/update_module

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { fetchAllExperts } from '../axios';
-import Admin_Dashboard from '../components/Admin_dash';
+import Admin_Dashboard from '../components/AdminDash';
 
 const ExpertPage = () => {
   const [experts, setExperts] = useState([]);

@@ -11,6 +11,11 @@ const organization = require("./controllers/organizationController");
 
 
 const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Express Mod running');
+});
+
 const PORT = process.env.PORT ;
 
 // Middleware
