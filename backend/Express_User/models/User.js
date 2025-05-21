@@ -35,11 +35,11 @@ const userSchema = new mongoose.Schema({
         default: null 
     },
     status: {
-        type: Boolean,        // true = active, false = inactive
+        type: Boolean,        
         default: true,
     },
     admin: {
-        type: Boolean,        // true = admin, false = normal user
+        type: Boolean,       
         default: false,
     },
     user_last_login: {
