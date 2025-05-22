@@ -607,244 +607,244 @@ const TrainingForm = () => {
       doc.text(`Batch 1 - ${formData.totalStrength}`, MARGIN + 5, yPos);
       yPos += 25;
 
-      // Program Coverage - Table
-      if (yPos > A4_HEIGHT - FOOTER_SPACE - 50) {
-        doc.addPage();
-        yPos = MARGIN + 30;
-        jsPDFPageMarker();
-      } else {
-        yPos += 15;
+// Program Coverage - Table
+if (yPos > A4_HEIGHT - FOOTER_SPACE - 50) {
+  doc.addPage();
+  yPos = MARGIN + 30;
+  jsPDFPageMarker();
+} else {
+  yPos += 15;
+}
+
+doc.setFont("helvetica", "bold");
+doc.setFontSize(16);
+doc.text("Program Coverage:", MARGIN, yPos);
+const progWidth = doc.getStringUnitWidth("Program Coverage:") * 16 / doc.internal.scaleFactor;
+doc.line(MARGIN, yPos + 2, MARGIN + progWidth, yPos + 2);
+yPos += 25;
+
+const headers = [
+  "Day",
+  "Topics Covered",
+  "Technical Tasks Performed",
+  "Git Link",
+  "Present",
+  "Absent"
+];
+
+const usableWidth = A4_WIDTH - (2 * MARGIN);
+const columnWidths = [
+  Math.floor(usableWidth * 0.08),
+  Math.floor(usableWidth * 0.20),
+  Math.floor(usableWidth * 0.35),
+  Math.floor(usableWidth * 0.17),
+  Math.floor(usableWidth * 0.10),
+  Math.floor(usableWidth * 0.10)
+];
+
+const tableX = MARGIN;
+let tableY = yPos;
+const LINE_HEIGHT = 14; // Height per line of text
+const CELL_PADDING = 6; // Padding inside each cell
+const HEADER_CONTENT_GAP = 4; // Additional gap between header and content
+
+// Function to draw table header
+const drawTableHeader = () => {
+  doc.setFillColor(220, 230, 240);
+  doc.rect(tableX, tableY, usableWidth, 18, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+
+  let colX = tableX;
+  headers.forEach((header, i) => {
+    doc.text(
+      header,
+      colX + (columnWidths[i] / 2),
+      tableY + 12,
+      { align: "center" }
+    );
+    colX += columnWidths[i];
+  });
+
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.5);
+
+  doc.line(tableX, tableY, tableX + usableWidth, tableY);
+  doc.line(tableX, tableY + 18, tableX + usableWidth, tableY + 18);
+
+  colX = tableX;
+  for (let i = 0; i <= columnWidths.length; i++) {
+    doc.line(colX, tableY, colX, tableY + 18);
+    if (i < columnWidths.length) colX += columnWidths[i];
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  tableY += 18;
+};
+
+// Draw initial table header
+drawTableHeader();
+
+if (formData.pointOfContact?.summary && Array.isArray(formData.pointOfContact.summary)) {
+  let availableSpace = A4_HEIGHT - FOOTER_SPACE - tableY; // Track remaining space on the page
+
+  formData.pointOfContact.summary.forEach((item, rowIndex) => {
+    // Prepare row data
+    const rowData = [
+      item.day || "",
+      item.topicsCovered || "",
+      item.technicalTasksPerformed || "",
+      item.gitLink || "",
+      (typeof item.attendancePresent === "string" ?
+        item.attendancePresent :
+        Array.isArray(item.attendancePresent) ?
+          item.attendancePresent.join(", ") : ""),
+      (typeof item.attendanceAbsent === "string" ?
+        item.attendanceAbsent :
+        Array.isArray(item.attendanceAbsent) ?
+          item.attendanceAbsent.join(", ") : "")
+    ];
+
+    // Format technical tasks with bullets
+    const wrappedCells = rowData.map((text, colIndex) => {
+      if (colIndex === 2 && text) {
+        const tasks = text.split("\n")
+          .map(t => t.trim())
+          .filter(t => t.length > 0)
+          .map(t => {
+            if (t.startsWith("-") || t.startsWith("•")) return t;
+            return `• ${t}`;
+          });
+        text = tasks.join("\n");
+      }
+      return doc.splitTextToSize(text, columnWidths[colIndex] - 6);
+    });
+
+    // Calculate total row height if rendered fully
+    const maxLines = Math.max(...wrappedCells.map(cell => cell.length));
+    const fullRowHeight = Math.max(maxLines * LINE_HEIGHT, 20) + CELL_PADDING + HEADER_CONTENT_GAP;
+
+    // Determine how many lines can fit in the remaining space
+    const linesThatFit = Math.floor((availableSpace - CELL_PADDING - HEADER_CONTENT_GAP) / LINE_HEIGHT);
+    const canFitFully = linesThatFit >= maxLines;
+
+    // Start of the row
+    let rowStartY = tableY;
+
+    if (canFitFully) {
+      // If the entire row fits, render it fully
+      let colX = tableX;
+      for (let colIndex = 0; colIndex < rowData.length; colIndex++) {
+        const cellX = colX + 3;
+        let cellY = tableY + 6 + HEADER_CONTENT_GAP; // Add gap between header and content
+        wrappedCells[colIndex].forEach((line, lineIndex) => {
+          doc.text(line, cellX, cellY + (lineIndex * LINE_HEIGHT));
+        });
+        colX += columnWidths[colIndex];
       }
 
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Program Coverage:", MARGIN, yPos);
-      const progWidth = doc.getStringUnitWidth("Program Coverage:") * 16 / doc.internal.scaleFactor;
-      doc.line(MARGIN, yPos + 2, MARGIN + progWidth, yPos + 2);
-      yPos += 25;
+      // Draw row borders
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineWidth(0.2);
+      doc.line(tableX, tableY + fullRowHeight, tableX + usableWidth, tableY + fullRowHeight);
 
-      const headers = [
-        "Day",
-        "Topics Covered",
-        "Technical Tasks Performed",
-        "Git Link",
-        "Present",
-        "Absent"
-      ];
+      colX = tableX; // Reset colX for drawing vertical borders
+      for (let i = 0; i <= columnWidths.length; i++) {
+        doc.line(colX, tableY, colX, tableY + fullRowHeight);
+        if (i < columnWidths.length) colX += columnWidths[i];
+      }
 
-      const usableWidth = A4_WIDTH - (2 * MARGIN);
-      const columnWidths = [
-        Math.floor(usableWidth * 0.08),
-        Math.floor(usableWidth * 0.20),
-        Math.floor(usableWidth * 0.35),
-        Math.floor(usableWidth * 0.17),
-        Math.floor(usableWidth * 0.10),
-        Math.floor(usableWidth * 0.10)
-      ];
+      tableY += fullRowHeight;
+      availableSpace -= fullRowHeight;
+    } else {
+      // If the row doesn't fit fully, split it across pages
+      let remainingLines = wrappedCells.map(cell => [...cell]); // Copy of lines to render
+      let linesRendered = 0;
 
-      const tableX = MARGIN;
-      let tableY = yPos;
-      const LINE_HEIGHT = 14; // Height per line of text
-      const CELL_PADDING = 6; // Padding inside each cell
-      const HEADER_CONTENT_GAP = 4; // Additional gap between header and content
+      while (remainingLines.some(cell => cell.length > 0)) {
+        const linesToRenderThisPage = Math.min(linesThatFit, maxLines - linesRendered);
+        if (linesToRenderThisPage <= 0) break; // Safety check
 
-      // Function to draw table header
-      const drawTableHeader = () => {
-        doc.setFillColor(220, 230, 240);
-        doc.rect(tableX, tableY, usableWidth, 18, "F");
+        const partialRowHeight = (linesToRenderThisPage * LINE_HEIGHT) + CELL_PADDING + HEADER_CONTENT_GAP;
 
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        doc.setTextColor(50, 50, 50);
-
+        // Render the lines that fit on this page
         let colX = tableX;
-        headers.forEach((header, i) => {
-          doc.text(
-            header,
-            colX + (columnWidths[i] / 2),
-            tableY + 12,
-            { align: "center" }
-          );
-          colX += columnWidths[i];
-        });
+        for (let colIndex = 0; colIndex < rowData.length; colIndex++) {
+          const cellX = colX + 3;
+          let cellY = tableY + 6 + HEADER_CONTENT_GAP; // Add gap between header and content
+          for (let i = 0; i < linesToRenderThisPage && remainingLines[colIndex].length > 0; i++) {
+            const line = remainingLines[colIndex][0];
+            doc.text(line, cellX, cellY + (i * LINE_HEIGHT));
+            remainingLines[colIndex].shift(); // Remove the rendered line
+          }
+          colX += columnWidths[colIndex];
+        }
 
+        // Draw partial row borders
         doc.setDrawColor(150, 150, 150);
-        doc.setLineWidth(0.5);
+        doc.setLineWidth(0.2);
+        doc.line(tableX, tableY + partialRowHeight, tableX + usableWidth, tableY + partialRowHeight);
 
-        doc.line(tableX, tableY, tableX + usableWidth, tableY);
-        doc.line(tableX, tableY + 18, tableX + usableWidth, tableY + 18);
-
-        colX = tableX;
+        colX = tableX; // Reset colX for drawing vertical borders
         for (let i = 0; i <= columnWidths.length; i++) {
-          doc.line(colX, tableY, colX, tableY + 18);
+          doc.line(colX, tableY, colX, tableY + partialRowHeight);
           if (i < columnWidths.length) colX += columnWidths[i];
         }
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
-        tableY += 18;
-      };
+        // Draw vertical lines for this portion of the row
+        colX = tableX;
+        for (let i = 0; i <= columnWidths.length; i++) {
+          doc.line(colX, rowStartY, colX, tableY + partialRowHeight);
+          if (i < columnWidths.length) colX += columnWidths[i];
+        }
 
-      // Draw initial table header
-      drawTableHeader();
+        linesRendered += linesToRenderThisPage;
+        tableY += partialRowHeight;
+        availableSpace -= partialRowHeight;
 
-      if (formData.pointOfContact?.summary && Array.isArray(formData.pointOfContact.summary)) {
-        let availableSpace = A4_HEIGHT - FOOTER_SPACE - tableY; // Track remaining space on the page
+        // If there are more lines to render, add a new page
+        if (remainingLines.some(cell => cell.length > 0)) {
+          doc.addPage();
+          tableY = MARGIN + 30;
+          yPos = tableY;
+          jsPDFPageMarker();
 
-        formData.pointOfContact.summary.forEach((item, rowIndex) => {
-          // Prepare row data
-          const rowData = [
-            item.day || "",
-            item.topicsCovered || "",
-            item.technicalTasksPerformed || "",
-            item.gitLink || "",
-            (typeof item.attendancePresent === "string" ?
-              item.attendancePresent :
-              Array.isArray(item.attendancePresent) ?
-                item.attendancePresent.join(", ") : ""),
-            (typeof item.attendanceAbsent === "string" ?
-              item.attendanceAbsent :
-              Array.isArray(item.attendanceAbsent) ?
-                item.attendanceAbsent.join(", ") : "")
-          ];
+          // Redraw table header on new page
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.text("Program Coverage (continued):", MARGIN, tableY);
+          const contProgWidth = doc.getStringUnitWidth("Program Coverage (continued):") * 16 / doc.internal.scaleFactor;
+          doc.line(MARGIN, tableY + 2, MARGIN + contProgWidth, tableY + 2);
+          tableY += 25;
 
-          // Format technical tasks with bullets
-          const wrappedCells = rowData.map((text, colIndex) => {
-            if (colIndex === 2 && text) {
-              const tasks = text.split("\n")
-                .map(t => t.trim())
-                .filter(t => t.length > 0)
-                .map(t => {
-                  if (t.t.startsWith("-") || t.startsWith("•")) return t;
-                  return `• ${t}`;
-                });
-              text = tasks.join("\n");
-            }
-            return doc.splitTextToSize(text, columnWidths[colIndex] - 6);
-          });
-
-          // Calculate total row height if rendered fully
-          const maxLines = Math.max(...wrappedCells.map(cell => cell.length));
-          const fullRowHeight = Math.max(maxLines * LINE_HEIGHT, 20) + CELL_PADDING + HEADER_CONTENT_GAP;
-
-          // Determine how many lines can fit in the remaining space
-          const linesThatFit = Math.floor((availableSpace - CELL_PADDING - HEADER_CONTENT_GAP) / LINE_HEIGHT);
-          const canFitFully = linesThatFit >= maxLines;
-
-          // Start of the row
-          let rowStartY = tableY;
-
-          if (canFitFully) {
-            // If the entire row fits, render it fully
-            let colX = tableX;
-            for (let colIndex = 0; colIndex < rowData.length; colIndex++) {
-              const cellX = colX + 3;
-              let cellY = tableY + 6 + HEADER_CONTENT_GAP; // Add gap between header and content
-              wrappedCells[colIndex].forEach((line, lineIndex) => {
-                doc.text(line, cellX, cellY + (lineIndex * LINE_HEIGHT));
-              });
-              colX += columnWidths[colIndex];
-            }
-
-            // Draw row borders
-            doc.setDrawColor(150, 150, 150);
-            doc.setLineWidth(0.2);
-            doc.line(tableX, tableY + fullRowHeight, tableX + usableWidth, tableY + fullRowHeight);
-
-            colX = tableX; // Reset colX for drawing vertical borders
-            for (let i = 0; i <= columnWidths.length; i++) {
-              doc.line(colX, tableY, colX, tableY + fullRowHeight);
-              if (i < columnWidths.length) colX += columnWidths[i];
-            }
-
-            tableY += fullRowHeight;
-            availableSpace -= fullRowHeight;
-          } else {
-            // If the row doesn't fit fully, split it across pages
-            let remainingLines = wrappedCells.map(cell => [...cell]); // Copy of lines to render
-            let linesRendered = 0;
-
-            while (remainingLines.some(cell => cell.length > 0)) {
-              const linesToRenderThisPage = Math.min(linesThatFit, maxLines - linesRendered);
-              if (linesToRenderThisPage <= 0) break; // Safety check
-
-              const partialRowHeight = (linesToRenderThisPage * LINE_HEIGHT) + CELL_PADDING + HEADER_CONTENT_GAP;
-
-              // Render the lines that fit on this page
-              let colX = tableX;
-              for (let colIndex = 0; colIndex < rowData.length; colIndex++) {
-                const cellX = colX + 3;
-                let cellY = tableY + 6 + HEADER_CONTENT_GAP; // Add gap between header and content
-                for (let i = 0; i < linesToRenderThisPage && remainingLines[colIndex].length > 0; i++) {
-                  const line = remainingLines[colIndex][0];
-                  doc.text(line, cellX, cellY + (i * LINE_HEIGHT));
-                  remainingLines[colIndex].shift(); // Remove the rendered line
-                }
-                colX += columnWidths[colIndex];
-              }
-
-              // Draw partial row borders
-              doc.setDrawColor(150, 150, 150);
-              doc.setLineWidth(0.2);
-              doc.line(tableX, tableY + partialRowHeight, tableX + usableWidth, tableY + partialRowHeight);
-
-              colX = tableX; // Reset colX for drawing vertical borders
-              for (let i = 0; i <= columnWidths.length; i++) {
-                doc.line(colX, tableY, colX, tableY + partialRowHeight);
-                if (i < columnWidths.length) colX += columnWidths[i];
-              }
-
-              // Draw vertical lines for this portion of the row
-              colX = tableX;
-              for (let i = 0; i <= columnWidths.length; i++) {
-                doc.line(colX, rowStartY, colX, tableY + partialRowHeight);
-                if (i < columnWidths.length) colX += columnWidths[i];
-              }
-
-              linesRendered += linesToRenderThisPage;
-              tableY += partialRowHeight;
-              availableSpace -= partialRowHeight;
-
-              // If there are more lines to render, add a new page
-              if (remainingLines.some(cell => cell.length > 0)) {
-                doc.addPage();
-                tableY = MARGIN + 30;
-                yPos = tableY;
-                jsPDFPageMarker();
-
-                // Redraw table header on new page
-                doc.setFont("helvetica", "bold");
-                doc.setFontSize(16);
-                doc.text("Program Coverage (continued):", MARGIN, tableY);
-                const contProgWidth = doc.getStringUnitWidth("Program Coverage (continued):") * 16 / doc.internal.scaleFactor;
-                doc.line(MARGIN, tableY + 2, MARGIN + contProgWidth, tableY + 2);
-                tableY += 25;
-
-                drawTableHeader();
-                availableSpace = A4_HEIGHT - FOOTER_SPACE - tableY; // Reset available space
-                rowStartY = tableY; // Reset rowStartY for the continued row
-              }
-            }
-
-            // Ensure the final bottom border of the row is drawn
-            if (!remainingLines.some(cell => cell.length > 0)) {
-              let colX = tableX; // Reset colX for final vertical borders
-              for (let i = 0; i <= columnWidths.length; i++) {
-                doc.line(colX, rowStartY, colX, tableY);
-                if (i < columnWidths.length) colX += columnWidths[i];
-              }
-            }
-          }
-        });
-      } else {
-        doc.setFontSize(10);
-        doc.text("No data available", tableX + (usableWidth / 2), tableY + 15, { align: "center" });
-        tableY += 30;
-        doc.line(tableX, tableY, tableX + usableWidth, tableY);
+          drawTableHeader();
+          availableSpace = A4_HEIGHT - FOOTER_SPACE - tableY; // Reset available space
+          rowStartY = tableY; // Reset rowStartY for the continued row
+        }
       }
 
-      yPos = tableY;
+      // Ensure the final bottom border of the row is drawn
+      if (!remainingLines.some(cell => cell.length > 0)) {
+        let colX = tableX; // Reset colX for final vertical borders
+        for (let i = 0; i <= columnWidths.length; i++) {
+          doc.line(colX, rowStartY, colX, tableY);
+          if (i < columnWidths.length) colX += columnWidths[i];
+        }
+      }
+    }
+  });
+} else {
+  doc.setFontSize(10);
+  doc.text("No data available", tableX + (usableWidth / 2), tableY + 15, { align: "center" });
+  tableY += 30;
+  doc.line(tableX, tableY, tableX + usableWidth, tableY);
+}
+
+yPos = tableY;
 
       // Student rankings section
       if (formData.student_ranking) {
@@ -1363,6 +1363,7 @@ const TrainingForm = () => {
       setGeneratingPdf(false);
     }
   };
+
 
   const renderFileList = (field, fieldName) => {
     if (formData[field].length === 0) return null;

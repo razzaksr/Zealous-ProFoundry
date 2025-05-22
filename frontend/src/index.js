@@ -38,9 +38,9 @@ import Update_Expert from "./pages/Update_Expert";
 import Update_Organization from "./pages/Update_Organization";
 import BulkCertificateGenerator from "./pages/BulkCertificateGenerator";
 import ClassPerformance from "./pages/reportAndPieGen";
-import ColumnChart from "./pages/columnChart";
 import AttendanceAnalytics from "./pages/attendanceComponent";
 import TrainingForm from "./pages/report_gen";
+import IndividualReport from "./pages/columnChart";
 
 
 const App = () => {
@@ -84,7 +84,7 @@ const App = () => {
               <Route path="/update_expert" element={<Update_Expert />} />
               <Route path="/update_organization" element={<Update_Organization />} />
               <Route path="/reportAndPieGen" element={<ClassPerformance />} />
-              <Route path="/student/:report_id" element={<ColumnChart />} />
+              <Route path="/student/:report_id" element={<IndividualReport />} />
               <Route path="/attendance" element={<AttendanceAnalytics />} />
               <Route path="/reportGen" element={<TrainingForm />} />
               <Route path="*" element={<Navigate to="/landing" />} />

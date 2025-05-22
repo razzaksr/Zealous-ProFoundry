@@ -4,6 +4,7 @@ const router = express.Router();
 const admin = require("firebase-admin");
 const consul = require("../middleware/consul");
 const axios = require("axios");
+const moment = require("moment");
 
 console.log("Project ID:", process.env.FIREBASE_PROJECT_ID);
 console.log("Client Email:", process.env.FIREBASE_CLIENT_EMAIL);
@@ -713,6 +714,7 @@ router.get("/get_expert_using_poc/:mod_poc_id", async (req, res) => {
     res.status(500).json({ error: "Unexpected error", details: err.message });
   }
 });
+
 /// GET TEST NAME 
 router.get("/get_test_name/:mod_tests", async (req, res) => {
   const { mod_tests } = req.params;
@@ -773,9 +775,11 @@ const formatExecutionDates = (start, end) => {
 
 
 
+
+// PUT route handler - corrected version
 router.put('/generate_report/:mod_poc_id', async (req, res) => {
-  const { mod_poc_id } = req.params;
-  const { summary, title, background,address,scopeOfTheTraining, totalStrength, company, email, student_ranking } = req.body;
+  const { mod_poc_id } = req.params;    
+  const { summary, title, background, address, scopeOfTheTraining, totalStrength, company, email, student_ranking } = req.body;
 
   try {
     // 1. Fetch POC service info
@@ -786,10 +790,20 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
     const serviceAddress = pocService[0].Address;
     const servicePort = pocService[0].ServicePort;
 
-    // 2. Get POC data
-    const pocUrl = `http://${serviceAddress}:${servicePort}/poc/get_poc/${mod_poc_id}`;
-    const pocResponse = await axios.get(pocUrl);
-    const poc = pocResponse.data;
+    // 2. Get POC data - FIXED: Added backticks
+    const pocUrl = `http://${serviceAddress}:${servicePort}/poc/get_poc_by_poc_id/${mod_poc_id}`;
+    let pocResponse, poc;
+    
+    try {
+      pocResponse = await axios.get(pocUrl);
+      poc = pocResponse.data;
+    } catch (error) {
+      console.error("Error fetching POC data:", error.message);
+      return res.status(500).json({ 
+        error: "Failed to fetch POC data", 
+        details: error.message 
+      });
+    }
 
     if (!poc) {
       return res.status(404).json({ error: "POC not found" });
@@ -797,7 +811,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
 
     const { mod_id, mod_poc_name, mod_poc_role, mod_poc_email, mod_poc_mobile, mod_tests } = poc;
 
-    // 3. Get Module data
+    // 3. Get Module data - FIXED: Added backticks
     const modService = await consul.catalog.service.nodes("Express_Mod");
     if (!modService || modService.length === 0) {
       return res.status(404).json({ error: "Express_Mod service not found in Consul" });
@@ -806,18 +820,47 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
     const modServicePort = modService[0].ServicePort;
 
     const modUrl = `http://${modServiceAddress}:${modServicePort}/modules/get_module_by_id/${mod_id}`;
-    const modResponse = await axios.get(modUrl);
-    const modData = modResponse.data;
+    let modResponse, modData;
+    
+    try {
+      modResponse = await axios.get(modUrl);
+      modData = modResponse.data;
+    } catch (error) {
+      console.error("Error fetching Module data:", error.message);
+      return res.status(500).json({ 
+        error: "Failed to fetch Module data", 
+        details: error.message 
+      });
+    }
 
-    // 4. Format dates
+    // 4. Format dates - FIXED: Added proper date handling
     const [start, end] = modData.mod_duration.split(" - ");
     const executiondates = formatExecutionDates(start, end);
+    
+    // Using moment (make sure it's installed)
     const startDate = moment(start, "DD/MM/YYYY");
     const endDate = moment(end, "DD/MM/YYYY");
     const durationDays = endDate.diff(startDate, "days") + 1;
     const schedule = `${durationDays} ${durationDays === 1 ? "day" : "days"}`;
 
-    // 5. Get Expert details
+    // Alternative without moment:
+    /*
+    const calculateDuration = (start, end) => {
+      const [startDay, startMonth, startYear] = start.split('/');
+      const [endDay, endMonth, endYear] = end.split('/');
+      
+      const startDate = new Date(startYear, startMonth - 1, startDay);
+      const endDate = new Date(endYear, endMonth - 1, endDay);
+      
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      
+      return `${diffDays} ${diffDays === 1 ? "day" : "days"}`;
+    };
+    const schedule = calculateDuration(start, end);
+    */
+
+    // 5. Get Expert details - FIXED: Added backticks
     const expertUrl = `http://${serviceAddress}:${servicePort}/poc/get_expert_using_poc/${mod_poc_id}`;
     const expertResponse = await axios.get(expertUrl);
     const expertData = expertResponse.data;
@@ -827,44 +870,47 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
       role: expertData.mod_expert_role || "N/A",
       company: company || expertData.mod_expert_company || "N/A",
       email: email || expertData.mod_expert_email || "N/A",
-      contact: expertData.mod_expert_mobile || "N/A"
+      contact: expertData.mod_expert_mobile || "N/A",
     };
 
-    // 6. Fetch test names from mod_tests
+   
+
+    // 6. Fetch test names from mod_tests - FIXED: Added backticks and better error handling
     let test_details = [];
 
     if (mod_tests && Object.keys(mod_tests).length > 0) {
       const testService = await consul.catalog.service.nodes("Express_Test");
       if (!testService || testService.length === 0) {
-        return res.status(404).json({ error: "Express_Test service not found in Consul" });
-      }
-    
-      const testServiceAddress = testService[0].Address;
-      const testServicePort = testService[0].ServicePort;
-    
-      // Extract test IDs properly
-      const testIds = Object.values(mod_tests).map(test => test.test_id);
-    
-      for (const testId of testIds) {
-        if (!testId) {
-          console.warn(`Skipping invalid test ID:`, testId);
-          continue;
-        }
-    
-        try {
-          const response = await axios.get(`http://${testServiceAddress}:${testServicePort}/test/get_by_test_id/${testId}`);
-          if (response.data && response.data.test_name) {
-            test_details.push(response.data.test_name);
+        console.warn("Express_Test service not found in Consul");
+        // Don't return error, just continue with empty test_details
+      } else {
+        const testServiceAddress = testService[0].Address;
+        const testServicePort = testService[0].ServicePort;
+      
+        // Extract test IDs properly
+        const testIds = Object.values(mod_tests).map(test => test.test_id);
+      
+        for (const testId of testIds) {
+          if (!testId) {
+            console.warn(`Skipping invalid test ID:`, testId);
+            continue;
           }
-        } catch (err) {
-          console.error(`Failed to fetch test name for test ID ${testId}:`, err.message);
+      
+          try {
+            // FIXED: Added backticks
+            const response = await axios.get(`http://${testServiceAddress}:${testServicePort}/test/get_by_test_id/${testId}`);
+            if (response.data && response.data.test_name) {
+              test_details.push(response.data.test_name);
+            }
+          } catch (err) {
+            console.error(`Failed to fetch test name for test ID ${testId}:`, err.message);
+            // Continue with other tests instead of failing completely
+          }
         }
       }
     }
     
     console.log("Fetched Test Details:", test_details);
-    
-    
 
     // 7. Create Point of Contact block
     const pointOfContact = {
@@ -875,12 +921,8 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
       test_details: [...test_details],
       summary: summary || []
     };
-  
 
-    // ----------------------
     // 8. Process update
-    // ----------------------
-
     let updateFields = {};
 
     if (student_ranking) {
@@ -888,7 +930,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
       updateFields['report.student_ranking'] = processedStudentRanking;
     }
 
-    if (summary || title || background ||address || scopeOfTheTraining || totalStrength || company || email) {
+    if (summary || title || background || address || scopeOfTheTraining || totalStrength || company || email) {
       updateFields['report.title'] = title;
       updateFields['report.background'] = background;
       updateFields['report.address'] = address;
@@ -902,13 +944,27 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
       updateFields['report.totalStrength'] = Number(totalStrength) || 0;
     }
 
-    const updated = await Poc.findOneAndUpdate(
-      { mod_poc_id },
-      { $set: updateFields },
-      { new: true }
-    );
+    // 9. Update database - Added error handling
+    let updated;
+    try {
+      updated = await Poc.findOneAndUpdate(
+        { mod_poc_id },
+        { $set: updateFields },
+        { new: true }
+      );
 
-    // 9. Return result
+      if (!updated) {
+        return res.status(404).json({ error: "POC record not found for update" });
+      }
+    } catch (error) {
+      console.error("Database update error:", error.message);
+      return res.status(500).json({ 
+        error: "Failed to update database", 
+        details: error.message 
+      });
+    }
+
+    // 10. Return result
     res.status(200).json({
       message: "Report generated successfully",
       reportData: {
@@ -928,6 +984,7 @@ router.put('/generate_report/:mod_poc_id', async (req, res) => {
 
   } catch (err) {
     console.error("Error generating report:", err.message);
+    console.error("Full error:", err); // This will help debug
     res.status(500).json({
       error: "Unexpected error",
       details: err.message

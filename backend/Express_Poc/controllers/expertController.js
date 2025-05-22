@@ -30,6 +30,19 @@ router.get('/read_all_experts', async (req, res) => {
     }
 });
 
+// GET EXPERT by mod_poc_id
+router.get('/get_expert_poc_id/:poc_id', async (req, res) => {
+    try {
+        const expert = await Expert.findOne({ poc_id: req.params.poc_id });
+
+        if (!expert) return res.status(404).json({ error: 'Expert not found' });
+
+        res.json(expert);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET EXPERT by mod_expert_id
 router.get('/get_expert/:mod_expert_id', async (req, res) => {
     try {
