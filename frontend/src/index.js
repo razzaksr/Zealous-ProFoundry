@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import ZealousSignIn from "./pages/SiginIn";
 import TestModule from "./pages/TestModules";
@@ -42,8 +42,10 @@ import AttendanceAnalytics from "./pages/attendanceComponent";
 import TrainingForm from "./pages/report_gen";
 import IndividualReport from "./pages/columnChart";
 
+const root = ReactDOM.createRoot(document.getElementById('root'));
 
-const App = () => {
+
+
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
   // Correctly fetch user from localStorage (based on your message)
@@ -51,14 +53,13 @@ const App = () => {
   const user = sessionData?.user;
   const isAdmin = user?.admin === true;
 
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<ZealousSignIn />} />
-        {isLoggedIn ? (
-          isAdmin ? (
-            // 🔐 Admin Routes
-            <>
+
+root.render(
+  isLoggedIn
+    ? isAdmin 
+      ? (
+        <BrowserRouter>
+          <Routes>
               <Route path="/landing" element={<AdminDashboard />} />
               <Route path="/poc" element={<PocPage />} />
               <Route path="/user" element={<UserPage />} />
@@ -88,10 +89,11 @@ const App = () => {
               <Route path="/attendance" element={<AttendanceAnalytics />} />
               <Route path="/reportGen" element={<TrainingForm />} />
               <Route path="*" element={<Navigate to="/landing" />} />
-            </>
-          ) : (
-            // 👤 Non-Admin Routes
-            <>
+          </Routes>
+        </BrowserRouter>
+      ) : (
+        <BrowserRouter>
+          <Routes>
               <Route path="/landing" element={<StudentDashboard />} />
               <Route path="/test-modules" element={<TestModule />} />
               <Route path="/test-intro/:testId" element={<TestIntro />} />
@@ -103,24 +105,18 @@ const App = () => {
               <Route path="/info" element={<InstructionsPage />} />
               <Route path="/codelist" element={<CodeList />} />.
               <Route path="*" element={<Navigate to="/landing" />} />
-            </>
-          )
-        ) : (
-          // 🚫 Not Logged In
-          <>
+          </Routes>
+        </BrowserRouter>
+      )
+    : (
+      <BrowserRouter>
+        <Routes>
             <Route path="/" element={<ZealousSignIn />} />
             <Route path="*" element={<Navigate to="/" />} />
-          </>
-        )}
-      </Routes>
-    </Router>
-  );
-};
-
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+        </Routes>
+      </BrowserRouter>
+    )
 );
+
+
+

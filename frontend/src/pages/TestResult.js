@@ -10,12 +10,6 @@ import {
   AppBar,
   Toolbar,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  useMediaQuery,
   ThemeProvider,
   createTheme,
   CssBaseline,
@@ -87,8 +81,35 @@ const TestResultPage = () => {
   const navigate = useNavigate();
   const [resultData, setResultData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dialog, setDialog] = useState({ open: false, message: "", onConfirm: null });
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Prevent back navigation and clear history
+  useEffect(() => {
+
+
+    // Replace current history entry with /test-result
+    window.history.replaceState(null, "", "/test-result");
+
+    // Flood history stack with dummy entries to disable back navigation
+    const floodHistory = () => {
+      for (let i = 0; i < 100; i++) {
+        window.history.pushState(null, "", "/test-result");
+      }
+    };
+    floodHistory();
+
+    // Handle popstate to keep user on /test-result
+    const handlePopState = (event) => {
+      event.preventDefault();
+      window.history.pushState(null, "", "/test-result");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   // Fetch test result from localStorage
   useEffect(() => {
@@ -97,30 +118,18 @@ const TestResultPage = () => {
         setLoading(true);
         const savedResult = localStorage.getItem("test_result");
         if (!savedResult) {
-          setDialog({
-            open: true,
-            message: "No test result found. Please take a test first.",
-            onConfirm: () => navigate("/dashboard"),
-          });
+          navigate("/dashboard");
           return;
         }
         const parsedResult = JSON.parse(savedResult);
         if (!parsedResult.testName || !parsedResult.studentName) {
-          setDialog({
-            open: true,
-            message: "Invalid test result data.",
-            onConfirm: () => navigate("/dashboard"),
-          });
+          navigate("/dashboard");
           return;
         }
         setResultData(parsedResult);
       } catch (error) {
         console.error("Error fetching test result:", error);
-        setDialog({
-          open: true,
-          message: "Failed to load test result.",
-          onConfirm: () => navigate("/dashboard"),
-        });
+        navigate("/dashboard");
       } finally {
         setLoading(false);
       }
@@ -131,10 +140,6 @@ const TestResultPage = () => {
 
   // Handle navigation to dashboard
   const handleBackToDashboard = () => {
-    // Optionally clear localStorage to prevent stale data
-    localStorage.removeItem("test_result");
-    localStorage.removeItem("test_progress");
-    localStorage.removeItem("test_timer");
     navigate("/dashboard");
   };
 
@@ -151,25 +156,6 @@ const TestResultPage = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Dialog
-        open={dialog.open}
-        onClose={() => setDialog({ open: false })}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Error</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            {dialog.message}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={dialog.onConfirm} color="primary" autoFocus>
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       <AppBar position="fixed" color="primary" elevation={2}>
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>

@@ -5,14 +5,12 @@ import {
   Button,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   CssBaseline,
   Dialog,
   DialogContent,
   DialogActions,
   Divider,
-  Fab,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -30,6 +28,10 @@ import {
   alpha,
   styled,
   Switch,
+  Chip,
+  List,
+  ListItem,
+  ListItemText,
 } from "@mui/material";
 import { Editor } from "@monaco-editor/react";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -38,7 +40,6 @@ import JavaIcon from "@mui/icons-material/DeveloperMode";
 import PythonIcon from "@mui/icons-material/Memory";
 import CppIcon from "@mui/icons-material/IntegrationInstructions";
 import CIcon from "@mui/icons-material/SettingsEthernet";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveIcon from "@mui/icons-material/Save";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
@@ -48,9 +49,8 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DoneIcon from "@mui/icons-material/Done";
+import InfoIcon from "@mui/icons-material/Info";
 import { fetchCodeById, fetchTestCaseById, compileCode, submitTestResult, getTestById } from "../axios";
 
 // Language mapping for backend
@@ -249,13 +249,6 @@ const createAppTheme = (mode) => {
           },
         },
       },
-      MuiFab: {
-        styleOverrides: {
-          root: {
-            boxShadow: mode === "dark" ? "0 4px 12px rgba(0, 0, 0, 0.4)" : "0 4px 12px rgba(0, 0, 0, 0.1)",
-          },
-        },
-      },
       MuiAlert: {
         styleOverrides: {
           root: {
@@ -311,14 +304,13 @@ const CodingPage = () => {
     mcqWrong: savedTestResult.mcqWrong || state?.mcqWrong || 0,
     result_poc_id: savedTestResult.result_poc_id || state?.result_poc_id || "",
     result_score: savedTestResult.result_score || state?.result_score || 0,
-    result_test_id: savedTestResult.result_test_id || state?.result_test_id || "",
     result_total_score: savedTestResult.result_total_score || state?.result_total_score || 0,
     studentName: savedTestResult.studentName || state?.studentName || "",
     testLanguage: savedTestResult.testLanguage || state?.testLanguage || "",
     testName: savedTestResult.testName || state?.testName || "",
     currentCodingIndex: savedTestResult.currentCodingIndex || state?.currentCodingIndex || 0,
     codingResults: savedTestResult.codingResults || state?.codingResults || [],
-    warningCount: savedTestResult.warningCount || 0,
+    testInstructions: savedTestResult.testInstructions || state?.testInstructions || [],
   });
 
   // Component state
@@ -341,8 +333,10 @@ const CodingPage = () => {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [submitConfirmDialogOpen, setSubmitConfirmDialogOpen] = useState(false);
   const [fetchedTestCodingIds, setFetchedTestCodingIds] = useState([]);
-  const [malpracticeCount, setMalpracticeCount] = useState(savedTestResult.warningCount || 0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showFullScreenPrompt, setShowFullScreenPrompt] = useState(true);
 
   const isDraggingRef = useRef(false);
   const dividerRef = useRef(null);
@@ -376,7 +370,47 @@ const CodingPage = () => {
     c: "C",
   };
 
-  // Fetch user data from localStorage on mount
+  // Default instructions
+  const defaultInstructions = [
+    "Read each problem statement carefully.",
+    "Write your solution in the provided code editor.",
+    "Use the specified programming language for each problem.",
+    "Test your code against the provided test cases before submitting.",
+    "Do not attempt to navigate away, use browser back/forward buttons, or copy/paste code.",
+    "Any malpractice, including using external tools or AI assistance, will result in immediate test submission.",
+    "Submit your test when you are ready to finalize your answers.",
+  ];
+
+  // Prevent browser back/forward navigation
+  useEffect(() => {
+    // Clear history and push current state multiple times to block back navigation
+    window.history.pushState(null, null, window.location.href);
+    // Add multiple history entries to make back button ineffective
+    for (let i = 0; i < 10; i++) {
+      window.history.pushState(null, null, window.location.href);
+    }
+
+    const handlePopState = (event) => {
+      event.preventDefault();
+      if (!hasSubmitted) {
+        // Trigger malpractice on back/forward attempt
+        setSnackbarMessage("Malpractice detected: Attempted navigation. Test submitted automatically.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        handleFinalSubmit(true);
+      }
+      // Push state again to keep user on current page
+      window.history.pushState(null, null, window.location.href);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [hasSubmitted]);
+
+  // Fetch user data and test instructions
   useEffect(() => {
     const storedUser = localStorage.getItem("true");
     if (storedUser) {
@@ -408,7 +442,7 @@ const CodingPage = () => {
     }
   }, []);
 
-  // Load saved submission payload from localStorage on mount
+  // Load saved submission payload
   useEffect(() => {
     if (codeId) {
       const savedPayload = localStorage.getItem(`code_${codeId}`);
@@ -431,7 +465,7 @@ const CodingPage = () => {
     }
   }, [codeId, language]);
 
-  // Fetch test data from testId
+  // Fetch test data
   useEffect(() => {
     const fetchTestData = async () => {
       if (!testId) {
@@ -452,6 +486,7 @@ const CodingPage = () => {
             testName: res.test_name || prev.testName,
             testLanguage: res.test_language || prev.testLanguage,
             result_total_score: (res.test_mcq_id?.length || 0) + (res.test_coding_id?.length || 0) * 10,
+            testInstructions: res.test_instructions || prev.testInstructions,
           };
           localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
           return updatedTestResult;
@@ -485,60 +520,134 @@ const CodingPage = () => {
     return () => clearInterval(timerRef.current);
   }, [timer, hasSubmitted]);
 
-  // Malpractice detection
+  // Full-screen logic
   useEffect(() => {
-    const handleMalpractice = () => {
-      setMalpracticeCount((prev) => {
-        const newCount = prev + 1;
-        setTestResult((prevResult) => {
-          const updatedTestResult = {
-            ...prevResult,
-            warningCount: newCount,
-          };
-          localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
-          return updatedTestResult;
-        });
-        if (newCount >= 3 && !hasSubmitted) {
+    const handleFullScreenChange = () => {
+      if (
+        !document.fullscreenElement &&
+        !document.webkitFullscreenElement &&
+        !document.mozFullScreenElement &&
+        !document.msFullscreenElement
+      ) {
+        if (isFullScreen && !hasSubmitted) {
           handleFinalSubmit(true);
         }
-        return newCount;
-      });
-      setSnackbarMessage("Malpractice detected! Please stay on the test page.");
-      setSnackbarSeverity("warning");
+        setIsFullScreen(false);
+      } else {
+        setIsFullScreen(true);
+        setShowFullScreenPrompt(false);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullScreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullScreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullScreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullScreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullScreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullScreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullScreenChange);
+      document.removeEventListener("MSFullscreenChange", handleFullScreenChange);
+    };
+  }, [isFullScreen, hasSubmitted]);
+
+  // Function to handle full-screen request
+  const requestFullScreen = async () => {
+    try {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        await elem.mozRequestFullScreen();
+      } else if (elem.webkitRequestFullscreen) {
+        await elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        await elem.msRequestFullscreen();
+      }
+      setIsFullScreen(true);
+      setShowFullScreenPrompt(false);
+    } catch (error) {
+      console.error("Failed to enter full-screen:", error);
+      setSnackbarMessage("Failed to enter full-screen mode. Please try again.");
+      setSnackbarSeverity("error");
       setSnackbarOpen(true);
+    }
+  };
+
+  // Malpractice detection
+  useEffect(() => {
+    const handleMalpractice = (reason) => {
+      if (!hasSubmitted) {
+        setSnackbarMessage(`Malpractice detected: ${reason}. Test submitted automatically.`);
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        handleFinalSubmit(true);
+      }
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        handleMalpractice();
+        handleMalpractice("Tab switching or minimizing browser");
       }
     };
 
     const handleContextMenu = (e) => {
       e.preventDefault();
-      handleMalpractice();
+      handleMalpractice("Right-click attempt");
     };
 
     const handleCopy = (e) => {
       e.preventDefault();
-      handleMalpractice();
+      handleMalpractice("Copy attempt");
     };
 
     const handlePaste = (e) => {
       e.preventDefault();
-      handleMalpractice();
+      handleMalpractice("Paste attempt");
+    };
+
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        handleMalpractice("Clipboard shortcut attempt (Win+V or Cmd+V)");
+      }
+      if ((e.altKey && e.key === "/") || (e.ctrlKey && e.key.toLowerCase() === "i")) {
+        e.preventDefault();
+        handleMalpractice("Suspected AI tool shortcut");
+      }
+    };
+
+    let lastInputTime = Date.now();
+    const handleEditorInput = (e) => {
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastInputTime;
+      lastInputTime = currentTime;
+
+      if (e.target.value && e.target.value.length > 100 && timeDiff < 500) {
+        handleMalpractice("Rapid code input detected (possible AI paste)");
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("copy", handleCopy);
     document.addEventListener("paste", handlePaste);
+    document.addEventListener("keydown", handleKeyDown);
+    const editorElement = document.querySelector(".monaco-editor .inputarea");
+    if (editorElement) {
+      editorElement.addEventListener("input", handleEditorInput);
+    }
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("paste", handlePaste);
+      document.removeEventListener("keydown", handleKeyDown);
+      if (editorElement) {
+        editorElement.removeEventListener("input", handleEditorInput);
+      }
     };
   }, [hasSubmitted]);
 
@@ -774,14 +883,6 @@ const CodingPage = () => {
     setResetDialogOpen(false);
   };
 
-  // Copy code to clipboard
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(input);
-    setSnackbarMessage("Code copied to clipboard");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
-  };
-
   // Manual save
   const handleSave = () => {
     const formattedTestCases = testCases.map((testCase) => ({
@@ -805,50 +906,45 @@ const CodingPage = () => {
     setSnackbarOpen(true);
   };
 
-  // Fetch code and test cases with graceful error handling
+  // Fetch code and test cases
   const fetchCodeAndTestCases = async (id) => {
     try {
       setLoading(true);
-      console.log(`Fetching code for ID: ${id}`);
       const code = await fetchCodeById(id);
-      console.log("Fetched code:", code);
       setSelectedCode(code);
 
       if (!code.code_test_cases_id || code.code_test_cases_id.length === 0) {
         setTestCases([]);
-        setSnackbarMessage("No test cases found for this problem. Proceeding with default template.");
+        setSnackbarMessage("No test cases found for this problem.");
         setSnackbarSeverity("warning");
         setSnackbarOpen(true);
         return;
       }
 
-      console.log("Fetching test cases:", code.code_test_cases_id);
       const testCasePromises = code.code_test_cases_id.map(async (testcase_id) => {
         try {
           return await fetchTestCaseById(testcase_id);
         } catch (err) {
           console.error(`Error fetching test case ${testcase_id}:`, err);
-          return null; // Return null for failed test cases
+          return null;
         }
       });
       const responses = await Promise.all(testCasePromises);
-      console.log("Fetched test cases:", responses);
-
       const validTestCases = responses.filter((tc) => tc && tc.testcase_input && tc.testcase_output);
       setTestCases(validTestCases);
 
       if (validTestCases.length === 0) {
-        setTestCases([{ testcase_input: "", testcase_output: "" }]); // Default empty test case
-        setSnackbarMessage("No valid test cases retrieved. Using default empty test case.");
+        setTestCases([{ testcase_input: "", testcase_output: "" }]);
+        setSnackbarMessage("No valid test cases retrieved.");
         setSnackbarSeverity("warning");
         setSnackbarOpen(true);
       }
     } catch (err) {
       console.error("Fetch error:", err);
-      setTestCases([{ testcase_input: "", testcase_output: "" }]); // Default empty test case
-      setOutput(`Error fetching problem: ${err.message}. Proceeding with default template.`);
+      setTestCases([{ testcase_input: "", testcase_output: "" }]);
+      setOutput(`Error fetching problem: ${err.message}.`);
       setShowOutput(true);
-      setSnackbarMessage(`Error fetching problem: ${err.message}. Continuing with default template.`);
+      setSnackbarMessage(`Error fetching problem: ${err.message}.`);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     } finally {
@@ -856,7 +952,7 @@ const CodingPage = () => {
     }
   };
 
-  // Fetch code on component mount or codeId change
+  // Fetch code on mount or codeId change
   useEffect(() => {
     if (codeId) {
       fetchCodeAndTestCases(codeId);
@@ -864,7 +960,7 @@ const CodingPage = () => {
     } else {
       setOutput("Error: No code ID provided in URL");
       setShowOutput(true);
-      setSnackbarMessage("No code ID provided in URL. Please navigate to a valid problem.");
+      setSnackbarMessage("No code ID provided in URL.");
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }
@@ -896,10 +992,7 @@ const CodingPage = () => {
 
       localStorage.setItem(`code_${currentCodeId}`, JSON.stringify(submissionPayload));
 
-      console.log("Submitting payload to compiler:", submissionPayload);
       const { results } = await compileCode(submissionPayload);
-      console.log("Compiler response:", results);
-
       const formattedOutput = results
         .map(
           (res, index) =>
@@ -910,7 +1003,6 @@ const CodingPage = () => {
         .join("\n");
       setOutput(formattedOutput);
 
-      // Evaluate results
       const allPassed = results.length > 0 && results.every((res) => res.passed);
       const codingScore = allPassed ? 10 : 0;
 
@@ -955,7 +1047,7 @@ const CodingPage = () => {
     } catch (error) {
       console.error("Compile error:", error);
       setOutput(`Error running code: ${error.message}`);
-      setSnackbarMessage("Error during code compilation. Proceeding anyway.");
+      setSnackbarMessage("Error during code compilation.");
       setSnackbarSeverity("warning");
       return false;
     } finally {
@@ -971,7 +1063,7 @@ const CodingPage = () => {
     await compileAndEvaluate(codeId, input, language, testCases);
   };
 
-  // Compile all programs with error tolerance
+  // Compile all programs
   const compileAllPrograms = async () => {
     const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
     setLoading(true);
@@ -987,7 +1079,6 @@ const CodingPage = () => {
         let codeLanguage = language;
         let codeTestCases = [];
 
-        // Fetch test cases for this code
         try {
           const code = await fetchCodeById(id);
           if (code.code_test_cases_id && code.code_test_cases_id.length > 0) {
@@ -1004,7 +1095,7 @@ const CodingPage = () => {
           }
         } catch (err) {
           console.error(`Error fetching code ${id}:`, err);
-          codeTestCases = [{ testcase_input: "", testcase_output: "" }]; // Default empty test case
+          codeTestCases = [{ testcase_input: "", testcase_output: "" }];
         }
 
         if (savedPayload) {
@@ -1026,13 +1117,13 @@ const CodingPage = () => {
       setOutput((prev) => `${prev}\nCompilation completed with ${compilationErrors} error(s).\n`);
       setSnackbarMessage(`Compilation completed with ${compilationErrors} error(s).`);
       setSnackbarSeverity(compilationErrors > 0 ? "warning" : "success");
-      return true; // Always return true to allow submission
+      return true;
     } catch (error) {
       console.error("Error compiling all programs:", error);
       setOutput((prev) => `${prev}\nError compiling programs: ${error.message}`);
-      setSnackbarMessage("Error compiling all programs. Proceeding with submission.");
+      setSnackbarMessage("Error compiling all programs.");
       setSnackbarSeverity("warning");
-      return true; // Allow submission despite errors
+      return true;
     } finally {
       setLoading(false);
       setOpenProgressDialog(false);
@@ -1047,12 +1138,9 @@ const CodingPage = () => {
     setLoading(true);
     setOpenProgressDialog(true);
     setOutput("Processing results...\n");
-    setShowOutput(true);
 
-    // Compile all programs, but don't abort on failure
     await compileAllPrograms();
 
-    // Show confirmation dialog unless it's a malpractice auto-submit
     if (!isMalpractice) {
       setSubmitConfirmDialogOpen(true);
       setLoading(false);
@@ -1061,7 +1149,6 @@ const CodingPage = () => {
     }
 
     try {
-      // Construct resultData from updated testResult
       const resultData = {
         result_user_id: testResult.result_user_id || userId || "",
         result_test_id: testResult.result_test_id || testId || "",
@@ -1083,16 +1170,12 @@ const CodingPage = () => {
         studentName: testResult.studentName || studentName || "",
         testLanguage: testResult.testLanguage || "",
         testName: testResult.testName || "",
-        warningCount: isMalpractice ? malpracticeCount : testResult.warningCount || 0,
         codingResults: testResult.codingResults || [],
       };
 
       setOutput((prev) => `${prev}\nSubmitting test for final evaluation...\n`);
-      console.log("Submitting final test result:", resultData);
-      // Submit to backend
       await submitTestResult(resultData);
 
-      // Clear localStorage for code submissions
       const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
       effectiveCodingIds.forEach((id) => localStorage.removeItem(`code_${id}`));
 
@@ -1102,7 +1185,6 @@ const CodingPage = () => {
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
 
-      // Navigate to test-result page
       navigate("/test-result", { state: { resultData } });
     } catch (error) {
       console.error("Final submit error:", error);
@@ -1145,11 +1227,9 @@ const CodingPage = () => {
         studentName: testResult.studentName || studentName || "",
         testLanguage: testResult.testLanguage || "",
         testName: testResult.testName || "",
-        warningCount: testResult.warningCount || 0,
         codingResults: testResult.codingResults || [],
       };
 
-      console.log("Submitting final test result:", resultData);
       await submitTestResult(resultData);
 
       const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
@@ -1182,34 +1262,6 @@ const CodingPage = () => {
     setSnackbarOpen(true);
   };
 
-  // Handle navigation to the next program
-  const handleNextProgram = async () => {
-    saveSubmissionPayload();
-    await compileAndEvaluate(codeId, input, language, testCases);
-
-    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
-    if (testResult.currentCodingIndex < effectiveCodingIds.length - 1) {
-      const nextCodeId = effectiveCodingIds[testResult.currentCodingIndex + 1];
-      setTestResult((prev) => {
-        const updatedTestResult = {
-          ...prev,
-          currentCodingIndex: prev.currentCodingIndex + 1,
-        };
-        localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
-        return updatedTestResult;
-      });
-      navigate(`/coding/${nextCodeId}`, {
-        state: {
-          ...testResult,
-          currentCodingIndex: testResult.currentCodingIndex + 1,
-        },
-      });
-      setSnackbarMessage("Compiled and moved to next program.");
-      setSnackbarSeverity("info");
-      setSnackbarOpen(true);
-    }
-  };
-
   // Handle navigation to the next problem
   const handleNext = async () => {
     saveSubmissionPayload();
@@ -1232,44 +1284,12 @@ const CodingPage = () => {
           currentCodingIndex: testResult.currentCodingIndex + 1,
         },
       });
+      // Push state again to prevent back navigation
+      window.history.pushState(null, null, window.location.href);
       setSnackbarMessage("Compiled and moved to next program.");
       setSnackbarSeverity("info");
       setSnackbarOpen(true);
     }
-  };
-
-  // Handle navigation to the previous problem
-  const handlePrevious = async () => {
-    saveSubmissionPayload();
-    await compileAndEvaluate(codeId, input, language, testCases);
-
-    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
-    if (testResult.currentCodingIndex > 0) {
-      const prevCodeId = effectiveCodingIds[testResult.currentCodingIndex - 1];
-      setTestResult((prev) => {
-        const updatedTestResult = {
-          ...prev,
-          currentCodingIndex: prev.currentCodingIndex - 1,
-        };
-        localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
-        return updatedTestResult;
-      });
-      navigate(`/coding/${prevCodeId}`, {
-        state: {
-          ...testResult,
-          currentCodingIndex: testResult.currentCodingIndex - 1,
-        },
-      });
-      setSnackbarMessage("Compiled and moved to previous program.");
-      setSnackbarSeverity("info");
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Handle back navigation
-  const handleBack = () => {
-    saveSubmissionPayload();
-    navigate(-1, { state: testResult });
   };
 
   // Format timer
@@ -1281,8 +1301,6 @@ const CodingPage = () => {
 
   // Determine effective coding IDs
   const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
-  const hasCodingProblems = effectiveCodingIds.length > 0;
-  const isFirstProgram = testResult.currentCodingIndex === 0;
   const isLastProgram = testResult.currentCodingIndex >= effectiveCodingIds.length - 1;
 
   return (
@@ -1332,6 +1350,75 @@ const CodingPage = () => {
             sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
           >
             Submit Test
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={instructionsOpen} onClose={() => setInstructionsOpen(false)} PaperProps={{ sx: { borderRadius: 3, bgcolor: "background.paper" } }}>
+        <DialogContent sx={{ p: 4 }}>
+          <Typography
+            variant="h6"
+            color="text.primary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important", mb: 2 }}
+          >
+            Test Instructions
+          </Typography>
+          <List sx={{ pl: 2 }}>
+            {(testResult.testInstructions || defaultInstructions).map((instruction, index) => (
+              <ListItem key={index} disablePadding>
+                <ListItemText
+                  primary={
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+                    >
+                      {`${index + 1}. ${instruction}`}
+                    </Typography>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setInstructionsOpen(false)}
+            variant="contained"
+            color="primary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={showFullScreenPrompt && !isFullScreen}
+        PaperProps={{ sx: { borderRadius: 3, bgcolor: "background.paper" } }}
+      >
+        <DialogContent sx={{ p: 4 }}>
+          <Typography
+            variant="h6"
+            color="text.primary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important", mb: 2 }}
+          >
+            Enter Full-Screen Mode
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+          >
+            This test requires full-screen mode to ensure a secure testing environment. Please click the button below to proceed.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={requestFullScreen}
+            variant="contained"
+            color="primary"
+            sx={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important" }}
+          >
+            Enter Full-Screen
           </Button>
         </DialogActions>
       </Dialog>
@@ -1430,6 +1517,11 @@ const CodingPage = () => {
             >
               {testResult.testName} - Coding Program {testResult.currentCodingIndex + 1} of {effectiveCodingIds.length || 1}
             </Typography>
+            <Tooltip title="View Instructions">
+              <IconButton size="small" onClick={() => setInstructionsOpen(true)} sx={{ ml: 1 }}>
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 }, flexShrink: 0 }}>
             <Box sx={{ display: "flex", alignItems: "center", bgcolor: alpha(theme.palette.primary.main, 0.1), p: 1, borderRadius: 1 }}>
@@ -1530,11 +1622,6 @@ const CodingPage = () => {
                 <Tooltip title="Save Code">
                   <IconButton size="small" onClick={handleSave}>
                     <SaveIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Copy Code">
-                  <IconButton size="small" onClick={copyToClipboard}>
-                    <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Button
@@ -1770,294 +1857,199 @@ const CodingPage = () => {
                                     borderRadius: 1,
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
-                                    fontSize: { xs: "0.7rem", sm: "0.8rem" },
+                                    fontSize: { xs: "0.65rem", sm: "0.75rem" },
                                   }}
                                 >
-                                  <strong>Input:</strong>{" "}
-                                  {Array.isArray(tc.testcase_input) ? tc.testcase_input.join(", ") : tc.testcase_input || "N/A"}
+                                  <strong>Input:</strong>
+                                  <br />
+                                  {Array.isArray(tc.testcase_input)
+                                    ? tc.testcase_input.join("\n")
+                                    : tc.testcase_input || "No input provided"}
                                 </Typography>
                               )}
-                              <Typography
-                                sx={{
-                                  fontFamily: "'Fira Code', monospace",
-                                  color: "text.secondary",
-                                  p: 1,
-                                  bgcolor: alpha(theme.palette.background.default, 0.7),
-                                  borderRadius: 1,
-                                  whiteSpace: "pre-wrap",
-                                  wordBreak: "break-word",
-                                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                                }}
-                              >
-                                <strong>Expected Output:</strong>{" "}
-                                {Array.isArray(tc.testcase_output)
-                                  ? tc.testcase_output.join(", ")
-                                  : tc.testcase_output || "N/A"}
-                              </Typography>
+                              {tc.testcase_output && (
+                                <Typography
+                                  sx={{
+                                    fontFamily: "'Fira Code', monospace",
+                                    color: "text.secondary",
+                                    p: 1,
+                                    bgcolor: alpha(theme.palette.background.default, 0.7),
+                                    borderRadius: 1,
+                                    whiteSpace: "pre-wrap",
+                                    wordBreak: "break-word",
+                                    fontSize: { xs: "0.65rem", sm: "0.75rem " },
+                                  }}
+                                >
+                                  <strong>Expected Output:</strong>
+                                  <br />
+                                  {Array.isArray(tc.testcase_output)
+                                    ? tc.testcase_output.join("\n")
+                                    : tc.testcase_output || "No output provided"}
+                                </Typography>
+                              )}
                             </CardContent>
                           </Card>
                         ))}
                       </Stack>
                     ) : (
-                      <Box
+                      <Typography
+                        variant="body2"
                         sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: "100%",
-                          opacity: 0.7,
+                          color: "text.secondary",
+                          p: 1,
+                          fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                          fontSize: { xs: "0.7rem", sm: "0.8rem" },
                         }}
                       >
-                        <FormatListNumberedIcon sx={{ fontSize: { xs: 36, sm: 48 }, color: "text.secondary", mb: 1 }} />
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          align="center"
-                          sx={{
-                            fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                            fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                          }}
-                        >
-                          No test cases available
-                        </Typography>
-                      </Box>
+                        No test cases available for this problem.
+                      </Typography>
                     )}
                   </>
                 ) : (
-                  <Box
+                  <Typography
+                    variant="body2"
                     sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: "100%",
-                      opacity: 0.7,
+                      color: "text.secondary",
+                      p: 1,
+                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                      fontSize: { xs: "0.7rem", sm: "0.8rem" },
                     }}
                   >
-                    <CodeIcon sx={{ fontSize: { xs: 36, sm: 48 }, color: "text.secondary", mb: 1 }} />
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      align="center"
-                      sx={{
-                        fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                        fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                      }}
-                    >
-                      No program loaded. Please navigate from a valid test.
-                    </Typography>
-                  </Box>
+                    No problem selected or failed to load problem.
+                  </Typography>
                 )}
               </Box>
             )}
-            {!isMobile && testCasesCollapsed && (
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%" }}>
-              <Tooltip title="Expand Test Cases">
-                <IconButton size="small" onClick={toggleTestCases}>
-                  <KeyboardArrowLeftIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Typography
-                variant="body2"
-                color="text.secondary"
+          </Box>
+        </Box>
+        {showOutput && (
+          <>
+            <Box
+              ref={outputDividerRef}
+              sx={{
+                height: 8,
+                backgroundColor: theme.palette.divider,
+                cursor: isMobile ? "default" : "row-resize",
+                "&:hover": { backgroundColor: isMobile ? theme.palette.divider : "#0c83c8" },
+              }}
+              onMouseDown={isMobile ? null : handleOutputMouseDown}
+            />
+            <Box
+              sx={{
+                height: outputMinimized ? 40 : `${outputHeight}%`,
+                maxHeight: outputMinimized ? 40 : "50%",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                bgcolor: "background.paper",
+                borderTop: 1,
+                borderColor: "divider",
+                transition: "height 0.2s ease-out",
+              }}
+            >
+              <Box
                 sx={{
-                  fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                  writingMode: "vertical-rl",
-                  transform: "rotate(180deg)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  p: 1,
+                  borderBottom: 1,
+                  borderColor: "divider",
                 }}
               >
-                Test Cases
-              </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <TerminalIcon sx={{ mr: 1, fontSize: { xs: 16, sm: 20 }, color: "#fc7a46" }} />
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="medium"
+                    sx={{
+                      fontSize: { xs: "0.85rem", sm: "1rem" },
+                      fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+                    }}
+                  >
+                    Output Console
+                  </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
+                  <Tooltip title={outputMinimized ? "Expand Output" : "Minimize Output"}>
+                    <IconButton
+                      size="small"
+                      onClick={toggleOutput}
+                      aria-label={outputMinimized ? "Expand output console" : "Minimize output console"}
+                    >
+                      {outputMinimized ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+              {!outputMinimized && (
+                <Box
+                  sx={{
+                    flex: 1,
+                    p: 1,
+                    overflow: "auto",
+                    bgcolor: mode === "dark" ? "#1e1e1e" : "#f5f5f5",
+                    fontFamily: "'Fira Code', monospace",
+                    fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                    color: "text.primary",
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {output || "Run your code to see the output here."}
+                </Box>
+              )}
             </Box>
-          )}
-        </Box>
-      </Box>
-      {/* Output Console */}
-      {showOutput && (
+          </>
+        )}
         <Box
           sx={{
-            height: outputMinimized ? "40px" : `${outputHeight}%`,
-            maxHeight: outputMinimized ? "40px" : "50%",
+            p: { xs: 1, sm: 1.5 },
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
             borderTop: 1,
             borderColor: "divider",
             bgcolor: "background.paper",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            transition: "height 0.2s ease-out",
+            flexWrap: "wrap",
+            gap: 1,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              p: 1,
-              borderBottom: outputMinimized ? 0 : 1,
-              borderColor: "divider",
-              bgcolor: "background.paper",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <TerminalIcon sx={{ mr: 1, fontSize: { xs: 16, sm: 20 }, color: "#0c83c8" }} />
-              <Typography
-                variant="subtitle1"
-                fontWeight="medium"
-                sx={{
-                  fontSize: { xs: "0.85rem", sm: "1rem" },
-                  fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-                }}
-              >
-                Output Console
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
-              <Tooltip title={outputMinimized ? "Expand Output" : "Minimize Output"}>
-                <IconButton
-                  size="small"
-                  onClick={toggleOutput}
-                  aria-label={outputMinimized ? "Expand output console" : "Minimize output console"}
-                >
-                  {outputMinimized ? <KeyboardArrowUpIcon fontSize="small" /> : <KeyboardArrowDownIcon fontSize="small" />}
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Close Output">
-                <IconButton
-                  size="small"
-                  onClick={() => setShowOutput(false)}
-                  aria-label="Close output console"
-                >
-                  <KeyboardArrowDownIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
-          {!outputMinimized && (
-            <>
-              <Box
-                ref={outputDividerRef}
-                sx={{
-                  height: 8,
-                  backgroundColor: theme.palette.divider,
-                  cursor: "row-resize",
-                  "&:hover": { backgroundColor: "#0c83c8" },
-                }}
-                onMouseDown={handleOutputMouseDown}
-              />
-              <Box
-                sx={{
-                  flex: 1,
-                  overflow: "auto",
-                  p: 1,
-                  bgcolor: mode === "dark" ? "#1e1e1e" : "#f5f5f5",
-                  fontFamily: "'Fira Code', monospace",
-                  fontSize: { xs: "0.7rem", sm: "0.8rem" },
-                  color: mode === "dark" ? "#d4d4d4" : "#333",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                }}
-              >
-                {output || "Run your code to see the output here..."}
-              </Box>
-            </>
-          )}
-        </Box>
-      )}
-      {/* Navigation and Submission Controls */}
-      <Box
-        sx={{
-          p: { xs: 1, sm: 1.5 },
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderTop: 1,
-          borderColor: "divider",
-          bgcolor: "background.paper",
-          flexWrap: "wrap",
-          gap: 1,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
-          <Tooltip title="Back to Test">
-            <IconButton size="small" onClick={handleBack}>
-              <ArrowBackIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handlePrevious}
-            disabled={isFirstProgram || loading}
-            startIcon={<NavigateBeforeIcon />}
-            sx={{
-              fontSize: { xs: "0.65rem", sm: "0.75rem" },
-              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-            }}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={handleNext}
-            disabled={isLastProgram || loading}
-            endIcon={<NavigateNextIcon />}
-            sx={{
-              fontSize: { xs: "0.65rem", sm: "0.75rem" },
-              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-            }}
-          >
-            Next
-          </Button>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.5, sm: 1 } }}>
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: { xs: "0.65rem", sm: "0.75rem" },
-              color: "text.secondary",
-              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-            }}
-          >
-            Program {testResult.currentCodingIndex + 1} of {effectiveCodingIds.length || 1}
-          </Typography>
-          {!isLastProgram && (
+          <Box sx={{ display: "flex", gap: { xs: 0.5, sm: 1 }, flexWrap: "wrap" }}>
             <Button
-              variant="contained"
-              color="primary"
-              size="small"
-              onClick={handleNextProgram}
-              disabled={loading}
+              variant="outlined"
+              onClick={handleNext}
+              disabled={isLastProgram || loading}
               endIcon={<NavigateNextIcon />}
+              size="small"
               sx={{
                 fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                px: { xs: 1, sm: 2 },
                 fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
               }}
             >
-              Next Program
+              Next
             </Button>
-          )}
-          <Button
-            variant="contained"
-            color="error"
-            size="small"
-            onClick={() => handleFinalSubmit()}
-            disabled={loading || hasSubmitted}
-            startIcon={<DoneIcon />}
-            sx={{
-              fontSize: { xs: "0.65rem", sm: "0.75rem" },
-              fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
-            }}
-          >
-            Submit Test
-          </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleFinalSubmit()}
+              disabled={loading || hasSubmitted}
+              startIcon={<DoneIcon />}
+              size="small"
+              sx={{
+                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                px: { xs: 1, sm: 2 },
+                fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif !important",
+              }}
+            >
+              Submit Test
+            </Button>
+          </Box>
         </Box>
       </Box>
-    </Box>
-  </ThemeProvider>
-);
+    </ThemeProvider>
+  );
 };
 
 export default CodingPage;
