@@ -1,18 +1,16 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+"use client"
+
+import { useEffect, useState, useCallback, useRef } from "react"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import {
   Box,
   Typography,
-  Grid,
   Paper,
   Radio,
   RadioGroup,
   FormControlLabel,
   Button,
   CircularProgress,
-  AppBar,
-  Toolbar,
-  Chip,
   Divider,
   Dialog,
   DialogTitle,
@@ -24,19 +22,12 @@ import {
   ThemeProvider,
   createTheme,
   CssBaseline,
-} from "@mui/material";
-import {
-  Timer as TimerIcon,
-  CheckCircle as CheckIcon,
-  Flag as FlagIcon,
-  ArrowForward as ArrowIcon,
-  ExitToApp as ExitIcon,
-  Info as InfoIcon,
-} from "@mui/icons-material";
-import { alpha, styled } from "@mui/material/styles";
-import { getTestById, getMcqById, submitTestResult } from "../axios";
+} from "@mui/material"
+import { Timer as TimerIcon, Flag as FlagIcon, ArrowForward as ArrowIcon, Info as InfoIcon } from "@mui/icons-material"
+import { getTestById, getMcqById, submitTestResult } from "../axios"
+import "../styles/McqStyle.css"
 
-// Create a custom theme
+// Create a custom theme with specified colors
 const theme = createTheme({
   typography: {
     fontFamily: ["Inter", "Roboto", '"Segoe UI"', "Arial", "sans-serif"].join(","),
@@ -49,124 +40,144 @@ const theme = createTheme({
     secondary: { main: "#fc7a46" },
     success: { main: "#2e7d32" },
     warning: { main: "#f57c00" },
-    background: { default: "#f5f7fa" },
+    background: { default: "#f8fafc" },
   },
-  shape: { borderRadius: 10 },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: { borderRadius: 8, padding: "8px 16px" },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: { borderRadius: 12 },
-      },
-    },
-    MuiIconButton: {
-      styleOverrides: {
-        root: {
-          padding: 8,
-          "&:hover": {
-            backgroundColor: alpha("#0c83c8", 0.1),
-          },
-        },
-      },
-    },
-  },
-});
+  shape: { borderRadius: 8 },
+})
 
-// Styled components
-const QuestionPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  height: "100%",
-  minHeight: "70vh",
-  display: "flex",
-  flexDirection: "column",
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-  backgroundColor: "#fff",
-}));
+// Pie Chart Component
+const PieChart = ({ data }) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0)
+  if (total === 0) return null
 
-const SidebarPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(2),
-  height: "100%",
-  minHeight: "70vh",
-  display: "flex",
-  flexDirection: "column",
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-  backgroundColor: "#fff",
-}));
+  let cumulativePercentage = 0
 
-const QuestionNumberChip = styled(Chip)(({ theme, status }) => ({
-  margin: theme.spacing(0.5),
-  width: 40,
-  height: 40,
-  borderRadius: "50%",
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-  ...(status === "answered" && {
-    backgroundColor: alpha(theme.palette.success.main, 0.2),
-    color: theme.palette.success.main,
-    "&:hover": { backgroundColor: alpha(theme.palette.success.main, 0.3) },
-  }),
-  ...(status === "marked" && {
-    backgroundColor: alpha(theme.palette.warning.main, 0.2),
-    color: theme.palette.warning.main,
-    "&:hover": { backgroundColor: alpha(theme.palette.warning.main, 0.3) },
-  }),
-  ...(status === "notAnswered" && {
-    backgroundColor: alpha(theme.palette.primary.main, 0.2),
-    color: theme.palette.primary.main,
-    "&:hover": { backgroundColor: alpha(theme.palette.primary.main, 0.3) },
-  }),
-  ...(status === "notVisited" && {
-    backgroundColor: alpha(theme.palette.grey[500], 0.2),
-    color: theme.palette.grey[500],
-    "&:hover": { backgroundColor: alpha(theme.palette.grey[500], 0.3) },
-  }),
-}));
+  const createPath = (percentage, cumulativePercentage) => {
+    const startAngle = cumulativePercentage * 3.6
+    const endAngle = (cumulativePercentage + percentage) * 3.6
+    const largeArcFlag = percentage > 50 ? 1 : 0
 
-const TimerBox = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: theme.spacing(1),
-  padding: theme.spacing(1),
-  borderRadius: 8,
-  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-}));
+    const x1 = 50 + 35 * Math.cos(((startAngle - 90) * Math.PI) / 180)
+    const y1 = 50 + 35 * Math.sin(((startAngle - 90) * Math.PI) / 180)
+    const x2 = 50 + 35 * Math.cos(((endAngle - 90) * Math.PI) / 180)
+    const y2 = 50 + 35 * Math.sin(((endAngle - 90) * Math.PI) / 180)
 
-const AnimatedButton = styled(Button)(({ theme }) => ({
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
-  },
-}));
+    return `M 50 50 L ${x1} ${y1} A 35 35 0 ${largeArcFlag} 1 ${x2} ${y2} Z`
+  }
+
+  return (
+    <div className="pie-chart-container">
+      <svg viewBox="0 0 100 100" className="pie-chart">
+        {data.map((item, index) => {
+          if (item.value === 0) return null
+          const percentage = (item.value / total) * 100
+          const path = createPath(percentage, cumulativePercentage)
+          cumulativePercentage += percentage
+
+          return <path key={index} d={path} fill={item.color} className="pie-slice" />
+        })}
+      </svg>
+    </div>
+  )
+}
+
+// Circular Timer Component (without numbers)
+const CircularTimer = ({ timeLeft, totalTime }) => {
+  const percentage = (timeLeft / totalTime) * 100
+  const circumference = 2 * Math.PI * 35
+  const strokeDasharray = circumference
+  const strokeDashoffset = circumference - (percentage / 100) * circumference
+
+  return (
+    <div className="circular-timer">
+      <svg className="timer-svg" viewBox="0 0 100 100">
+        <circle className="timer-background" cx="50" cy="50" r="35" fill="none" stroke="#e2e8f0" strokeWidth="6" />
+        <circle
+          className="timer-progress"
+          cx="50"
+          cy="50"
+          r="35"
+          fill="none"
+          stroke={percentage > 20 ? "#0c83c8" : "#fc7a46"}
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          transform="rotate(-90 50 50)"
+        />
+        <circle cx="50" cy="50" r="25" fill="#f8fafc" />
+        <TimerIcon
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            fontSize: "20px",
+            color: percentage > 20 ? "#0c83c8" : "#fc7a46",
+          }}
+        />
+      </svg>
+    </div>
+  )
+}
+
+// Question Navigator Component
+const QuestionNavigator = ({ progress, currentQuestion, onQuestionSelect }) => {
+  return (
+    <div className="question-navigator">
+      <Typography variant="subtitle2" className="navigator-title">
+        Question Navigator
+      </Typography>
+      <div className="question-grid">
+        {progress.map((item, index) => {
+          let status = "not-visited"
+          if (item.selected_option) {
+            status = "answered"
+          } else if (item.marked) {
+            status = "marked"
+          } else if (item.visited) {
+            status = "not-answered"
+          }
+
+          return (
+            <div
+              key={index}
+              className={`question-bubble ${status} ${index === currentQuestion ? "current" : ""}`}
+              onClick={() => onQuestionSelect(index)}
+            >
+              {index + 1}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 const McqPage = () => {
-  const { testId } = useParams();
-  const navigate = useNavigate();
-  const { state } = useLocation();
-  const [testData, setTestData] = useState(null);
-  const [mcqData, setMcqData] = useState([]);
-  const [codingIds, setCodingIds] = useState([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [progress, setProgress] = useState([]);
-  const [testResult, setTestResult] = useState({});
-  const [timer, setTimer] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [dialog, setDialog] = useState({ open: false, type: "", message: "", onConfirm: null });
-  const [instructionsDialogOpen, setInstructionsDialogOpen] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [studentName, setStudentName] = useState("");
-  const [userId, setUserId] = useState("");
-  const [pocId, setPocId] = useState("");
-  const timerRef = useRef(null);
-  const isSubmitting = useRef(false);
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const { testId } = useParams()
+  const navigate = useNavigate()
+  const { state } = useLocation()
+  const [testData, setTestData] = useState(null)
+  const [mcqData, setMcqData] = useState([])
+  const [codingIds, setCodingIds] = useState([])
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [progress, setProgress] = useState([])
+  const [testResult, setTestResult] = useState({})
+  const [timer, setTimer] = useState(0)
+  const [totalTime, setTotalTime] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [dialog, setDialog] = useState({ open: false, type: "", message: "", onConfirm: null })
+  const [instructionsDialogOpen, setInstructionsDialogOpen] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [studentName, setStudentName] = useState("")
+  const [userId, setUserId] = useState("")
+  const [pocId, setPocId] = useState("")
+  const timerRef = useRef(null)
+  const isSubmitting = useRef(false)
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"))
 
-  // Default instructions if testData.test_instructions is not available
+  // Default instructions
   const defaultInstructions = [
     "Read each question carefully before answering.",
     "Select one option for each multiple-choice question.",
@@ -176,87 +187,88 @@ const McqPage = () => {
     "Ensure you remain in fullscreen mode throughout the test.",
     "Any attempt to copy, paste, open developer tools, or switch tabs will result in immediate test submission.",
     "Submit the test when you are ready, or proceed to the coding section if applicable.",
-  ];
+  ]
 
   // Shuffle array utility
   const shuffleArray = (array) => {
-    if (!array || !Array.isArray(array)) return [];
-    const shuffled = [...array];
+    if (!array || !Array.isArray(array)) return []
+    const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
-    return shuffled;
-  };
+    return shuffled
+  }
 
   // Initialize test data and progress
   useEffect(() => {
     const initializeTest = async () => {
       try {
-        setLoading(true);
+        setLoading(true)
 
         // Load user data
-        const storedUser = localStorage.getItem("true");
-        let userData = {};
+        const storedUser = localStorage.getItem("true")
+        let userData = {}
         if (storedUser) {
           try {
-            userData = JSON.parse(storedUser);
-            setStudentName(userData.user?.full_name || "");
-            setUserId(userData.user?.user_id || "");
-            setPocId(userData.user?.mod_poc_id?.mod_poc_id || "");
+            userData = JSON.parse(storedUser)
+            setStudentName(userData.user?.full_name || "Student")
+            setUserId(userData.user?.user_id || "")
+            setPocId(userData.user?.mod_poc_id?.mod_poc_id || "")
           } catch (error) {
-            console.error("Failed to parse user data:", error);
+            console.error("Failed to parse user data:", error)
           }
         }
 
         // Fetch test data
-        const test = await getTestById(testId);
-        if (!test) throw new Error("Test data not found");
-        setTestData(test);
+        const test = await getTestById(testId)
+        if (!test) throw new Error("Test data not found")
+        setTestData(test)
 
         // Load coding IDs
-        let codingIds = test.test_coding_id?.length ? test.test_coding_id : [];
-        const savedCodingIds = JSON.parse(localStorage.getItem("coding_ids") || "[]");
+        let codingIds = test.test_coding_id?.length ? test.test_coding_id : []
+        const savedCodingIds = JSON.parse(localStorage.getItem("coding_ids") || "[]")
         if (savedCodingIds.length > 0) {
-          codingIds = savedCodingIds;
+          codingIds = savedCodingIds
         } else {
-          localStorage.setItem("coding_ids", JSON.stringify(codingIds));
+          localStorage.setItem("coding_ids", JSON.stringify(codingIds))
         }
-        setCodingIds(codingIds);
+        setCodingIds(codingIds)
 
         // Fetch and shuffle MCQ data
-        const mcqPromises = (test.test_mcq_id || []).map((id) => getMcqById(id));
-        const mcqResults = await Promise.all(mcqPromises);
+        const mcqPromises = (test.test_mcq_id || []).map((id) => getMcqById(id))
+        const mcqResults = await Promise.all(mcqPromises)
         const shuffledMcq = shuffleArray(
           mcqResults.map((mcq) => ({
             ...mcq,
             mcq_options: shuffleArray(mcq.mcq_options || []),
-          }))
-        );
-        setMcqData(shuffledMcq);
+          })),
+        )
+        setMcqData(shuffledMcq)
 
         // Load or initialize progress
-        const savedProgress = JSON.parse(localStorage.getItem("test_progress") || "[]");
+        const savedProgress = JSON.parse(localStorage.getItem("test_progress") || "[]")
         const initialProgress = shuffledMcq.map((mcq) => ({
           mcq_id: mcq.mcq_id,
           selected_option: null,
           marked: false,
           visited: false,
-        }));
+        }))
         const mergedProgress = initialProgress.map((init) => {
-          const saved = savedProgress.find((p) => p.mcq_id === init.mcq_id);
-          return saved || init;
-        });
-        setProgress(mergedProgress);
+          const saved = savedProgress.find((p) => p.mcq_id === init.mcq_id)
+          return saved || init
+        })
+        setProgress(mergedProgress)
 
         // Load or initialize timer
-        const savedTimer = localStorage.getItem("test_timer");
-        const totalTime = (test.test_mcq_id?.length || 0) * 60 + (test.test_coding_id?.length || 0) * 600;
-        setTimer(savedTimer ? parseInt(savedTimer, 10) : totalTime);
+        const savedTimer = localStorage.getItem("test_timer")
+        const totalTime = (test.test_mcq_id?.length || 0) * 60 + (test.test_coding_id?.length || 0) * 600
+        setTotalTime(totalTime)
+        setTimer(savedTimer ? Number.parseInt(savedTimer, 10) : totalTime)
 
         // Load or initialize test result
-        const savedResult = JSON.parse(localStorage.getItem("test_result") || "{}");
-        const navigationResult = state || {};
+        const savedResult = JSON.parse(localStorage.getItem("test_result") || "{}")
+        const navigationResult = state || {}
         const updatedResult = {
           result_user_id: userData.user?.user_id || savedResult.result_user_id || navigationResult.result_user_id || "",
           result_test_id: testId,
@@ -265,7 +277,8 @@ const McqPage = () => {
             savedResult.result_total_score ||
             navigationResult.result_total_score ||
             (test.test_mcq_id?.length || 0) + (test.test_coding_id?.length || 0) * 10,
-          result_poc_id: userData.user?.mod_poc_id?.mod_poc_id || savedResult.result_poc_id || navigationResult.result_poc_id || "",
+          result_poc_id:
+            userData.user?.mod_poc_id?.mod_poc_id || savedResult.result_poc_id || navigationResult.result_poc_id || "",
           studentName: userData.user?.full_name || savedResult.studentName || navigationResult.studentName || "",
           testName: test.test_name || savedResult.testName || navigationResult.testName || "",
           testLanguage: test.test_language || savedResult.testLanguage || navigationResult.testLanguage || "",
@@ -285,211 +298,197 @@ const McqPage = () => {
           mcqNotVisited: savedResult.mcqNotVisited || navigationResult.mcqNotVisited || test.test_mcq_id?.length || 0,
           marked: savedResult.marked || navigationResult.marked || 0,
           currentCodingIndex: savedResult.currentCodingIndex || navigationResult.currentCodingIndex || 0,
-        };
-        setTestResult(updatedResult);
-        localStorage.setItem("test_result", JSON.stringify(updatedResult));
+        }
+        setTestResult(updatedResult)
+        localStorage.setItem("test_result", JSON.stringify(updatedResult))
 
         // Clear browser history to prevent back navigation
-        window.history.replaceState(null, null, `/mcq/${testId}`);
-        window.history.pushState(null, null, `/mcq/${testId}`);
-        window.history.pushState(null, null, `/mcq/${testId}`);
+        window.history.replaceState(null, null, `/mcq/${testId}`)
+        window.history.pushState(null, null, `/mcq/${testId}`)
+        window.history.pushState(null, null, `/mcq/${testId}`)
 
-        setIsInitialized(true);
+        setIsInitialized(true)
       } catch (error) {
-        console.error("Initialization error:", error);
+        console.error("Initialization error:", error)
         setDialog({
           open: true,
           type: "error",
           message: "Failed to load test data",
           onConfirm: () => {
-            window.history.replaceState(null, null, "/test-result");
-            navigate("/test-result");
+            window.history.replaceState(null, null, "/test-result")
+            navigate("/test-result")
           },
-        });
+        })
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    initializeTest();
-  }, [testId, navigate, state]);
+    initializeTest()
+  }, [testId, navigate, state])
 
   // Timer countdown
   useEffect(() => {
     if (!isInitialized || timer <= 0) {
       if (timer <= 0 && isInitialized && !isSubmitting.current) {
-        handleSubmitTest();
+        handleSubmitTest()
       }
-      return;
+      return
     }
     timerRef.current = setInterval(() => {
       setTimer((prev) => {
-        const newTime = prev - 1;
-        localStorage.setItem("test_timer", newTime);
-        return newTime;
-      });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [timer, isInitialized]);
+        const newTime = prev - 1
+        localStorage.setItem("test_timer", newTime)
+        return newTime
+      })
+    }, 1000)
+    return () => clearInterval(timerRef.current)
+  }, [timer, isInitialized])
 
   // Malpractice prevention and navigation blocking
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized) return
 
-    // Prevent browser back navigation
     const handlePopState = () => {
-      window.history.pushState(null, null, `/mcq/${testId}`);
-      handleMalpractice("Attempted to navigate back using browser controls");
-    };
+      window.history.pushState(null, null, `/mcq/${testId}`)
+      handleMalpractice("Attempted to navigate back using browser controls")
+    }
 
-    // Warn before leaving page
     const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = "Leaving the test will submit it automatically. Are you sure?";
-      handleMalpractice("Attempted to close or refresh the page");
-    };
+      e.preventDefault()
+      e.returnValue = "Leaving the test will submit it automatically. Are you sure?"
+      handleMalpractice("Attempted to close or refresh the page")
+    }
 
-    // Request and maintain fullscreen
     const requestFullscreen = async () => {
       try {
         if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
+          await document.documentElement.requestFullscreen()
         } else if (document.documentElement.mozRequestFullScreen) {
-          await document.documentElement.mozRequestFullScreen();
+          await document.documentElement.mozRequestFullScreen()
         } else if (document.documentElement.webkitRequestFullscreen) {
-          await document.documentElement.webkitRequestFullscreen();
+          await document.documentElement.webkitRequestFullscreen()
         } else if (document.documentElement.msRequestFullscreen) {
-          await document.documentElement.msRequestFullscreen();
+          await document.documentElement.msRequestFullscreen()
         }
       } catch (error) {
-        console.error("Fullscreen request failed:", error);
-        handleMalpractice("Failed to maintain fullscreen mode");
+        console.error("Fullscreen request failed:", error)
+        handleMalpractice("Failed to maintain fullscreen mode")
       }
-    };
+    }
 
-    // Handle fullscreen exit
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && isInitialized) {
-        handleMalpractice("Exited fullscreen mode");
+        handleMalpractice("Exited fullscreen mode")
       }
-    };
+    }
 
-    // Handle visibility change (tab/window switch)
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log("Malpractice: Tab/window switched");
+        console.log("Malpractice: Tab/window switched")
         setTimeout(() => {
           if (document.hidden) {
-            handleMalpractice("Tab/window switching detected");
+            handleMalpractice("Tab/window switching detected")
           }
-        }, 1000);
+        }, 1000)
       }
-    };
+    }
 
-    // Prevent copy-paste
     const preventCopyPaste = (e) => {
-      e.preventDefault();
-      handleMalpractice("Copy/paste attempted");
-    };
+      e.preventDefault()
+      handleMalpractice("Copy/paste attempted")
+    }
 
-    // Prevent right-click
     const preventRightClick = (e) => {
-      e.preventDefault();
-      handleMalpractice("Right-click attempted");
-    };
+      e.preventDefault()
+      handleMalpractice("Right-click attempted")
+    }
 
-    // Prevent developer tools
     const preventDevTools = (e) => {
       if (
         e.key === "F12" ||
         (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
         (e.ctrlKey && e.key === "U")
       ) {
-        e.preventDefault();
-        handleMalpractice("Attempted to open developer tools");
+        e.preventDefault()
+        handleMalpractice("Attempted to open developer tools")
       }
-    };
+    }
 
-    // Detect mouse leaving window
     const handleMouseLeave = (e) => {
       if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
-        handleMalpractice("Mouse moved outside test window");
+        handleMalpractice("Mouse moved outside test window")
       }
-    };
+    }
 
-    // Detect new tab/window opening
     const detectNewWindow = () => {
-      handleMalpractice("Attempted to open a new tab or window");
-    };
+      handleMalpractice("Attempted to open a new tab or window")
+    }
 
-    // Handle malpractice by submitting test immediately
     const handleMalpractice = (message) => {
       setDialog({
         open: true,
         type: "malpractice",
         message: `Malpractice detected: ${message}. Test will be submitted.`,
         onConfirm: handleSubmitTest,
-      });
-    };
+      })
+    }
 
-    // Add event listeners
-    window.addEventListener("popstate", handlePopState);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    document.addEventListener("copy", preventCopyPaste);
-    document.addEventListener("paste", preventCopyPaste);
-    document.addEventListener("contextmenu", preventRightClick);
-    document.addEventListener("keydown", preventDevTools);
-    document.addEventListener("mouseleave", handleMouseLeave);
-    window.addEventListener("blur", detectNewWindow);
+    window.addEventListener("popstate", handlePopState)
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    document.addEventListener("fullscreenchange", handleFullscreenChange)
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    document.addEventListener("copy", preventCopyPaste)
+    document.addEventListener("paste", preventCopyPaste)
+    document.addEventListener("contextmenu", preventRightClick)
+    document.addEventListener("keydown", preventDevTools)
+    document.addEventListener("mouseleave", handleMouseLeave)
+    window.addEventListener("blur", detectNewWindow)
 
-    // Initial fullscreen request
-    requestFullscreen();
+    requestFullscreen()
 
-    // Periodic fullscreen check
     const fullscreenCheckInterval = setInterval(() => {
       if (!document.fullscreenElement && isInitialized) {
-        requestFullscreen();
+        requestFullscreen()
       }
-    }, 5000);
+    }, 5000)
 
     return () => {
-      window.removeEventListener("popstate", handlePopState);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      document.removeEventListener("copy", preventCopyPaste);
-      document.removeEventListener("paste", preventCopyPaste);
-      document.removeEventListener("contextmenu", preventRightClick);
-      document.removeEventListener("keydown", preventDevTools);
-      document.removeEventListener("mouseleave", handleMouseLeave);
-      window.removeEventListener("blur", detectNewWindow);
-      clearInterval(fullscreenCheckInterval);
-    };
-  }, [isInitialized, testId]);
+      window.removeEventListener("popstate", handlePopState)
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+      document.removeEventListener("fullscreenchange", handleFullscreenChange)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      document.removeEventListener("copy", preventCopyPaste)
+      document.removeEventListener("paste", preventCopyPaste)
+      document.removeEventListener("contextmenu", preventRightClick)
+      document.removeEventListener("keydown", preventDevTools)
+      document.removeEventListener("mouseleave", handleMouseLeave)
+      window.removeEventListener("blur", detectNewWindow)
+      clearInterval(fullscreenCheckInterval)
+    }
+  }, [isInitialized, testId])
 
   // Save progress and test result on change
   useEffect(() => {
-    if (!isInitialized || !testData || !mcqData) return;
+    if (!isInitialized || !testData || !mcqData) return
 
-    localStorage.setItem("test_progress", JSON.stringify(progress));
+    localStorage.setItem("test_progress", JSON.stringify(progress))
 
-    const answeredCount = progress.filter((p) => p.selected_option).length;
-    const markedCount = progress.filter((p) => p.marked).length;
-    const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited).length;
-    const notVisitedCount = progress.filter((p) => !p.visited).length;
-    let mcqScore = 0;
-    let wrongAnswersCount = 0;
+    const answeredCount = progress.filter((p) => p.selected_option).length
+    const markedCount = progress.filter((p) => p.marked).length
+    const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited).length
+    const notVisitedCount = progress.filter((p) => !p.visited).length
+    let mcqScore = 0
+    let wrongAnswersCount = 0
 
     progress.forEach((p) => {
-      const question = mcqData.find((q) => q.mcq_id === p.mcq_id);
+      const question = mcqData.find((q) => q.mcq_id === p.mcq_id)
       if (question && p.selected_option && p.selected_option === question.mcq_answer) {
-        mcqScore += 1;
+        mcqScore += 1
       } else if (p.selected_option) {
-        wrongAnswersCount += 1;
+        wrongAnswersCount += 1
       }
-    });
+    })
 
     setTestResult((prev) => {
       const updatedResult = {
@@ -516,72 +515,68 @@ const McqPage = () => {
         mcqNotVisited: notVisitedCount,
         marked: markedCount,
         currentCodingIndex: prev.currentCodingIndex || 0,
-      };
-      localStorage.setItem("test_result", JSON.stringify(updatedResult));
-      return updatedResult;
-    });
-  }, [progress, testData, userId, pocId, studentName, testId, mcqData, isInitialized, codingIds]);
+      }
+      localStorage.setItem("test_result", JSON.stringify(updatedResult))
+      return updatedResult
+    })
+  }, [progress, testData, userId, pocId, studentName, testId, mcqData, isInitialized, codingIds])
 
   // Handle option selection
   const handleOptionChange = (option) => {
     setProgress((prev) =>
       prev.map((item, index) =>
-        index === currentQuestion ? { ...item, selected_option: option, visited: true } : item
-      )
-    );
-  };
+        index === currentQuestion ? { ...item, selected_option: option, visited: true } : item,
+      ),
+    )
+  }
 
   // Handle marking question
   const handleMarkQuestion = () => {
     setProgress((prev) =>
-      prev.map((item, index) =>
-        index === currentQuestion ? { ...item, marked: !item.marked, visited: true } : item
-      )
-    );
-  };
+      prev.map((item, index) => (index === currentQuestion ? { ...item, marked: !item.marked, visited: true } : item)),
+    )
+  }
 
   // Navigate to question
   const handleQuestionNavigation = (index) => {
     if (index >= 0 && index < mcqData.length) {
-      setProgress((prev) =>
-        prev.map((item, idx) => (idx === index ? { ...item, visited: true } : item))
-      );
-      setCurrentQuestion(index);
+      setProgress((prev) => prev.map((item, idx) => (idx === index ? { ...item, visited: true } : item)))
+      setCurrentQuestion(index)
     }
-  };
+  }
 
   // Submit test
   const handleSubmitTest = useCallback(async () => {
-    if (isSubmitting.current) return;
-    isSubmitting.current = true;
+    if (isSubmitting.current) return
+    isSubmitting.current = true
 
     try {
-      console.log("Submitting test...");
-      const resultData = JSON.parse(localStorage.getItem("test_result") || "{}") || testResult;
-      await submitTestResult(resultData);
-      console.log("Test submitted successfully");
+      console.log("Submitting test...")
+      const resultData = JSON.parse(localStorage.getItem("test_result") || "{}") || testResult
+      await submitTestResult(resultData)
+      console.log("Test submitted successfully")
 
       if (document.exitFullscreen) {
-        await document.exitFullscreen().catch((err) => console.error("Failed to exit fullscreen:", err));
+        await document.exitFullscreen().catch((err) => console.error("Failed to exit fullscreen:", err))
       }
 
-      window.history.replaceState(null, null, "/test-result");
-      navigate("/test-result");
+      window.history.replaceState(null, null, "/test-result")
+      navigate("/test-result")
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Submission error:", error)
       setDialog({
         open: true,
         type: "error",
         message: "Failed to submit test. You will be redirected to the results page.",
         onConfirm: () => {
-          window.history.replaceState(null, null, "/test-result");
-          navigate("/test-result");
+          window.history.replaceState(null, null, "/test-result")
+          navigate("/test-result")
         },
-      });
+      })
     } finally {
-      isSubmitting.current = false;
+      isSubmitting.current = false
     }
-  }, [testResult, navigate]);
+  }, [testResult, navigate])
 
   // Handle proceed to coding with warning
   const handleProceedToCoding = () => {
@@ -591,8 +586,8 @@ const McqPage = () => {
         type: "error",
         message: "No coding problems available for this test.",
         onConfirm: () => setDialog({ open: false }),
-      });
-      return;
+      })
+      return
     }
     setDialog({
       open: true,
@@ -605,11 +600,11 @@ const McqPage = () => {
             currentCodingIndex: 0,
             codingIds,
           },
-        });
-        setDialog({ open: false });
+        })
+        setDialog({ open: false })
       },
-    });
-  };
+    })
+  }
 
   // Handle submit test with warning
   const handleSubmitTestWithWarning = () => {
@@ -618,17 +613,24 @@ const McqPage = () => {
       type: "submit",
       message: "Submitting the test is final. You cannot make further changes. Do you want to submit?",
       onConfirm: handleSubmitTest,
-    });
-  };
+    })
+  }
 
   // Handle instructions dialog open/close
   const handleOpenInstructions = () => {
-    setInstructionsDialogOpen(true);
-  };
+    setInstructionsDialogOpen(true)
+  }
 
   const handleCloseInstructions = () => {
-    setInstructionsDialogOpen(false);
-  };
+    setInstructionsDialogOpen(false)
+  }
+
+  // Format timer
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+  }
 
   // Render loading state
   if (loading) {
@@ -636,7 +638,7 @@ const McqPage = () => {
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
         <CircularProgress />
       </Box>
-    );
+    )
   }
 
   // Render error if test data or MCQ data is missing
@@ -654,48 +656,52 @@ const McqPage = () => {
             variant="contained"
             color="primary"
             onClick={() => {
-              window.history.replaceState(null, null, "/test-result");
-              navigate("/test-result");
+              window.history.replaceState(null, null, "/test-result")
+              navigate("/test-result")
             }}
           >
             Go to Results
           </Button>
         </Paper>
       </Box>
-    );
+    )
   }
 
   // Calculate question status counts
-  const answeredCount = progress.filter((p) => p.selected_option).length;
-  const markedCount = progress.filter((p) => p.marked).length;
-  const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited).length;
-  const notVisitedCount = progress.filter((p) => !p.visited).length;
+  const answeredCount = progress.filter((p) => p.selected_option).length
+  const markedCount = progress.filter((p) => p.marked).length
+  const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited).length
+  const notVisitedCount = progress.filter((p) => !p.visited).length
 
-  // Format timer
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
+  // Prepare pie chart data
+  const pieChartData = [
+    { label: "Answered", value: answeredCount, color: "#0c83c8" },
+    { label: "Marked", value: markedCount, color: "#fc7a46" },
+    { label: "Not Answered", value: notAnsweredCount, color: "#64748b" },
+    { label: "Not Visited", value: notVisitedCount, color: "#e2e8f0" },
+  ]
 
   // Check if last question is answered
-  const isLastQuestionAnswered = currentQuestion === mcqData.length - 1 && progress[currentQuestion]?.selected_option;
+  const isLastQuestionAnswered = currentQuestion === mcqData.length - 1 && progress[currentQuestion]?.selected_option
 
   // Prepare instructions content
   const instructions = testData.test_instructions
     ? Array.isArray(testData.test_instructions)
       ? testData.test_instructions
       : testData.test_instructions.split("\n").filter((line) => line.trim())
-    : defaultInstructions;
+    : defaultInstructions
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+
+      {/* Dialogs */}
       <Dialog
         open={dialog.open}
         onClose={() => setDialog({ open: false })}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
+        className="clean-dialog"
       >
         <DialogTitle id="alert-dialog-title">
           {dialog.type === "malpractice" ? "Malpractice Detected" : dialog.type === "error" ? "Error" : "Warning"}
@@ -706,15 +712,15 @@ const McqPage = () => {
         <DialogActions>
           {dialog.type === "proceed" || dialog.type === "submit" ? (
             <>
-              <Button onClick={() => setDialog({ open: false })} color="primary">
+              <Button onClick={() => setDialog({ open: false })} color="primary" className="clean-button">
                 Stay in MCQ
               </Button>
-              <Button onClick={dialog.onConfirm} color="secondary" autoFocus>
+              <Button onClick={dialog.onConfirm} color="secondary" autoFocus className="clean-button">
                 {dialog.type === "proceed" ? "Proceed to Coding" : "Submit Test"}
               </Button>
             </>
           ) : (
-            <Button onClick={dialog.onConfirm} color="primary" autoFocus>
+            <Button onClick={dialog.onConfirm} color="primary" autoFocus className="clean-button">
               OK
             </Button>
           )}
@@ -727,6 +733,7 @@ const McqPage = () => {
         aria-labelledby="instructions-dialog-title"
         maxWidth="sm"
         fullWidth
+        className="clean-dialog"
       >
         <DialogTitle id="instructions-dialog-title">Test Instructions</DialogTitle>
         <DialogContent>
@@ -739,181 +746,165 @@ const McqPage = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseInstructions} color="primary" autoFocus>
+          <Button onClick={handleCloseInstructions} color="primary" autoFocus className="clean-button">
             Close
           </Button>
         </DialogActions>
       </Dialog>
 
-      <AppBar position="fixed" color="primary" elevation={2}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            {testData.test_name || "Test"}
-          </Typography>
-          <IconButton
-            color="inherit"
-            onClick={handleOpenInstructions}
-            aria-label="View test instructions"
-            sx={{ mr: 1 }}
-          >
-            <InfoIcon />
-          </IconButton>
-          <TimerBox>
-            <TimerIcon />
-            <Typography variant="subtitle1">{formatTime(timer)}</Typography>
-          </TimerBox>
-        </Toolbar>
-      </AppBar>
+      {/* Header */}
+      <div className="header">
+        <div className="header-content">
+          <div className="header-left">
+            <Typography variant="h6" className="test-title">
+              {testData.test_name || "Test"}
+            </Typography>
+            <IconButton onClick={handleOpenInstructions} aria-label="View test instructions" className="info-button">
+              <InfoIcon />
+            </IconButton>
+          </div>
+          <div className="header-right">
+            <div className="timer-display">
+              <TimerIcon className="timer-icon" />
+              <span className="timer-text">{formatTime(timer)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Box sx={{ mt: 8, p: { xs: 2, md: 4 }, bgcolor: theme.palette.background.default }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
-            <QuestionPaper elevation={3}>
-              <Typography variant="h6" gutterBottom>
-                Question {currentQuestion + 1}
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 3, fontSize: "1.1rem" }}>
-                {mcqData[currentQuestion]?.mcq_question || "Loading question..."}
-              </Typography>
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Left Card - Question */}
+        <div className="question-card">
+          <div className="question-header">
+            <Typography variant="h6" className="question-number">
+              Question {currentQuestion + 1} of {mcqData.length}
+            </Typography>
+          </div>
 
-              <RadioGroup
-                value={progress[currentQuestion]?.selected_option || ""}
-                onChange={(e) => handleOptionChange(e.target.value)}
-                sx={{ mb: 3 }}
-              >
-                {(mcqData[currentQuestion]?.mcq_options || []).map((option, index) => (
-                  <FormControlLabel
-                    key={index}
-                    value={option}
-                    control={<Radio />}
-                    label={option}
-                    sx={{ mb: 1, "& .MuiFormControlLabel-label": { fontSize: "1rem" } }}
-                  />
-                ))}
-              </RadioGroup>
+          <div className="question-content">
+            <Typography variant="body1" className="question-text">
+              {mcqData[currentQuestion]?.mcq_question || "Loading question..."}
+            </Typography>
 
-              <Box sx={{ mt: "auto", display: "flex", justifyContent: "space-between", gap: 1, flexWrap: "wrap" }}>
-                <AnimatedButton
+            <RadioGroup
+              value={progress[currentQuestion]?.selected_option || ""}
+              onChange={(e) => handleOptionChange(e.target.value)}
+              className="options-group"
+            >
+              {(mcqData[currentQuestion]?.mcq_options || []).map((option, index) => (
+                <FormControlLabel
+                  key={index}
+                  value={option}
+                  control={<Radio className="clean-radio" />}
+                  label={option}
+                  className="option-item"
+                />
+              ))}
+            </RadioGroup>
+          </div>
+
+          <div className="question-actions">
+            <Button
+              variant="outlined"
+              onClick={handleMarkQuestion}
+              startIcon={<FlagIcon />}
+              className="clean-button mark-button"
+            >
+              {progress[currentQuestion]?.marked ? "Unmark" : "Mark for Review"}
+            </Button>
+
+            <div className="navigation-buttons">
+              {currentQuestion > 0 && (
+                <Button
                   variant="outlined"
-                  color="primary"
-                  onClick={handleMarkQuestion}
-                  startIcon={<FlagIcon />}
+                  onClick={() => handleQuestionNavigation(currentQuestion - 1)}
+                  className="clean-button nav-button"
                 >
-                  {progress[currentQuestion]?.marked ? "Unmark" : "Mark for Review"}
-                </AnimatedButton>
-
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  {currentQuestion > 0 && !isLastQuestionAnswered && (
-                    <AnimatedButton
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => handleQuestionNavigation(currentQuestion - 1)}
-                    >
-                      Previous
-                    </AnimatedButton>
-                  )}
-                  {currentQuestion < mcqData.length - 1 ? (
-                    <AnimatedButton
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleQuestionNavigation(currentQuestion + 1)}
-                      endIcon={<ArrowIcon />}
-                    >
-                      Next
-                    </AnimatedButton>
-                  ) : (
-                    isLastQuestionAnswered && (
-                      <AnimatedButton
-                        variant="contained"
-                        color="primary"
-                        onClick={testData.test_coding_id?.length > 0 ? handleProceedToCoding : handleSubmitTestWithWarning}
-                        endIcon={<ArrowIcon />}
-                      >
-                        Proceed
-                      </AnimatedButton>
-                    )
-                  )}
-                </Box>
-              </Box>
-            </QuestionPaper>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <SidebarPaper elevation={3}>
-              <Typography variant="h6" gutterBottom>
-                Question Palette
-              </Typography>
-
-              <Box sx={{ mb: 2, display: "flex", flexWrap: "wrap" }}>
-                {progress.map((item, index) => (
-                  <QuestionNumberChip
-                    key={index}
-                    label={index + 1}
-                    status={
-                      item.selected_option
-                        ? "answered"
-                        : item.marked
-                        ? "marked"
-                        : item.visited
-                        ? "notAnswered"
-                        : "notVisited"
-                    }
-                    onClick={() => handleQuestionNavigation(index)}
-                  />
-                ))}
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle1" gutterBottom>
-                Status Overview
-              </Typography>
-              <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <CheckIcon color="success" />
-                  <Typography variant="body2">Answered: {answeredCount}</Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <FlagIcon color="warning" />
-                  <Typography variant="body2">Marked: {markedCount}</Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                  <TimerIcon color="primary" />
-                  <Typography variant="body2">Not Answered: {notAnsweredCount}</Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <ExitIcon color="disabled" />
-                  <Typography variant="body2">Not Visited: {notVisitedCount}</Typography>
-                </Box>
-              </Box>
-
-              <Box sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}>
-                <AnimatedButton
+                  Previous
+                </Button>
+              )}
+              {currentQuestion < mcqData.length - 1 ? (
+                <Button
                   variant="contained"
-                  color="secondary"
-                  onClick={handleSubmitTestWithWarning}
-                  fullWidth
+                  onClick={() => handleQuestionNavigation(currentQuestion + 1)}
+                  endIcon={<ArrowIcon />}
+                  className="clean-button nav-button primary"
                 >
-                  Submit Test
-                </AnimatedButton>
-                {testData.test_coding_id?.length > 0 && (
-                  <AnimatedButton
+                  Next
+                </Button>
+              ) : (
+                isLastQuestionAnswered && (
+                  <Button
                     variant="contained"
-                    color="primary"
-                    onClick={handleProceedToCoding}
+                    onClick={testData.test_coding_id?.length > 0 ? handleProceedToCoding : handleSubmitTestWithWarning}
                     endIcon={<ArrowIcon />}
-                    fullWidth
+                    className="clean-button proceed-button"
                   >
-                    Proceed to Coding
-                  </AnimatedButton>
-                )}
-              </Box>
-            </SidebarPaper>
-          </Grid>
-        </Grid>
-      </Box>
-    </ThemeProvider>
-  );
-};
+                    Proceed
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+        </div>
 
-export default McqPage;
+        {/* Right Card - Student Info & Navigation */}
+        <div className="info-card">
+          <div className="student-info">
+            <Typography variant="h6" className="student-name">
+              {studentName}
+            </Typography>
+          </div>
+
+          <div className="charts-container">
+            <div className="chart-item">
+              <Typography variant="subtitle2" className="chart-label">
+                Progress
+              </Typography>
+              <PieChart data={pieChartData} />
+            </div>
+            <div className="chart-item">
+              <Typography variant="subtitle2" className="chart-label">
+                Time
+              </Typography>
+              <CircularTimer timeLeft={timer} totalTime={totalTime} />
+            </div>
+          </div>
+
+          <Divider className="section-divider" />
+
+          <QuestionNavigator
+            progress={progress}
+            currentQuestion={currentQuestion}
+            onQuestionSelect={handleQuestionNavigation}
+          />
+
+          <div className="final-actions">
+            <Button
+              variant="contained"
+              onClick={handleSubmitTestWithWarning}
+              fullWidth
+              className="clean-button submit-button"
+            >
+              Submit Test
+            </Button>
+            {testData.test_coding_id?.length > 0 && (
+              <Button
+                variant="contained"
+                onClick={handleProceedToCoding}
+                endIcon={<ArrowIcon />}
+                fullWidth
+                className="clean-button coding-button"
+              >
+                Proceed to Coding
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </ThemeProvider>
+  )
+}
+
+export default McqPage
