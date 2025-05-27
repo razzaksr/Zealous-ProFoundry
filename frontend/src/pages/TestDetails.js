@@ -267,6 +267,21 @@ const TestDetails = () => {
     };
 
     fetchTestData();
+
+    // Prevent back navigation by handling popstate
+    const handlePopState = () => {
+      // Push the current page back to the history to prevent going back
+      window.history.pushState(null, null, window.location.pathname);
+      setSnackbarMessage("Navigation back is disabled during the test.");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [testId]);
 
   // Check if test has MCQ component
@@ -281,7 +296,7 @@ const TestDetails = () => {
   // Determine first component to navigate to
   const getFirstComponentPath = () => {
     if (hasMcq) return `/mcq/${testId}`;
-    if (hasCoding) return `/coding/${testId}`;
+    if (hasCoding) return `/coding/${testData.test_coding_id[0]}`; // Use first coding ID
     return null;
   };
 
@@ -303,30 +318,49 @@ const TestDetails = () => {
     }
 
     try {
+      // Calculate total time: 60 seconds per MCQ, 600 seconds per coding question
+      const mcqCount = testData.test_mcq_id?.length || 0;
+      const codingCount = testData.test_coding_id?.length || 0;
+      const totalTime = (mcqCount * 60) + (codingCount * 600);
+
+      // Store total time in localStorage
+      if (totalTime > 0) {
+        localStorage.setItem("test_timer", totalTime.toString());
+      } else {
+        setSnackbarMessage("No valid test components to set timer.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        return;
+      }
+
       // Request fullscreen mode
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
         setIsFullscreen(true);
-        // Navigate to first component after successful fullscreen
-        navigate(firstComponentPath);
       } else if (document.documentElement.mozRequestFullScreen) {
         await document.documentElement.mozRequestFullScreen();
         setIsFullscreen(true);
-        navigate(firstComponentPath);
       } else if (document.documentElement.webkitRequestFullscreen) {
         await document.documentElement.webkitRequestFullscreen();
         setIsFullscreen(true);
-        navigate(firstComponentPath);
       } else if (document.documentElement.msRequestFullscreen) {
         await document.documentElement.msRequestFullscreen();
         setIsFullscreen(true);
-        navigate(firstComponentPath);
       } else {
         // Fallback if fullscreen not supported
         setSnackbarMessage("Fullscreen mode not supported by your browser. The test requires fullscreen.");
         setSnackbarSeverity("warning");
         setSnackbarOpen(true);
+        return;
       }
+
+      // Prevent back navigation by replacing history and pushing dummy entries
+      window.history.replaceState(null, null, firstComponentPath);
+      window.history.pushState(null, null, firstComponentPath);
+      window.history.pushState(null, null, firstComponentPath);
+
+      // Navigate to first component
+      navigate(firstComponentPath);
     } catch (err) {
       console.error("Fullscreen request failed:", err);
       setIsFullscreen(false);
@@ -337,7 +371,8 @@ const TestDetails = () => {
   };
 
   const handleBack = () => {
-    navigate(-1);
+    // Navigate to a safe previous route, e.g., dashboard or home
+    navigate("/dashboard"); // Adjust this to your desired fallback route
   };
 
   const handleSnackbarClose = () => {
@@ -668,7 +703,7 @@ const TestDetails = () => {
                       : "The test is currently disabled and cannot be started."}
                   </Typography>
                 ) : (
-                  <Typography variant="body1" color="error" sx={{ mb: 2 }}>
+                  <Typography variant="body1" color="error" sx={{ mb: 1 }}>
                     No test components found. Please contact the administrator.
                   </Typography>
                 )}

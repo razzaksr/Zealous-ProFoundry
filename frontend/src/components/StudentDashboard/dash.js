@@ -85,7 +85,7 @@ export default function DashboardHeader() {
 
   return (
     <>
-      <AppBar position="sticky" sx={{ backgroundColor: "#fff", borderRadius: "36px"  }}>
+      <AppBar position="sticky" sx={{ backgroundColor: "#fff" }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Box display="flex" alignItems="center">
             <img src={Image} alt="Zealous Logo" width={150} height={67} />

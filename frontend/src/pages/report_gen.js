@@ -1887,4 +1887,4 @@ yPos = tableY;
   );
 };
 
-export default TrainingForm;
+export default TrainingForm;  

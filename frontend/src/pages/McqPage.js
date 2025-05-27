@@ -7,23 +7,23 @@ import {
   Typography,
   Paper,
   Radio,
-  RadioGroup,
   FormControlLabel,
   Button,
   CircularProgress,
   Divider,
   Dialog,
   DialogTitle,
+  DialogActions,
   DialogContent,
   DialogContentText,
-  DialogActions,
+  LinearProgress,
   IconButton,
   useMediaQuery,
   ThemeProvider,
   createTheme,
   CssBaseline,
 } from "@mui/material"
-import { Timer as TimerIcon, Flag as FlagIcon, ArrowForward as ArrowIcon, Info as InfoIcon } from "@mui/icons-material"
+import { Flag as FlagIcon, ArrowForward as ArrowIcon, Info as InfoIcon, Timer as TimerIcon } from "@mui/icons-material"
 import { getTestById, getMcqById, submitTestResult } from "../axios"
 import "../styles/McqStyle.css"
 
@@ -74,47 +74,68 @@ const PieChart = ({ data }) => {
           const path = createPath(percentage, cumulativePercentage)
           cumulativePercentage += percentage
 
-          return <path key={index} d={path} fill={item.color} className="pie-slice" />
+          return (
+            <path
+              key={index}
+              d={path}
+              fill={item.color}
+              className="pie-slice"
+              style={{
+                transition: 'all 0.5s ease-in-out',
+                transformOrigin: 'center',
+              }}
+            />
+          )
         })}
       </svg>
     </div>
   )
 }
 
-// Circular Timer Component (without numbers)
+// Circular Timer Component
 const CircularTimer = ({ timeLeft, totalTime }) => {
   const percentage = (timeLeft / totalTime) * 100
   const circumference = 2 * Math.PI * 35
   const strokeDasharray = circumference
   const strokeDashoffset = circumference - (percentage / 100) * circumference
 
+  // Determine color based on time remaining
+  const getTimerColor = () => {
+    if (percentage > 50) return "#22c55e" // Green for >50%
+    if (percentage > 20) return "#f97316" // Orange for 20-50%
+    return "#ef4444" // Red for <20%
+  }
+
   return (
     <div className="circular-timer">
       <svg className="timer-svg" viewBox="0 0 100 100">
-        <circle className="timer-background" cx="50" cy="50" r="35" fill="none" stroke="#e2e8f0" strokeWidth="6" />
+        <circle
+          className="timer-background"
+          cx="50"
+          cy="50"
+          r="35"
+          fill="#e2e8f0"
+          stroke="none"
+        />
         <circle
           className="timer-progress"
           cx="50"
           cy="50"
           r="35"
           fill="none"
-          stroke={percentage > 20 ? "#0c83c8" : "#fc7a46"}
+          stroke={getTimerColor()}
           strokeWidth="6"
-          strokeLinecap="round"
           strokeDasharray={strokeDasharray}
           strokeDashoffset={strokeDashoffset}
           transform="rotate(-90 50 50)"
         />
-        <circle cx="50" cy="50" r="25" fill="#f8fafc" />
-        <TimerIcon
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            fontSize: "20px",
-            color: percentage > 20 ? "#0c83c8" : "#fc7a46",
-          }}
+        <circle
+          className="timer-fill"
+          cx="50"
+          cy="50"
+          r="30"
+          fill={getTimerColor()}
+          opacity="0.2"
         />
       </svg>
     </div>
@@ -260,11 +281,17 @@ const McqPage = () => {
         })
         setProgress(mergedProgress)
 
-        // Load or initialize timer
+        // Load timer from localStorage
         const savedTimer = localStorage.getItem("test_timer")
-        const totalTime = (test.test_mcq_id?.length || 0) * 60 + (test.test_coding_id?.length || 0) * 600
-        setTotalTime(totalTime)
-        setTimer(savedTimer ? Number.parseInt(savedTimer, 10) : totalTime)
+        if (!savedTimer) {
+          throw new Error("Test timer not found in localStorage")
+        }
+        const timerValue = Number.parseInt(savedTimer, 10)
+        if (isNaN(timerValue) || timerValue <= 0) {
+          throw new Error("Invalid test timer value")
+        }
+        setTimer(timerValue)
+        setTotalTime(timerValue)
 
         // Load or initialize test result
         const savedResult = JSON.parse(localStorage.getItem("test_result") || "{}")
@@ -313,7 +340,7 @@ const McqPage = () => {
         setDialog({
           open: true,
           type: "error",
-          message: "Failed to load test data",
+          message: error.message || "Failed to load test data",
           onConfirm: () => {
             window.history.replaceState(null, null, "/test-result")
             navigate("/test-result")
@@ -399,11 +426,6 @@ const McqPage = () => {
       handleMalpractice("Copy/paste attempted")
     }
 
-    const preventRightClick = (e) => {
-      e.preventDefault()
-      handleMalpractice("Right-click attempted")
-    }
-
     const preventDevTools = (e) => {
       if (
         e.key === "F12" ||
@@ -429,9 +451,13 @@ const McqPage = () => {
       setDialog({
         open: true,
         type: "malpractice",
-        message: `Malpractice detected: ${message}. Test will be submitted.`,
+        message: `Malpractice detected: ${message}. Test will be submitted automatically.`,
         onConfirm: handleSubmitTest,
       })
+      // Auto-submit after 2 seconds
+      setTimeout(() => {
+        handleSubmitTest()
+      }, 1000)
     }
 
     window.addEventListener("popstate", handlePopState)
@@ -440,7 +466,6 @@ const McqPage = () => {
     document.addEventListener("visibilitychange", handleVisibilityChange)
     document.addEventListener("copy", preventCopyPaste)
     document.addEventListener("paste", preventCopyPaste)
-    document.addEventListener("contextmenu", preventRightClick)
     document.addEventListener("keydown", preventDevTools)
     document.addEventListener("mouseleave", handleMouseLeave)
     window.addEventListener("blur", detectNewWindow)
@@ -460,7 +485,6 @@ const McqPage = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange)
       document.removeEventListener("copy", preventCopyPaste)
       document.removeEventListener("paste", preventCopyPaste)
-      document.removeEventListener("contextmenu", preventRightClick)
       document.removeEventListener("keydown", preventDevTools)
       document.removeEventListener("mouseleave", handleMouseLeave)
       window.removeEventListener("blur", detectNewWindow)
@@ -476,8 +500,8 @@ const McqPage = () => {
 
     const answeredCount = progress.filter((p) => p.selected_option).length
     const markedCount = progress.filter((p) => p.marked).length
-    const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited).length
-    const notVisitedCount = progress.filter((p) => !p.visited).length
+    const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited && !p.marked).length
+    const notVisitedCount = progress.filter((p) => !p.visited && !p.marked && !p.selected_option).length
     let mcqScore = 0
     let wrongAnswersCount = 0
 
@@ -521,19 +545,25 @@ const McqPage = () => {
     })
   }, [progress, testData, userId, pocId, studentName, testId, mcqData, isInitialized, codingIds])
 
-  // Handle option selection
-  const handleOptionChange = (option) => {
-    setProgress((prev) =>
-      prev.map((item, index) =>
-        index === currentQuestion ? { ...item, selected_option: option, visited: true } : item,
-      ),
+  // Handle option click for selection/deselection
+  const handleOptionClick = (option) => {
+    setProgress((prev) => 
+      prev.map((item, idx) => 
+        idx === currentQuestion
+          ? {
+              ...item,
+              selected_option: item?.selected_option === option ? null : option,
+              visited: true,
+            }
+          : item,
+      )
     )
   }
 
   // Handle marking question
   const handleMarkQuestion = () => {
     setProgress((prev) =>
-      prev.map((item, index) => (index === currentQuestion ? { ...item, marked: !item.marked, visited: true } : item)),
+      prev.map((item, idx) => (idx === currentQuestion ? { ...item, marked: !item.marked, visited: true } : item))
     )
   }
 
@@ -574,7 +604,7 @@ const McqPage = () => {
         },
       })
     } finally {
-      isSubmitting.current = false
+      isSubmitting.current = true
     }
   }, [testResult, navigate])
 
@@ -667,18 +697,30 @@ const McqPage = () => {
     )
   }
 
-  // Calculate question status counts
-  const answeredCount = progress.filter((p) => p.selected_option).length
-  const markedCount = progress.filter((p) => p.marked).length
-  const notAnsweredCount = progress.filter((p) => !p.selected_option && p.visited).length
-  const notVisitedCount = progress.filter((p) => !p.visited).length
+  // Calculate question status counts with priority for marked
+  let answeredCount = 0
+  let markedCount = 0
+  let notAnsweredCount = 0
+  let notVisitedCount = 0
 
-  // Prepare pie chart data
+  progress.forEach((p) => {
+    if (p.selected_option) {
+      answeredCount += 1;
+    } else if (p.marked) {
+      markedCount += 1;
+    } else if (p.visited) {
+      notAnsweredCount += 1;
+    } else {
+      notVisitedCount += 1;
+    }
+  })
+
+  // Prepare pie chart data with updated colors
   const pieChartData = [
-    { label: "Answered", value: answeredCount, color: "#0c83c8" },
-    { label: "Marked", value: markedCount, color: "#fc7a46" },
-    { label: "Not Answered", value: notAnsweredCount, color: "#64748b" },
-    { label: "Not Visited", value: notVisitedCount, color: "#e2e8f0" },
+    { label: "Answered", value: answeredCount, color: "#22c55e" }, // Green
+    { label: "Marked", value: markedCount, color: "#f97316" }, // Orange
+    { label: "Not Answered", value: notAnsweredCount, color: "#ef4444" }, // Red
+    { label: "Not Visited", value: notVisitedCount, color: "#9ca3af" }, // Gray
   ]
 
   // Check if last question is answered
@@ -698,16 +740,23 @@ const McqPage = () => {
       {/* Dialogs */}
       <Dialog
         open={dialog.open}
-        onClose={() => setDialog({ open: false })}
+        onClose={() => {}}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
         className="clean-dialog"
+        disableEscapeKeyDown={dialog.type === "malpractice"}
+        disableBackdropClick={dialog.type === "malpractice"}
       >
         <DialogTitle id="alert-dialog-title">
           {dialog.type === "malpractice" ? "Malpractice Detected" : dialog.type === "error" ? "Error" : "Warning"}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">{dialog.message}</DialogContentText>
+          {dialog.type === "malpractice" && (
+            <Box sx={{ mt: 2 }}>
+              <LinearProgress />
+            </Box>
+          )}
         </DialogContent>
         <DialogActions>
           {dialog.type === "proceed" || dialog.type === "submit" ? (
@@ -719,11 +768,11 @@ const McqPage = () => {
                 {dialog.type === "proceed" ? "Proceed to Coding" : "Submit Test"}
               </Button>
             </>
-          ) : (
+          ) : dialog.type === "error" ? (
             <Button onClick={dialog.onConfirm} color="primary" autoFocus className="clean-button">
               OK
             </Button>
-          )}
+          ) : null}
         </DialogActions>
       </Dialog>
 
@@ -735,7 +784,7 @@ const McqPage = () => {
         fullWidth
         className="clean-dialog"
       >
-        <DialogTitle id="instructions-dialog-title">Test Instructions</DialogTitle>
+        <DialogTitle id="instructions-title">Test Instructions</DialogTitle>
         <DialogContent>
           <Box component="ol" sx={{ pl: 3, mb: 0 }}>
             {instructions.map((instruction, index) => (
@@ -787,21 +836,38 @@ const McqPage = () => {
               {mcqData[currentQuestion]?.mcq_question || "Loading question..."}
             </Typography>
 
-            <RadioGroup
-              value={progress[currentQuestion]?.selected_option || ""}
-              onChange={(e) => handleOptionChange(e.target.value)}
-              className="options-group"
-            >
+            <div className="options-group">
               {(mcqData[currentQuestion]?.mcq_options || []).map((option, index) => (
-                <FormControlLabel
+                <div
                   key={index}
-                  value={option}
-                  control={<Radio className="clean-radio" />}
-                  label={option}
-                  className="option-item"
-                />
+                  className={`option-item ${progress[currentQuestion]?.selected_option === option ? "selected" : ""}`}
+                  onClick={() => handleOptionClick(option)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      handleOptionClick(option)
+                    }
+                  }}
+                >
+                  <FormControlLabel
+                    value={option}
+                    control={
+                      <Radio
+                        className="custom-radio"
+                        checked={progress[currentQuestion]?.selected_option === option}
+                        onChange={() => {}}
+                        onClick={(e) => e.stopPropagation()}
+                        tabIndex={-1}
+                      />
+                    }
+                    label={option}
+                    className="option-label"
+                  />
+                </div>
               ))}
-            </RadioGroup>
+            </div>
           </div>
 
           <div className="question-actions">
