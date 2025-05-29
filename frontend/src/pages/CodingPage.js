@@ -43,6 +43,7 @@ import CIcon from "@mui/icons-material/SettingsEthernet";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveIcon from "@mui/icons-material/Save";
 import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
+import JavascriptIcon from "@mui/icons-material/Code" // Using Code icon for JavaScript
 import TerminalIcon from "@mui/icons-material/Terminal";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -60,6 +61,7 @@ const languageApiMap = {
   java: "java",
   cpp: "cpp",
   c: "c",
+  javascript: "js ",
 };
 
 // Material UI Switch for theme toggle
@@ -353,6 +355,7 @@ const CodingPage = () => {
     java: `import java.util.*;\npublic class Progman {\n\tpublic static void main(String[] args) {\n\t\tSystem.out.println("Hello World");\n\t}\n}`,
     c: `#include <stdio.h>\nint main() {\n\tprintf("Hello World");\n\treturn 0;\n}`,
     cpp: `#include <iostream>\nusing namespace std;\nint main() {\n\tcout << "Hello World";\n\treturn 0;\n}`,
+    javascript: `console.log("Hello World");`,
   };
 
   // Language icon mapping
@@ -361,6 +364,7 @@ const CodingPage = () => {
     java: <JavaIcon fontSize="small" />,
     cpp: <CppIcon fontSize="small" />,
     c: <CIcon fontSize="small" />,
+     javascript: <JavascriptIcon fontSize="small" />
   };
 
   // Language display names
@@ -369,6 +373,7 @@ const CodingPage = () => {
     java: "Java",
     cpp: "C++",
     c: "C",
+    javascript: "JavaScript",
   };
 
   // Default instructions
@@ -442,28 +447,34 @@ const CodingPage = () => {
     }
   }, []);
 
-  // Load saved submission payload
-  useEffect(() => {
-    if (codeId) {
-      const savedPayload = localStorage.getItem(`code_${codeId}`);
-      if (savedPayload) {
-        try {
-          const parsedPayload = JSON.parse(savedPayload);
-          setLanguage(
-            parsedPayload.language
-              ? Object.keys(languageApiMap).find((key) => languageApiMap[key] === parsedPayload.language)
-              : "python"
-          );
-          setInput(parsedPayload.code || templates[language]);
-        } catch (error) {
-          console.error("Error parsing saved payload:", error);
-          setInput(templates[language]);
-        }
-      } else {
+useEffect(() => {
+  if (codeId) {
+    const savedPayload = localStorage.getItem(`code_${codeId}`);
+    if (savedPayload) {
+      try {
+        const parsedPayload = JSON.parse(savedPayload);
+        const savedLanguage = Object.keys(languageApiMap).find(
+          (key) => languageApiMap[key] === parsedPayload.language
+        ) || "python";
+        console.log("Loading saved language:", savedLanguage); // Debug log
+        // Only update language if it hasn't been set by user interaction
+        setLanguage((currentLanguage) => {
+          if (currentLanguage === "python" || !currentLanguage) {
+            return savedLanguage;
+          }
+          return currentLanguage;
+        });
+        setInput(parsedPayload.code || templates[savedLanguage]);
+      } catch (error) {
+        console.error("Error parsing saved payload:", error);
         setInput(templates[language]);
       }
+    } else {
+      console.log("No saved payload, using default template for language:", language); // Debug log
+      setInput(templates[language]);
     }
-  }, [codeId, language]);
+  }
+}, [codeId]); // Remove `language` from dependencies
 
   // Fetch test data
   useEffect(() => {
@@ -619,9 +630,9 @@ const CodingPage = () => {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("copy", handleCopy);
-    document.addEventListener("paste", handlePaste);
-    document.addEventListener("keydown", handleKeyDown);
+    // document.addEventListener("copy", handleCopy);
+    // document.addEventListener("paste", handlePaste);
+    // document.addEventListener("keydown", handleKeyDown);
     const editorElement = document.querySelector(".monaco-editor .inputarea");
     if (editorElement) {
       editorElement.addEventListener("input", handleEditorInput);
@@ -630,9 +641,9 @@ const CodingPage = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("copy", handleCopy);
-      document.removeEventListener("paste", handlePaste);
-      document.removeEventListener("keydown", handleKeyDown);
+      // document.removeEventListener("copy", handleCopy);
+      // document.removeEventListener("paste", handlePaste);
+      // document.removeEventListener("keydown", handleKeyDown);
       if (editorElement) {
         editorElement.removeEventListener("input", handleEditorInput);
       }
@@ -841,16 +852,52 @@ const CodingPage = () => {
     setInput(value || "");
   };
 
-  // Handle language selection
-  const handleLanguageChange = (event) => {
-    const value = event.target.value;
-    setLanguage(value);
-    const savedPayload = localStorage.getItem(`code_${codeId}`);
-    if (!savedPayload) {
-      setInput(templates[value] || "");
-    }
-  };
+const handleLanguageChange = (event) => {
+  const newLanguage = event.target.value;
+  console.log("Language change triggered. New language:", newLanguage); // Debug log
 
+  // Update language state
+  setLanguage((prevLanguage) => {
+    console.log("Previous language:", prevLanguage, "New language:", newLanguage); // Debug log
+    return newLanguage;
+  });
+
+  // Load saved code for the new language, if it exists
+  const savedPayload = localStorage.getItem(`code_${codeId}`);
+  let newCode = templates[newLanguage];
+
+  if (savedPayload) {
+    try {
+      const parsedPayload = JSON.parse(savedPayload);
+      console.log("Saved payload found:", parsedPayload); // Debug log
+      if (parsedPayload.language === languageApiMap[newLanguage]) {
+        newCode = parsedPayload.code || templates[newLanguage];
+        console.log("Using saved code for language:", newLanguage); // Debug log
+      }
+    } catch (error) {
+      console.error("Error parsing saved payload:", error);
+    }
+  } else {
+    console.log("No saved payload, using template for:", newLanguage); // Debug log
+  }
+
+  // Update editor content
+  setInput(newCode);
+  console.log("Editor input set to:", newCode); // Debug log
+
+  // Update editor language model
+  if (editorRef.current && editorRef.current.getModel()) {
+    window.monaco.editor.setModelLanguage(editorRef.current.getModel(), newLanguage);
+    console.log("Editor language model updated to:", newLanguage); // Debug log
+  } else {
+    console.warn("Editor or model not available during language change"); // Debug log
+  }
+
+  // Save the new language and code
+  saveSubmissionPayload();
+  console.log("Submission payload saved for language:", newLanguage); // Debug log
+
+};
   // Reset editor to template
   const resetEditor = () => {
     setResetDialogOpen(true);
@@ -1554,6 +1601,9 @@ const CodingPage = () => {
                 <MenuItem value="c">
                   <CIcon sx={{ mr: 1, fontSize: "small" }} /> C
                 </MenuItem>
+                                <MenuItem value="javascript">
+                  <JavascriptIcon sx={{ mr: 1, fontSize: "small" }} /> JavaScript
+                </MenuItem>
               </Select>
             </FormControl>
             <FormGroup>
@@ -2057,4 +2107,4 @@ const CodingPage = () => {
   );
 };
 
-export default CodingPage;
+export default CodingPage;  

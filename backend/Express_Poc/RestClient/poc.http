@@ -56,10 +56,10 @@ Content-Type: application/json
 {
     "mod_poc_id": "b4021b93-8384-4607-8b59-58c66fdd794d",
     "test_id": [
-        { "test_id": "b2b727d1-f034-4636-9a28-b6cd84d07043", "assigned_date": "27/05/2025" },
-        { "test_id": "7fb99966-8e32-4481-9f54-50bcf7e33e50", "assigned_date": "27/05/2025" },
-        { "test_id": "17ddd540-e9bc-434d-960b-d31712f18ba3", "assigned_date": "27/05/2025" }
-
+        { "test_id": "b2b727d1-f034-4636-9a28-b6cd84d07043", "assigned_date": "29/05/2025" },
+        { "test_id": "7fb99966-8e32-4481-9f54-50bcf7e33e50", "assigned_date": "29/05/2025" },
+        { "test_id": "17ddd540-e9bc-434d-960b-d31712f18ba3", "assigned_date": "29/05/2025" },
+        { "test_id": "7ab99966-8e32-4481-9f54-50bcf7e33e50", "assigned_date": "29/05/2025" }
     ]
 }
 

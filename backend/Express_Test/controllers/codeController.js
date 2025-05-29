@@ -156,40 +156,79 @@ router.post('/compiler', async (req, res) => {
       return res.status(400).json({ error: 'Missing or invalid parameters' });
     }
 
+    // Map language to Piston-compatible identifier
+    const languageMap = {
+      javascript: 'js',
+      python: 'python3',
+      java: 'java',
+      cpp: 'cpp',
+      c: 'c',
+    };
+    const pistonLanguage = languageMap[language.toLowerCase()];
+    if (!pistonLanguage) {
+      return res.status(400).json({ error: `Unsupported language: ${language}` });
+    }
+
     // Prepare results array
     const results = [];
 
     // Iterate through each test case
     for (const testCase of testCases) {
-      const { input, expectedOutput } = testCase;
+      // Handle both 'output' and 'expectedOutput' keys
+      const input = testCase.input || '';
+      const expectedOutput = testCase.expectedOutput || testCase.output || '';
+
+      // Validate test case
+      if (expectedOutput === undefined) {
+        return res.status(400).json({ error: 'Test case missing expectedOutput or output' });
+      }
 
       // Prepare payload for Piston API
       const payload = {
-        language,
-        version: '*', // Use latest version available
+        language: pistonLanguage,
+        version: '*', // Latest version, but can specify e.g., '18.15.0' for Node.js
         files: [
           {
             content: code,
           },
         ],
-        stdin: input || '',
+        stdin: input,
         args: [],
         compile_timeout: 10000,
         run_timeout: 3000,
       };
 
-      // Send request to Piston API
-      const response = await axios.post(PISTON_API_URL, payload);
+      // Send request to Piston API with error handling
+      let response;
+      try {
+        response = await axios.post(PISTON_API_URL, payload);
+      } catch (apiError) {
+        console.error(`Piston API error for test case:`, apiError.message);
+        results.push({
+          input,
+          expectedOutput,
+          actualOutput: `API Error: ${apiError.message}`,
+          passed: false,
+        });
+        continue;
+      }
 
-      // Extract output
-      const output = response.data.run?.stdout || response.data.run?.stderr || '';
-      const passed = output.trim() === expectedOutput.trim();
+      // Extract output and handle errors
+      const runData = response.data.run || {};
+      let output = (runData.stdout || '').trim();
+      const errorOutput = (runData.stderr || '').trim();
+
+      if (errorOutput) {
+        output = errorOutput; // Include stderr in output for debugging
+      }
+
+      const passed = output === expectedOutput.trim();
 
       // Add result to array
       results.push({
         input,
         expectedOutput,
-        actualOutput: output.trim(),
+        actualOutput: output,
         passed,
       });
     }
@@ -200,8 +239,11 @@ router.post('/compiler', async (req, res) => {
       results,
     });
   } catch (error) {
-    console.error('Error executing code:', error.message);
-    res.status(500).json({ error: 'Failed to execute code' });
+    console.error('Error executing code:', error.message, error.stack);
+    res.status(500).json({
+      error: 'Failed to execute code',
+      details: error.message,
+    });
   }
 });
 

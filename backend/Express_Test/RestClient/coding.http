@@ -45,11 +45,12 @@ POST http://localhost:8082/coding/compiler
 Content-Type: application/json
 
 {
-  "language": "java",
-  "code": "import java.util.Scanner;\n\npublic class Factorial {\n    public static int factorial(int n) {\n        if (n == 0 || n == 1)\n            return 1;\n        return n * factorial(n - 1);\n    }\n\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int input = sc.nextInt();\n        System.out.println(factorial(input));\n        sc.close();\n    }\n}",
+  "language": "javascript",
+  "code": "console.log('Hello, World!');",
   "testCases": [
-    { "input": "5", "expectedOutput": "120" },
-    { "input": "6", "expectedOutput": "720" },
-    { "input": "7", "expectedOutput": "5040" }
+    {
+      "input": "",
+      "output": "Hello, World!"
+    }
   ]
 }

@@ -3,12 +3,12 @@ POST http://localhost:8086/user_gateway/user/add_user
 Content-Type: application/json
 
 {
-  "full_name": "Keserthana",
-  "department": "AsI&DS",
+  "full_name": "student_1",
+  "department": "Computer Science Engineering",
   "college": "Muthayammal Engineering College",
-  "rollno": "22AD078",
-  "email": "keerSVVSVthsssana@gmail.com",
-  "mobile_no": "+919876543210"
+  "rollno": "22CS001",
+  "email": "student1@gmail.com",
+  "mobile_no": "+919876513210"
 }
 
 ### Create User in Bulk
@@ -16,22 +16,38 @@ POST http://localhost:8086/user_gateway/user/bulk_add_users
 Content-Type: application/json
 
 [
-  {
-    "full_name": "Keerthana",
-    "department": "AI&DS",
-    "college": "Muthayammal Engineering College",
-    "rollno": "22AD078",
-    "email": "keerthana@gmail.com",
-    "mobile_no": "+919876543210"
-  },
-  {
-    "full_name": "John Doe",
-    "department": "CSE",
-    "college": "Example University",
-    "rollno": "22CS123",
-    "email": "john.doe@gmail.com",
-    "mobile_no": "+919876543210"
-  }
+{
+  "full_name": "student_2",
+  "department": "Computer Science Engineering",
+  "college": "Muthayammal Engineering College",
+  "rollno": "22CS002",
+  "email": "student2@gmail.com",
+  "mobile_no": "+919876512222"
+},
+{
+  "full_name": "student_3",
+  "department": "Computer Science Engineering",
+  "college": "Muthayammal Engineering College",
+  "rollno": "22CS003",
+  "email": "student3@gmail.com",
+  "mobile_no": "+919876513333"
+},
+{
+  "full_name": "student_4",
+  "department": "Computer Science Engineering",
+  "college": "Muthayammal Engineering College",
+  "rollno": "22CS004",
+  "email": "student4@gmail.com",
+  "mobile_no": "+919876514444"
+},
+{
+  "full_name": "student_5",
+  "department": "Computer Science Engineering",
+  "college": "Muthayammal Engineering College",
+  "rollno": "22CS005",
+  "email": "student5@gmail.com",
+  "mobile_no": "+919876515555"
+}
 ]
 
 ### Create Admin
