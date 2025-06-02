@@ -101,6 +101,7 @@ export default function Admin_Dash() {
     {
       text: "POC",
       icon: <Assignment />,
+      color: "#0c83c8",
       routes: [
         { text: "View POC", path: "/poc", icon: <Visibility /> },
         { text: "Add POC", path: "/add_poc", icon: <Add /> },
@@ -110,19 +111,17 @@ export default function Admin_Dash() {
     {
       text: "Organization",
       icon: <Business />,
+      color: "#fc7a46",
       routes: [
         { text: "View Organization", path: "/organization", icon: <Visibility /> },
         { text: "Add Organization", path: "/add_organisation", icon: <Add /> },
-        {
-          text: "Update Organization",
-          path: "/update_organization",
-          icon: <Edit />,
-        },
+        { text: "Update Organization", path: "/update_organization", icon: <Edit /> },
       ],
     },
     {
       text: "Module",
       icon: <Book />,
+      color: "#0c83c8",
       routes: [
         { text: "View Module", path: "/module", icon: <Visibility /> },
         { text: "Add Module", path: "/add_module", icon: <Add /> },
@@ -132,11 +131,13 @@ export default function Admin_Dash() {
     {
       text: "Test",
       icon: <Quiz />,
+      color: "#fc7a46",
       routes: [{ text: "View Test", path: "/test", icon: <Visibility /> }],
     },
     {
       text: "User",
       icon: <Person />,
+      color: "#0c83c8",
       routes: [
         { text: "View User", path: "/user", icon: <Visibility /> },
         { text: "Add User", path: "/add_user", icon: <Add /> },
@@ -145,6 +146,7 @@ export default function Admin_Dash() {
     {
       text: "Expert",
       icon: <People />,
+      color: "#fc7a46",
       routes: [
         { text: "View Expert", path: "/expert", icon: <Visibility /> },
         { text: "Add Expert", path: "/add_expert", icon: <Add /> },
@@ -154,6 +156,7 @@ export default function Admin_Dash() {
     {
       text: "MCQ",
       icon: <Quiz />,
+      color: "#0c83c8",
       routes: [
         { text: "View MCQ", path: "/mcq-admin", icon: <Visibility /> },
         { text: "Add MCQ", path: "/add_mcq", icon: <Add /> },
@@ -162,6 +165,7 @@ export default function Admin_Dash() {
     {
       text: "Coding",
       icon: <Code />,
+      color: "#fc7a46",
       routes: [
         { text: "View Coding", path: "/codingpage", icon: <Visibility /> },
         { text: "Add Coding", path: "/add_coding", icon: <Add /> },
@@ -171,6 +175,7 @@ export default function Admin_Dash() {
     {
       text: "Testcase",
       icon: <BugReport />,
+      color: "#0c83c8",
       routes: [
         { text: "View Testcase", path: "/testcasepage", icon: <Visibility /> },
         { text: "Add Testcase", path: "/add_testcase", icon: <Add /> },
@@ -179,15 +184,41 @@ export default function Admin_Dash() {
   ];
 
   const drawerContent = (
-    <Box sx={{ width: 250 }} role="presentation">
-      <List>
+    <Box sx={{ width: 280, overflowY: 'auto' }} role="presentation">
+      <Box sx={{ p: 2, borderBottom: '1px solid rgba(0, 0, 0, 0.1)' }}>
+        <Typography variant="h6" sx={{ color: '#0c83c8', fontWeight: 'bold' }}>
+          Admin Dashboard
+        </Typography>
+      </Box>
+      <List sx={{ '.MuiListItemButton-root': { border: 0 } }}>
         {menuItems.map((item) => (
           <div key={item.text}>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleMenuToggle(item.text)}>
-                <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItem disablePadding sx={{ '--card-color': item.color }}>
+              <ListItemButton
+                onClick={() => handleMenuToggle(item.text)}
+                sx={{
+                  color: '#333',
+                  padding: '0.75rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'background-color 0.2s, color 0.2s',
+                  '&:hover': {
+                    backgroundColor: 'rgba(12, 131, 200, 0.1)',
+                    color: '#0c83c8',
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: '2.25rem', color: item.color }}>
+                  {item.icon}
+                </ListItemIcon>
                 <ListItemText primary={item.text} />
-                {openMenus[item.text] ? <ExpandLess /> : <ExpandMore />}
+                <Box sx={{ ml: 'auto' }}>
+                  {openMenus[item.text] ? (
+                    <ExpandLess sx={{ color: '#333' }} />
+                  ) : (
+                    <ExpandMore sx={{ color: '#333' }} />
+                  )}
+                </Box>
               </ListItemButton>
             </ListItem>
             <Collapse in={openMenus[item.text]} timeout="auto" unmountOnExit>
@@ -195,10 +226,21 @@ export default function Admin_Dash() {
                 {item.routes.map((route) => (
                   <ListItem key={route.text} disablePadding>
                     <ListItemButton
-                      sx={{ pl: 4 }}
+                      sx={{
+                        pl: 4,
+                        color: '#333',
+                        padding: '0.75rem 1.25rem',
+                        transition: 'background-color 0.2s, color 0.2s',
+                        '&:hover': {
+                          backgroundColor: 'rgba(12, 131, 200, 0.1)',
+                          color: '#0c83c8',
+                        },
+                      }}
                       onClick={() => navigate(route.path)}
                     >
-                      <ListItemIcon>{route.icon}</ListItemIcon>
+                      <ListItemIcon sx={{ minWidth: '2.25rem', color: item.color }}>
+                        {route.icon}
+                      </ListItemIcon>
                       <ListItemText primary={route.text} />
                     </ListItemButton>
                   </ListItem>
@@ -213,6 +255,59 @@ export default function Admin_Dash() {
 
   return (
     <>
+      <style>{`
+        :root {
+          --primary-color: #0c83c8;
+          --secondary-color: #fc7a46;
+        }
+
+        .sidebar {
+          position: fixed;
+          top: 0;
+          left: ${drawerOpen ? '0' : '-280px'};
+          width: 280px;
+          height: 100vh;
+          background-color: #ffffff;
+          box-shadow: 0.25rem 0 1rem rgba(0, 0, 0, 0.1);
+          transition: left 0.3s ease;
+          z-index: 1050;
+          overflow-y: auto;
+        }
+
+        .sidebar-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background-color: rgba(0, 0, 0, 0.3);
+          z-index: 1040;
+          opacity: ${drawerOpen ? '1' : '0'};
+          visibility: ${drawerOpen ? 'visible' : 'hidden'};
+          transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .sidebar::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+          background: var(--primary-color);
+          border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+          .sidebar {
+            width: 260px;
+            left: ${drawerOpen ? '0' : '-260px'};
+          }
+        }
+      `}</style>
+
       <AppBar
         position="sticky"
         sx={{ backgroundColor: "#fff", borderRadius: "36px" }}
@@ -254,7 +349,29 @@ export default function Admin_Dash() {
         </Toolbar>
       </AppBar>
 
-      <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
+      <div className="sidebar-overlay" onClick={toggleDrawer(false)}></div>
+
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 280,
+            boxSizing: 'border-box',
+            backgroundColor: '#ffffff',
+            boxShadow: '0.25rem 0 1rem rgba(0, 0, 0, 0.1)',
+            transition: 'left 0.3s ease',
+            position: 'fixed',
+            top: 0,
+            left: drawerOpen ? 0 : '-280px',
+            height: '100vh',
+            zIndex: 1050,
+            overflowY: 'auto',
+          },
+        }}
+        classes={{ paper: 'sidebar' }}
+      >
         {drawerContent}
       </Drawer>
 

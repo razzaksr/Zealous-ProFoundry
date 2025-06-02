@@ -371,8 +371,7 @@ const TestDetails = () => {
   };
 
   const handleBack = () => {
-    // Navigate to a safe previous route, e.g., dashboard or home
-    navigate("/dashboard"); // Adjust this to your desired fallback route
+    window.history.back(); 
   };
 
   const handleSnackbarClose = () => {
@@ -535,7 +534,7 @@ const TestDetails = () => {
             </Box>
 
             <CardContent sx={{ p: 0 }}>
-              <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid container spacing={2} sx={{ mb: 1 }}>
                 <Grid item xs={12} sm={6}>
                   <InfoCard elevation={0}>
                     <IconWrapper>
@@ -697,13 +696,13 @@ const TestDetails = () => {
                 )}
                 
                 {(hasMcq || hasCoding) ? (
-                  <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
+                  <Typography variant="body1" color="textSecondary" sx={{ mb: -3}}>
                     {isTestActive
                       ? `Click "${getButtonText()}" to begin the assessment. The test will open in fullscreen mode.`
                       : "The test is currently disabled and cannot be started."}
                   </Typography>
                 ) : (
-                  <Typography variant="body1" color="error" sx={{ mb: 1 }}>
+                  <Typography variant="body1" color="error" sx={{ mb: 0.5 }}>
                     No test components found. Please contact the administrator.
                   </Typography>
                 )}

@@ -10,12 +10,13 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  LinearProgress,
   Box,
   Typography,
+  IconButton,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
+import { styled, alpha } from "@mui/material/styles";
 import { QRCodeCanvas } from "qrcode.react";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Certificate template
 const CertificateTemplate = ({ forwardedRef, certificateId }) => {
@@ -64,103 +65,113 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
 
   return (
     <div
-      ref={forwardedRef}
       style={{
-        width: "1123px",
-        height: "794px",
-        background: "transparent",
-        position: "relative",
-        fontFamily: "Georgia, serif",
-        padding: "60px",
-        boxSizing: "border-box",
-        color: "#000",
-        textAlign: "center",
+        width: "100%",
+        maxWidth: "1123px",
+        margin: "0 auto",
+        transform: "scale(calc(100vw / 1200))",
+        transformOrigin: "top center",
+        overflow: "hidden",
       }}
     >
-      {/* Temporary inline background for debugging */}
-      <img
-        src={BackgroundImg}
-        alt="Background"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: -1,
-          objectFit: "cover",
-        }}
-        onError={(e) => console.error("Failed to load inline background image:", e, BackgroundImg)}
-      />
-      <h2 style={{ fontSize: "46px", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
-      <p style={{ fontSize: "16px", fontStyle: "italic" }}>
-        Certificate ID: {certificateId}
-      </p>
-
-      <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>
-        WE ARE PROUDLY PRESENT THIS SKILL WORKSHOP
-      </p>
-      <p style={{ fontSize: "2rem", fontWeight: "bold", marginTop: "30px" }}>CERTIFICATE TO</p>
-
-      <div style={{ display: "inline-block", textAlign: "center", marginTop: "-50px" }}>
-        <h3 style={{ fontSize: "26px", color: "#35b5ff", marginBottom: "5px" }}>
-          {userDetails.full_name?.toUpperCase()} ({userDetails.rollno})
-        </h3>
-        <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "100%" }} />
-      </div>
-
-      <p style={{ fontSize: "18px", margin: "30px auto", width: "80%" }}>
-        Department of <strong>{userDetails.department}</strong> from <strong>{userDetails.college}</strong> on
-        <strong> {moduleDetails.mod_name}</strong>. Obtained a mark of <strong>{percentage}%</strong>.<br />
-        Duration: {moduleDetails.mod_duration}.
-      </p>
-
       <div
+        ref={forwardedRef}
         style={{
-          position: "absolute",
-          bottom: "90px",
-          left: "220px",
+          width: "1123px",
+          height: "794px",
+          background: "transparent",
+          position: "relative",
+          fontFamily: "Georgia, serif",
+          padding: "60px",
+          boxSizing: "border-box",
+          color: "#000",
           textAlign: "center",
-        }}
-      >
-        <QRCodeCanvas
-          value={verificationUrl}
-          size={100}
-          level="H"
-          style={{ marginBottom: "10px" }}
-        />
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "40px",
-          left: "200px",
-          textAlign: "center",
-          fontSize: "1.3rem",
-        }}
-      >
-        <strong>{issueDate}</strong>
-        <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "140px", margin: "5px auto 0" }} />
-        <span style={{ fontWeight: "bold" }}>Date of Issue</span>
-      </div>
-
-      <div
-        style={{
-          position: "absolute",
-          bottom: "40px",
-          right: "60px",
-          textAlign: "center",
-          fontSize: "1.3rem",
         }}
       >
         <img
-          src={DigiSign || "/placeholder.svg"}
-          alt="Digital Signature"
-          style={{ height: "90px", width: "90px", marginBottom: "5px" }}
+          src={BackgroundImg}
+          alt="Background"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1,
+            objectFit: "cover",
+          }}
+          onError={(e) => console.error("Failed to load background image:", e, BackgroundImg)}
         />
-        <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "200px", margin: "5px auto 0" }} />
-        <span style={{ fontWeight: "bold" }}>Head - Technology & Training</span>
+        <h2 style={{ fontSize: "2.8rem", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
+        <p style={{ fontSize: "1rem", fontStyle: "italic" }}>
+          Certificate ID: {certificateId}
+        </p>
+
+        <p style={{ fontSize: "1.5rem", fontWeight: "bold", marginTop: "10px" }}>
+          WE ARE PROUDLY PRESENT THIS SKILL WORKSHOP
+        </p>
+        <p style={{ fontSize: "1.5rem", fontWeight: "bold", marginTop: "10px" }}>CERTIFICATE TO</p>
+
+        <div style={{ display: "inline-block", textAlign: "center", marginTop: "10px" }}>
+          <h3 style={{ fontSize: "1.6rem", color: "#35b5ff", marginBottom: "5px" }}>
+            {userDetails.full_name?.toUpperCase()} ({userDetails.rollno})
+          </h3>
+          <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "100%" }} />
+        </div>
+
+        <p style={{ fontSize: "1.1rem", margin: "30px auto", width: "80%" }}>
+          Department of <strong>{userDetails.department}</strong> from <strong>{userDetails.college}</strong> on
+          <strong> {moduleDetails.mod_name}</strong>. Obtained a mark of <strong>{percentage}%</strong>.<br />
+          Duration: {moduleDetails.mod_duration}.
+        </p>
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: "90px",
+            left: "220px",
+            textAlign: "center",
+          }}
+        >
+          <QRCodeCanvas
+            value={verificationUrl}
+            size={100}
+            level="H"
+            style={{ marginBottom: "10px" }}
+          />
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: "40px",
+            left: "200px",
+            textAlign: "center",
+            fontSize: "1rem",
+          }}
+        >
+          <strong>{issueDate}</strong>
+          <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "140px", margin: "5px auto 0" }} />
+          <span style={{ fontWeight: "bold" }}>Date of Issue</span>
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            bottom: "40px",
+            right: "60px",
+            textAlign: "center",
+            fontSize: "1rem",
+          }}
+        >
+          <img
+            src={DigiSign || "/placeholder.svg"}
+            alt="Digital Signature"
+            style={{ height: "90px", width: "90px", marginBottom: "5px" }}
+          />
+          <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "200px", margin: "5px auto 0" }} />
+          <span style={{ fontWeight: "bold" }}>Head - Technology & Training</span>
+        </div>
       </div>
     </div>
   );
@@ -185,12 +196,12 @@ const generateCertificate = async (certificateId, setProgress, setError) => {
       throw new Error("Failed to render certificate template");
     }
 
-    console.log("Loading background image from:", BackgroundImg); // Debug path
+    console.log("Loading background image from:", BackgroundImg);
     const background = new Image();
     background.src = BackgroundImg;
     await new Promise((resolve, reject) => {
       background.onload = () => {
-        console.log("Background image loaded successfully:", background.src, background.width, background.height); // Debug
+        console.log("Background image loaded successfully:", background.src, background.width, background.height);
         resolve();
       };
       background.onerror = (error) => {
@@ -203,17 +214,17 @@ const generateCertificate = async (certificateId, setProgress, setError) => {
     const canvas = await html2canvas(certificateRef.current, {
       useCORS: true,
       backgroundColor: "transparent",
-      scale: 2, // Optimized scale
+      scale: 2,
     });
 
     setProgress(60);
-    const imgData = canvas.toDataURL("image/jpeg", 0.8); // JPEG for compression
-    console.log(`Canvas data URL size: ${(imgData.length * 0.75 / 1024 / 1024).toFixed(2)} MB`); // Debug canvas size
+    const imgData = canvas.toDataURL("image/jpeg", 0.8);
+    console.log(`Canvas data URL size: ${(imgData.length * 0.75 / 1024 / 1024).toFixed(2)} MB`);
 
     const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
-    console.log("Adding background to PDF:", background.src); // Debug
-    pdf.addImage(background, "JPEG", 0, 0, 297, 210); // Removed FAST for testing
-    pdf.addImage(imgData, "JPEG", 0, 0, 297, 210); // Removed FAST for testing
+    console.log("Adding background to PDF:", background.src);
+    pdf.addImage(background, "JPEG", 0, 0, 297, 210);
+    pdf.addImage(imgData, "JPEG", 0, 0, 297, 210);
 
     const storedUser = localStorage.getItem("true");
     const user = storedUser ? JSON.parse(storedUser) : null;
@@ -238,49 +249,114 @@ const generateCertificate = async (certificateId, setProgress, setError) => {
 };
 
 // Styled Components
-const StyledButton = styled("div")(({ theme }) => ({
-  transition: "all 0.3s ease",
-  margin: theme.spacing(1),
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+const CurvyDialog = styled(Dialog)(({ theme }) => ({
+  "& .MuiDialog-paper": {
+    borderRadius: "20px",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.15)",
+    overflow: "hidden",
+    transition: "all 0.3s ease",
+    width: "90vw",
+    maxWidth: "400px",
+    [theme.breakpoints.up("sm")]: {
+      maxWidth: "600px",
+    },
+    "&:hover": {
+      transform: "scale(1.02)",
+      boxShadow: "0 12px 24px rgba(0, 0, 0, 0.2)",
+    },
   },
 }));
 
-const AnimatedLinearProgress = styled(LinearProgress)(({ theme }) => ({
-  height: 10,
-  borderRadius: 5,
-  transition: "all 0.3s ease",
-  position: "relative",
-  overflow: "hidden",
-  "& .MuiLinearProgress-bar": {
-    backgroundColor: "#fc7a46",
+const CurvyDialogTitle = styled(DialogTitle)(({ theme }) => ({
+  background: "linear-gradient(135deg, #0c83c8 0%, #3a9bd7 100%)",
+  color: "#ffffff",
+  padding: theme.spacing(2, 3),
+  fontSize: "1.25rem",
+  fontWeight: 600,
+  textAlign: "center",
+  borderTopLeftRadius: "20px",
+  borderTopRightRadius: "20px",
+  [theme.breakpoints.down("sm")]: {
+    fontSize: "1rem",
+    padding: theme.spacing(1.5, 2),
   },
+}));
+
+const CurvyDialogContent = styled(DialogContent)(({ theme }) => ({
+  padding: theme.spacing(4),
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: theme.spacing(2),
+  backgroundColor: "#f9fafc",
+  borderBottomLeftRadius: "20px",
+  borderBottomRightRadius: "20px",
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(2),
+  },
+}));
+
+const ProgressBarContainer = styled(Box)(({ theme }) => ({
+  width: "100%",
+  height: "12px",
+  marginTop: theme.spacing(2),
+  backgroundColor: alpha(theme.palette.grey[300], 0.5),
+  borderRadius: "12px",
+  overflow: "hidden",
+  position: "relative",
+  transition: "all 0.3s ease",
   "&:hover": {
+    backgroundColor: alpha(theme.palette.grey[300], 0.7),
+    boxShadow: `0 0 8px ${alpha("#fc7a46", 0.3)}`,
     transform: "scale(1.01)",
-    boxShadow: "0 2px 8px rgba(252, 122, 70, 0.4)",
-    "&::after": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-      animation: "shimmer 1.5s infinite",
-    },
+  },
+  [theme.breakpoints.down("sm")]: {
+    height: "8px",
+    marginTop: theme.spacing(1),
+  },
+}));
+
+const ProgressBarFill = styled(Box)(({ theme, value }) => ({
+  width: `${value}%`,
+  height: "100%",
+  background: "linear-gradient(90deg, #0c83c8 0%, #fc7a46 100%)",
+  borderRadius: "12px",
+  transition: "width 0.5s ease-in-out",
+  position: "relative",
+  "&::after": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+    animation: "shimmer 2s infinite",
   },
   "@keyframes shimmer": {
-    "0%": {
-      transform: "translateX(-100%)",
-    },
-    "100%": {
-      transform: "translateX(100%)",
-    },
+    "0%": { transform: "translateX(-100%)" },
+    "100%": { transform: "translateX(100%)" },
   },
 }));
 
-// Exported Certificate Generator component
+const CloseButton = styled(IconButton)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.grey[200], 0.8),
+  color: theme.palette.grey[700],
+  borderRadius: "50%",
+  padding: theme.spacing(1),
+  transition: "all 0.3s ease",
+  "&:hover": {
+    backgroundColor: alpha(theme.palette.grey[300], 0.9),
+    transform: "scale(1.2)",
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
+  },
+  [theme.breakpoints.down("sm")]: {
+    padding: theme.spacing(0.5),
+  },
+}));
+
+// Certificate Generator component
 const CertificateGenerator = forwardRef((props, ref) => {
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -299,7 +375,7 @@ const CertificateGenerator = forwardRef((props, ref) => {
     try {
       const storedUser = localStorage.getItem("true");
       if (!storedUser) {
-        throw new Error("User data not found in localStorage");
+        throw new Error("No user data found in localStorage");
       }
 
       const user = JSON.parse(storedUser);
@@ -316,7 +392,7 @@ const CertificateGenerator = forwardRef((props, ref) => {
       await generateCertificate(certId, setProgress, setError);
     } catch (err) {
       console.error("Error in certificate generation:", err);
-      const errorMessage = err.message || "Failed to generate certificate. Please try again.";
+      const errorMessage = err.message || "Failed to generate certificate.";
       setError(errorMessage);
     }
   };
@@ -329,43 +405,73 @@ const CertificateGenerator = forwardRef((props, ref) => {
   };
 
   return (
-    <Dialog open={open} onClose={progress === 100 || error ? handleClose : undefined} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ backgroundColor: "#0c83c8", color: "white" }}>Certificate Generation</DialogTitle>
-      <DialogContent sx={{ p: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 2,
-            mt: 2,
-          }}
-        >
+    <CurvyDialog
+      open={open}
+      onClose={progress === 100 || error ? handleClose : undefined}
+      fullWidth
+    >
+      <CurvyDialogTitle>Generating Certificate</CurvyDialogTitle>
+      <CurvyDialogContent>
+        <Box sx={{ width: "100%", textAlign: "center" }}>
           {error ? (
-            <Typography color="error">{error}</Typography>
+            <Typography
+              variant="body1"
+              color="error"
+              sx={{
+                fontWeight: 500,
+                fontSize: { xs: "0.9rem", sm: "1rem" },
+                animation: "fadeIn 0.5s ease-in",
+                "@keyframes fadeIn": {
+                  "0%": { opacity: 0 },
+                  "100%": { opacity: 1 },
+                },
+              }}
+            >
+              {error}
+            </Typography>
           ) : (
             <>
-              <AnimatedLinearProgress variant="determinate" value={progress} sx={{ width: "100%" }} />
+              <ProgressBarContainer>
+                <ProgressBarFill value={progress} />
+              </ProgressBarContainer>
               <Typography
+                variant="body1"
                 sx={{
-                  color: "#0c83c8",
+                  mt: 2,
+                  color: progress === 100 ? "#0c83c8" : "#333",
                   fontWeight: 500,
-                  transition: "all 0.3s ease",
-                  animation: progress === 100 ? "pulse 1.5s infinite" : "none",
+                  fontSize: { xs: "0.9rem", sm: "1rem" },
+                  animation: progress === 100 ? "pulse 1.5s infinite" : "fadeIn 0.5s ease-in",
                   "@keyframes pulse": {
                     "0%": { opacity: 0.8 },
                     "50%": { opacity: 1 },
                     "100%": { opacity: 0.8 },
                   },
+                  "@keyframes fadeIn": {
+                    "0%": { opacity: 0 },
+                    "100%": { opacity: 1 },
+                  },
                 }}
               >
-                {progress === 100 ? "Certificate generated successfully!" : `Generating certificate: ${progress}%`}
+                {progress === 100 ? "Certificate Generated!" : `Progress: ${progress}%`}
               </Typography>
             </>
           )}
         </Box>
-      </DialogContent>
-    </Dialog>
+        {(progress === 100 || error) && (
+          <CloseButton
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              top: { xs: 8, sm: 16 },
+              right: { xs: 8, sm: 16 },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: { xs: "1.2rem", sm: "1.5rem" } }} />
+          </CloseButton>
+        )}
+      </CurvyDialogContent>
+    </CurvyDialog>
   );
 });
 

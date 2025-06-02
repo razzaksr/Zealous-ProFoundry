@@ -45,8 +45,8 @@ POST http://localhost:8082/coding/compiler
 Content-Type: application/json
 
 {
-  "language": "javascript",
-  "code": "console.log('Hello, World!');",
+  "language": "python",
+  "code": "print('Hello, World!');",
   "testCases": [
     {
       "input": "",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BookOpen, FileText } from "lucide-react";
 import AssessmentScores from "../components/StudentDashboard/AssessmentScores";
 import UpcomingDeadlines from "../components/StudentDashboard/UpcomingDeadlines";
@@ -10,10 +10,13 @@ import {
   fetchOrgName,
   checkIfTestTaken,
   fetchTestsToday,
+  fetchPocCertStatus,
 } from "../axios";
 import CourseInfoCards from "../components/StudentDashboard/CourseInfoCards";
 import Dash from "../components/StudentDashboard/dash";
 import { useNavigate } from "react-router-dom";
+import { CircularProgress, Box } from "@mui/material";
+import CertificateGenerator from "../components/certificate";
 
 export default function StudentDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -31,6 +34,8 @@ export default function StudentDashboard() {
   const [courseProgress, setCourseProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [canDownloadCertificate, setCanDownloadCertificate] = useState(false);
+  const certificateRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -92,6 +97,10 @@ export default function StudentDashboard() {
       setModId(modulePocData.mod_id || null);
       setPocId(modulePocData.mod_poc_id || null);
       setCoordinatorName(modulePocData.mod_poc_name || "Not assigned");
+
+      // Fetch certificate status
+      const certStatus = await fetchPocCertStatus(modPocId);
+      setCanDownloadCertificate(certStatus === true);
 
       if (modulePocData.mod_id) {
         const [expertData, moduleData, orgData] = await Promise.all([
@@ -196,6 +205,7 @@ export default function StudentDashboard() {
       maxWidth: "1400px",
       margin: "0 auto",
       width: "100%",
+      boxSizing: "border-box",
     },
     header: {
       background: `linear-gradient(135deg, #0c83c8 0%, #0a6eaa 100%)`,
@@ -206,12 +216,12 @@ export default function StudentDashboard() {
       marginBottom: "24px",
     },
     headerTitle: {
-      fontSize: "28px",
+      fontSize: "clamp(24px, 5vw, 28px)",
       fontWeight: "700",
       marginBottom: "8px",
     },
     headerSubtitle: {
-      fontSize: "16px",
+      fontSize: "clamp(14px, 3vw, 16px)",
       opacity: "0.9",
       marginBottom: "16px",
     },
@@ -219,11 +229,12 @@ export default function StudentDashboard() {
       display: "flex",
       gap: "12px",
       marginTop: "16px",
+      flexWrap: "wrap",
     },
     progressCircle: {
       position: "relative",
-      width: "200px",
-      height: "200px",
+      width: "clamp(150px, 25vw, 200px)",
+      height: "clamp(150px, 25vw, 200px)",
       borderRadius: "50%",
       background: `conic-gradient(#fc7a46 ${courseProgress}%, rgba(255,255,255,0.2) 0)`,
       display: "flex",
@@ -243,11 +254,11 @@ export default function StudentDashboard() {
       zIndex: "1",
     },
     progressPercentage: {
-      fontSize: "36px",
+      fontSize: "clamp(28px, 6vw, 36px)",
       fontWeight: "bold",
     },
     progressLabel: {
-      fontSize: "14px",
+      fontSize: "clamp(12px, 2.5vw, 14px)",
     },
     statCard: {
       padding: "12px",
@@ -267,12 +278,12 @@ export default function StudentDashboard() {
       justifyContent: "center",
     },
     statTitle: {
-      fontSize: "12px",
+      fontSize: "clamp(10px, 2vw, 12px)",
       color: "#6b7280",
       marginBottom: "4px",
     },
     statValue: {
-      fontSize: "16px",
+      fontSize: "clamp(14px, 2.5vw, 16px)",
       fontWeight: "600",
       whiteSpace: "nowrap",
       overflow: "hidden",
@@ -281,10 +292,12 @@ export default function StudentDashboard() {
     sectionSpacing: {
       marginBottom: "24px",
     },
-    errorMessage: {
-      color: "#ff4444",
-      textAlign: "center",
-      padding: "20px",
+    loadingContainer: {
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      width: "100%",
     },
   };
 
@@ -326,14 +339,40 @@ export default function StudentDashboard() {
     navigate(`/test-intro/${firstUncompletedTestId}`);
   };
 
+  const handleDownloadCertificate = async () => {
+    try {
+      if (certificateRef.current) {
+        await certificateRef.current.handleDownloadCertificate();
+      } else {
+        throw new Error("Certificate generator not initialized");
+      }
+    } catch (error) {
+      console.error("Certificate generation failed:", error);
+      alert("Failed to generate certificate.");
+    }
+  };
+
   if (isLoading) {
-    return <div style={styles.container}>Loading dashboard...</div>;
+    return (
+      <div style={styles.container}>
+        <Box style={styles.loadingContainer}>
+          <CircularProgress
+            size={isMobile ? "60px" : "80px"}
+            sx={{ color: "#0c83c8" }}
+          />
+        </Box>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div style={styles.container}>
-        <div style={styles.errorMessage}>{error}</div>
+        <Box style={styles.loadingContainer}>
+          <p style={{ color: "#ff4444", textAlign: "center", fontSize: "clamp(14px, 3vw, 16px)" }}>
+            {error}
+          </p>
+        </Box>
       </div>
     );
   }
@@ -342,7 +381,8 @@ export default function StudentDashboard() {
 
   return (
     <div style={styles.container}>
-      <Dash />
+      <Dash certificateRef={certificateRef} />
+      <CertificateGenerator ref={certificateRef} />
       <div style={styles.mainContent}>
         <div style={{ ...styles.header, ...styles.sectionSpacing }}>
           <div
@@ -361,7 +401,7 @@ export default function StudentDashboard() {
               <div style={styles.buttonContainer}>
                 <button
                   style={{
-                    backgroundColor: testIds.length === 0 || allTestsTaken ? "#cccccc" : "#0c80c3",
+                    backgroundColor: testIds.length === 0 || allTestsTaken ? "#cccccc" : "#fc7a46",
                     color: "white",
                     border: "none",
                     borderRadius: "8px",
@@ -377,46 +417,53 @@ export default function StudentDashboard() {
                   disabled={testIds.length === 0 || allTestsTaken}
                   onMouseOver={(e) => {
                     if (testIds.length > 0 && !allTestsTaken) {
-                      e.currentTarget.style.backgroundColor = "#fc7a46";
-                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.backgroundColor = "#e56a3c";
+                      e.currentTarget.style.boxShadow = "inset 0 2px 4px rgba(0, 0, 0, 0.2)";
+                      e.currentTarget.style.transform = "scale(1.05)";
                     }
                   }}
                   onMouseOut={(e) => {
                     if (testIds.length > 0 && !allTestsTaken) {
-                      e.currentTarget.style.backgroundColor = "#0c83c8";
-                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.backgroundColor = "#fc7a46";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "scale(1)";
                     }
                   }}
                 >
                   <FileText size={18} />
                   Take Tests
                 </button>
-                <button
-                  style={{
-                    backgroundColor: "transparent",
-                    color: "white",
-                    border: "1px solid white",
-                    borderRadius: "8px",
-                    fontWeight: "600",
-                    padding: "10px 20px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  <BookOpen size={18} />
-                  View Resources
-                </button>
+                {canDownloadCertificate && (
+                  <button
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "white",
+                      border: "1px solid white",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      padding: "10px 20px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={handleDownloadCertificate}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = "#0b70ad";
+                      e.currentTarget.style.boxShadow = "inset 0 2px 4px rgba(0, 0, 0, 0.2)";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.boxShadow = "none";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    <BookOpen size={18} />
+                    Download Certificate
+                  </button>
+                )}
               </div>
             </div>
             <div

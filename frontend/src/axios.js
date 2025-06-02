@@ -26,6 +26,8 @@ export const getTestById = async (testId) => {
   }
 };
 
+
+
 // Get MCQ by ID
 export const getMcqById = async (mcqId) => {
   try {
@@ -479,6 +481,17 @@ export const updateTest = async (testData) => {
   }
 };
 
+// Create test API call
+export const createTest = async (testData) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/testcase_gateway/test/create`, testData);
+    return response.data;
+  } catch (error) {
+    console.error("Create test error:", error);
+    throw error;
+  }
+};
+
 // Add users
 export const addUser = async (userData) => {
   try {
@@ -613,4 +626,4 @@ export const generateReport = async (mod_poc_id, reportData) => {
   }
 };
 
-// Fetch 
+

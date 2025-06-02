@@ -324,36 +324,6 @@ body {
   font-weight: 500;
 }
 
-/* Accuracy Rate */
-.accuracy-rate {
-  padding: 1rem;
-  border-radius: 0.5rem;
-}
-
-.accuracy-rate.info-light {
-  background-color: #e3f2fd;
-  border: 1px solid #bbdefb;
-}
-
-.accuracy-rate.success-light {
-  background-color: #e8f5e8;
-  border: 1px solid #c8e6c9;
-}
-
-.rate-display {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9375rem;
-}
-
-.rate-value {
-  font-weight: 600;
-}
-
-.rate-value.primary { color: #1976d2; }
-.rate-value.success { color: #2e7d32; }
-
 /* Dialog Styles */
 .dialog-overlay {
   position: fixed;

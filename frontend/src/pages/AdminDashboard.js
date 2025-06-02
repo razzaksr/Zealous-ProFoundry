@@ -6,38 +6,22 @@ import {
   Button, 
   Paper, 
   InputBase, 
-  IconButton, 
-  Avatar, 
-  Tabs, 
-  Tab, 
-  Card, 
-  CardContent, 
-  CardActions, 
-  Chip,
-  AppBar,
-  Toolbar,
   Container,
-  Badge
+  Tabs, 
+  Tab,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import {
-  Person,
-  Code,
-  MenuBook,
-  Business,
-  School,
-  AccountCircle,
-  Quiz,
-  BugReport,
   Add,
   Visibility,
   Edit,
   Search,
-  Notifications,
   Dashboard as DashboardIcon
 } from '@mui/icons-material';
-import Admin_Dashboard from '../components/AdminDash.js';
+import AdminDash from '../components/AdminDash';
 
 // Custom styled components
 const StyledSearch = styled('div')(({ theme }) => ({
@@ -81,147 +65,183 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 }));
 
 const DashboardCard = styled(Card)(({ theme }) => ({
+  backgroundColor: '#ffffff',
+  borderRadius: '0.75rem',
+  boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.1)',
+  transition: 'transform 0.3s, box-shadow 0.3s',
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  transition: 'all 0.3s ease',
   '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: theme.shadows[10],
+    transform: 'translateY(-0.5rem)',
+    boxShadow: '0 1rem 2rem rgba(0, 0, 0, 0.15)',
   },
 }));
 
-const CardIconWrapper = styled(Box)(({ theme, color }) => ({
+const CardHeaderCustom = styled(Box)(({ theme, color }) => ({
+  backgroundColor: color,
+  color: '#ffffff',
+  padding: '1.5rem',
+  textAlign: 'center',
+  borderRadius: '0.75rem 0.75rem 0 0',
+}));
+
+const IconWrapper = styled(Box)(({ theme }) => ({
+  width: '4rem',
+  height: '4rem',
+  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  borderRadius: '50%',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: theme.spacing(3),
-  backgroundColor: color || theme.palette.primary.main,
-  color: theme.palette.common.white,
+  margin: '0 auto 1rem',
+  '& i': {
+    fontSize: '1.5rem',
+    color: '#ffffff',
+  },
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius,
+  backgroundColor: '#f8f9fa',
+  border: '1px solid rgba(0, 0, 0, 0.1)',
+  borderRadius: '0.5rem',
+  padding: '0.75rem 1.25rem',
+  display: 'flex',
+  alignItems: 'center',
   textTransform: 'none',
   fontWeight: 600,
+  color: '#333',
+  justifyContent: 'space-between',
+  transition: 'background-color 0.2s, color 0.2s, transform 0.2s',
+  '&:hover': {
+    backgroundColor: ({ color }) => 
+      color === '#0c83c8' ? '#fc7a46' : color === '#fc7a46' ? '#0c83c8' : color,
+    color: ({ color }) => 
+      color === '#0c83c8' ? '#0c83c8' : color === '#fc7a46' ? '#fc7a46' : '#333',
+    transform: 'translateX(0.5rem)',
+    '& i': {
+      color: ({ color }) => 
+        color === '#0c83c8' ? '#0c83c8' : color === '#fc7a46' ? '#fc7a46' : '#333',
+    },
+  },
+  '& i:first-child': {
+    marginRight: '0.75rem',
+  },
+  '& .action-arrow': {
+    opacity: 0,
+    transition: 'opacity 0.2s',
+  },
+  '&:hover .action-arrow': {
+    opacity: 1,
+  },
 }));
 
-// Main Dashboard Component
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState(0);
   
   const actionTypes = ['All', 'View', 'Add', 'Update'];
-  
-  // Get appropriate icon for each item
-  const getIcon = (label) => {
-    switch(label.toLowerCase()) {
-      case 'poc': return <AccountCircle fontSize="large" />;
-      case 'user': return <Person fontSize="large" />;
-      case 'coding': return <Code fontSize="large" />;
-      case 'testcase': return <BugReport fontSize="large" />;
-      case 'module': 
-      case 'test module': return <MenuBook fontSize="large" />;
-      case 'organization':
-      case 'organisation': return <Business fontSize="large" />;
-      case 'expert': return <School fontSize="large" />;
-      case 'mcq': return <Quiz fontSize="large" />;
-      case 'test': return <BugReport fontSize="large" />;
-      default: return <DashboardIcon fontSize="large" />;
-    }
-  };
 
-  // Get color for cards based on label
-  const getColor = (label) => {
-    switch(label.toLowerCase()) {
-      case 'poc': return '#1976d2'; // blue
-      case 'user': return '#9c27b0'; // purple
-      case 'coding': return '#2e7d32'; // green
-      case 'testcase': return '#ff9800'; // amber
-      case 'module': 
-      case 'test module': return '#d32f2f'; // red
-      case 'organization':
-      case 'organisation': return '#3f51b5'; // indigo
-      case 'expert': return '#009688'; // teal
-      case 'mcq': return '#e91e63'; // pink
-      case 'test': return '#ffc107'; // yellow
-      default: return '#607d8b'; // blue-grey
-    }
-  };
-  
-  // Get description for each item
-  const getDescription = (label, type) => {
-    const action = type === 'View' ? 'Access and view' : 
-                  type === 'Add' ? 'Create new' : 'Modify existing';
-    
-    switch(label.toLowerCase()) {
-      case 'poc': return `${action} point of contact information`;
-      case 'user': return `${action} user accounts`;
-      case 'coding': return `${action} programming challenges`;
-      case 'testcase': return `${action} test scenarios and cases`;
-      case 'module': return `${action} learning modules`;
-      case 'test module': return `${action} test module configurations`;
-      case 'organization':
-      case 'organisation': return `${action} organizations`;
-      case 'expert': return `${action} domain experts`;
-      case 'mcq': return `${action} multiple choice questions`;
-      case 'test': return `${action} assessment tests`;
-      default: return `${action} ${label}`;
-    }
-  };
-
-  // Get icon for action type
-  const getActionIcon = (type) => {
-    switch(type.toLowerCase()) {
-      case 'view': return <Visibility />;
-      case 'add': return <Add />;
-      case 'update': return <Edit />;
-      default: return null;
-    }
-  };
-
-  // Original buttons data with Add User added
-  const allButtons = [
-    { label: 'POC', path: '/poc', type: 'View' },
-    { label: 'User', path: '/user', type: 'View' },
-    { label: 'Coding', path: '/codingpage', type: 'View' },
-    { label: 'Testcase', path: '/testcasepage', type: 'View' },
-    { label: 'Module', path: '/module', type: 'View' },
-    { label: 'Organization', path: '/organization', type: 'View' },
-    { label: 'Expert', path: '/expert', type: 'View' },
-    { label: 'MCQ', path: '/mcq-admin', type: 'View' },
-    { label: 'Test', path: '/test', type: 'View' },
-  
-    // ADD action items
-    { label: 'MCQ', path: '/add_mcq', type: 'Add' },
-    { label: 'Module', path: '/add_module', type: 'Add' },
-    { label: 'Organisation', path: '/add_organisation', type: 'Add' },
-    { label: 'TestCase', path: '/add_testcase', type: 'Add' },
-    { label: 'Coding', path: '/add_coding', type: 'Add' },
-    { label: 'POC', path: '/add_poc', type: 'Add' },
-    { label: 'Expert', path: '/add_expert', type: 'Add' },
-    { label: 'User', path: '/add_user', type: 'Add' }, // New Add User action
-  
-    // UPDATE action items
-    { label: 'Coding', path: '/update_coding', type: 'Update' },
-    { label: 'Test Module', path: '/update_testmodule', type: 'Update' },
-    { label: 'POC', path: '/update_poc', type: 'Update' },
-    { label: 'Expert', path: '/update_expert', type: 'Update' },
-    { label: 'Organization', path: '/update_organization', type: 'Update' },
-    { label: 'Certficate', path: '/bulk_certficate', type: 'Update' }, // New Update User action 
-
-        //Report Side Cards
-        { label: 'Report And PieChart Gen', path: '/reportAndPieGen', type: 'Add' },
-        { label: 'Report Generation', path: '/reportGen', type: 'Add' },
+  // Routes from Admin_Dash
+  const menuItems = [
+    {
+      text: 'POC',
+      icon: 'fas fa-clipboard-list',
+      color: '#0c83c8',
+      routes: [
+        { text: 'View POC', path: '/poc', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add POC', path: '/add_poc', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'Update POC', path: '/update_poc', icon: 'fas fa-edit', type: 'Update' },
+      ],
+    },
+    {
+      text: 'Organization',
+      icon: 'fas fa-building',
+      color: '#fc7a46',
+      routes: [
+        { text: 'View Organization', path: '/organization', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add Organization', path: '/add_organisation', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'Update Organization', path: '/update_organization', icon: 'fas fa-edit', type: 'Update' },
+      ],
+    },
+    {
+      text: 'Module',
+      icon: 'fas fa-book',
+      color: '#0c83c8',
+      routes: [
+        { text: 'View Module', path: '/module', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add Module', path: '/add_module', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'Update Module', path: '/update_testmodule', icon: 'fas fa-edit', type: 'Update' },
+      ],
+    },
+    {
+      text: 'Test',
+      icon: 'fas fa-question-circle',
+      color: '#fc7a46',
+      routes: [
+        { text: 'View Test', path: '/test', icon: 'fas fa-eye', type: 'View' },
+      ],
+    },
+    {
+      text: 'User',
+      icon: 'fas fa-user',
+      color: '#0c83c8',
+      routes: [
+        { text: 'View User', path: '/user', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add User', path: '/add_user', icon: 'fas fa-plus', type: 'Add' },
+      ],
+    },
+    {
+      text: 'Expert',
+      icon: 'fas fa-users',
+      color: '#fc7a46',
+      routes: [
+        { text: 'View Expert', path: '/expert', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add Expert', path: '/add_expert', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'Update Expert', path: '/update_expert', icon: 'fas fa-edit', type: 'Update' },
+      ],
+    },
+    {
+      text: 'MCQ',
+      icon: 'fas fa-question-circle',
+      color: '#0c83c8',
+      routes: [
+        { text: 'View MCQ', path: '/mcq-admin', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add MCQ', path: '/add_mcq', icon: 'fas fa-plus', type: 'Add' },
+      ],
+    },
+    {
+      text: 'Coding',
+      icon: 'fas fa-code',
+      color: '#fc7a46',
+      routes: [
+        { text: 'View Coding', path: '/codingpage', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add Coding', path: '/add_coding', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'Update Coding', path: '/update_coding', icon: 'fas fa-edit', type: 'Update' },
+      ],
+    },
+    {
+      text: 'Testcase',
+      icon: 'fas fa-bug',
+      color: '#0c83c8',
+      routes: [
+        { text: 'View Testcase', path: '/testcasepage', icon: 'fas fa-eye', type: 'View' },
+        { text: 'Add Testcase', path: '/add_testcase', icon: 'fas fa-plus', type: 'Add' },
+      ],
+    },
   ];
-  
 
   // Filter items based on search and active tab
-  const filteredButtons = allButtons.filter(button => {
-    const matchesSearch = button.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          getDescription(button.label, button.type).toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === 0 || actionTypes[activeTab] === button.type;
+  const filteredMenuItems = menuItems.filter(item => {
+    const matchesSearch = 
+      item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.routes.some(route => 
+        route.text.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    const matchesTab = 
+      activeTab === 0 || 
+      item.routes.some(route => actionTypes[activeTab] === route.type);
     return matchesSearch && matchesTab;
   });
 
@@ -234,93 +254,96 @@ export default function AdminDashboard() {
   };
 
   return (
-   <>
-   <Admin_Dashboard />
-    <Box sx={{ flexGrow: 1 }}>
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-        {/* Tabs for filtering */}
-        <Paper sx={{ mb: 4 }}>
-          <StyledSearch>
-            <SearchIconWrapper>
-              <Search />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="Search actions…"
-              inputProps={{ 'aria-label': 'search' }}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </StyledSearch>
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            indicatorColor="primary"
-            textColor="primary"
-            variant="fullWidth"
-          >
-            {actionTypes.map((type, index) => (
-              <Tab 
-                key={type} 
-                label={type} 
-                icon={index > 0 ? getActionIcon(type) : <DashboardIcon />} 
-                iconPosition="start"
+    <>
+      <AdminDash />
+      <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        rel="stylesheet"
+      />
+      <Box sx={{ flexGrow: 1 }}>
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+          {/* Tabs for filtering */}
+          <Paper sx={{ mb: 4 }}>
+            <StyledSearch>
+              <SearchIconWrapper>
+                <Search />
+              </SearchIconWrapper>
+              <StyledInputBase
+                placeholder="Search actions…"
+                inputProps={{ 'aria-label': 'search' }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-            ))}
-          </Tabs>
-        </Paper>
+            </StyledSearch>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              indicatorColor="primary"
+              textColor="primary"
+              variant="fullWidth"
+            >
+              {actionTypes.map((type, index) => (
+                <Tab 
+                  key={type} 
+                  label={type} 
+                  icon={
+                    index > 0 ? (
+                      type === 'View' ? <Visibility /> :
+                      type === 'Add' ? <Add /> :
+                      type === 'Update' ? <Edit /> : null
+                    ) : <DashboardIcon />
+                  } 
+                  iconPosition="start"
+                />
+              ))}
+            </Tabs>
+          </Paper>
 
-        {/* Dashboard grid */}
-        <Grid container spacing={4}>
-          {filteredButtons.map((button, index) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={`${button.type}-${button.label}-${index}`} >
-              <DashboardCard>
-                <CardIconWrapper color={getColor(button.label)}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                    {getIcon(button.label)}
-                    <Chip 
-                      icon={getActionIcon(button.type)} 
-                      label={button.type} 
-                      variant="outlined" 
-                      sx={{ 
-                        color: 'white', 
-                        borderColor: 'rgba(255, 255, 255, 0.5)',
-                        '& .MuiChip-icon': { color: 'white' } 
-                      }}
-                    />
-                  </Box>
-                </CardIconWrapper>
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Typography variant="h5" component="h2" gutterBottom>
-                    {button.label}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {getDescription(button.label, button.type)}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <ActionButton 
-                    variant="contained" 
-                    fullWidth
-                    onClick={() => handleNavigation(button.path)}
-                    sx={{ bgcolor: getColor(button.label) ,borderRadius:3}}
-                  >
-                    {button.type === 'View' ? 'View Details' : button.type === 'Add' ? 'Create New' : 'Modify'}
-                  </ActionButton>
-                </CardActions>
-              </DashboardCard>
-            </Grid>
-          ))}
-        </Grid>
-        
-        {filteredButtons.length === 0 && (
-          <Box textAlign="center" py={8}>
-            <Typography variant="h6" color="text.secondary">
-              No dashboard items match your search.
-            </Typography>
-          </Box>
-        )}
-      </Container>
-    </Box>
-   </>
+          {/* Dashboard grid */}
+          <Grid container spacing={4}>
+            {filteredMenuItems.map((item, index) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={`${item.text}-${index}`}>
+                <DashboardCard>
+                  <CardHeaderCustom color={item.color}>
+                    <IconWrapper>
+                      <i className={item.icon}></i>
+                    </IconWrapper>
+                    <Typography variant="h5" component="h2">
+                      {item.text}
+                    </Typography>
+                  </CardHeaderCustom>
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {item.routes.map((route) => (
+                        (activeTab === 0 || route.type === actionTypes[activeTab]) && (
+                          <ActionButton
+                            key={route.text}
+                            fullWidth
+                            onClick={() => handleNavigation(route.path)}
+                            color={item.color}
+                          >
+                            <i className={route.icon}></i>
+                            <span>{route.text}</span>
+                            <i className="fas fa-arrow-right action-arrow"></i>
+                          </ActionButton>
+                        )
+                      ))}
+                    </Box>
+                  </CardContent>
+                </DashboardCard>
+              </Grid>
+            ))}
+          </Grid>
+          
+          {filteredMenuItems.length === 0 && (
+            <Box textAlign="center" py={8}>
+              <Typography variant="h6" color="text.secondary">
+                No dashboard items match your search.
+              </Typography>
+            </Box>
+          )}
+        </Container>
+      </Box>
+    </>
   );
 }

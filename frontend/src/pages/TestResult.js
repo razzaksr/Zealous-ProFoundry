@@ -281,17 +281,6 @@ const TestResultPage = () => {
                     <div className="grid-label">Not Visited</div>
                   </div>
                 </div>
-                <div className="accuracy-rate info-light">
-                  <div className="rate-display">
-                    <span>Accuracy Rate</span>
-                    <span className="rate-value primary">
-                      {(resultData.mcqAnswered || 0) > 0
-                        ? Math.round(((resultData.mcqCorrect || 0) / (resultData.mcqAnswered || 1)) * 100)
-                        : 0}
-                      %
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* Coding Section */}
@@ -321,17 +310,6 @@ const TestResultPage = () => {
                       <Eye size={32} className="grid-icon grey" />
                       <div className="grid-value grey">{resultData.codingNotAnswered || 0}</div>
                       <div className="grid-label">Not Visited</div>
-                    </div>
-                  </div>
-                  <div className="accuracy-rate success-light">
-                    <div className="rate-display">
-                      <span>Success Rate</span>
-                      <span className="rate-value success">
-                        {(resultData.codingAnswered || 0) > 0
-                          ? Math.round(((resultData.codingCorrect || 0) / (resultData.codingAnswered || 1)) * 100)
-                          : 0}
-                        %
-                      </span>
                     </div>
                   </div>
                 </div>

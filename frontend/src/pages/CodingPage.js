@@ -57,11 +57,11 @@ import { fetchCodeById, fetchTestCaseById, compileCode, submitTestResult, getTes
 
 // Language mapping for backend
 const languageApiMap = {
-  python: "python3",
+  python: "python",
   java: "java",
   cpp: "cpp",
   c: "c",
-  javascript: "js ",
+  javascript: "javascript",
 };
 
 // Material UI Switch for theme toggle
@@ -630,9 +630,9 @@ useEffect(() => {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
     document.addEventListener("contextmenu", handleContextMenu);
-    // document.addEventListener("copy", handleCopy);
-    // document.addEventListener("paste", handlePaste);
-    // document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("copy", handleCopy);
+    document.addEventListener("paste", handlePaste);
+    document.addEventListener("keydown", handleKeyDown);
     const editorElement = document.querySelector(".monaco-editor .inputarea");
     if (editorElement) {
       editorElement.addEventListener("input", handleEditorInput);
@@ -641,9 +641,9 @@ useEffect(() => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.removeEventListener("contextmenu", handleContextMenu);
-      // document.removeEventListener("copy", handleCopy);
-      // document.removeEventListener("paste", handlePaste);
-      // document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("copy", handleCopy);
+      document.removeEventListener("paste", handlePaste);
+      document.removeEventListener("keydown", handleKeyDown);
       if (editorElement) {
         editorElement.removeEventListener("input", handleEditorInput);
       }
@@ -1001,16 +1001,18 @@ const handleLanguageChange = (event) => {
     }
   }, [codeId]);
 
-  // Compile and evaluate code
-  const compileAndEvaluate = async (currentCodeId, codeInput, codeLanguage, codeTestCases) => {
-    setShowOutput(true);
-    setOutputMinimized(false);
-    setLoading(true);
-    setOpenProgressDialog(true);
-    setOutput("Running code against test cases...\n");
+const compileAndEvaluate = async (currentCodeId, codeInput, codeLanguage, codeTestCases) => {
+  setShowOutput(true);
+  setOutputMinimized(false);
+  setLoading(true);
+  setOpenProgressDialog(true);
+  setOutput("Running code against test cases...\n");
 
-    try {
-      const formattedTestCases = codeTestCases.map((testCase) => ({
+  try {
+    // Validate and format test cases
+    const formattedTestCases = codeTestCases
+      .filter(tc => tc?.testcase_input != null && tc?.testcase_output != null)
+      .map(testCase => ({
         input: Array.isArray(testCase.testcase_input)
           ? testCase.testcase_input.join("\n")
           : testCase.testcase_input || "",
@@ -1019,218 +1021,421 @@ const handleLanguageChange = (event) => {
           : testCase.testcase_output || "",
       }));
 
-      const submissionPayload = {
-        language: languageApiMap[codeLanguage],
-        code: codeInput,
-        testCases: formattedTestCases.length > 0 ? formattedTestCases : [{ input: "", expectedOutput: "" }],
-      };
-
-      localStorage.setItem(`code_${currentCodeId}`, JSON.stringify(submissionPayload));
-
-      const { results } = await compileCode(submissionPayload);
-      const formattedOutput = results.map(
-        (res, index) =>
-          `Test Case #${index + 1}:\nInput:\n${res.input}\nExpected Output:\n${res.expectedOutput}\nActual Output:\n${res.actualOutput}\nPassed: ${
-            res.passed ? "✅" : "❌"
-          }\n`
-      ).join("\n");
-      setOutput(formattedOutput);
-
-      const allPassed = results.length > 0 && results.every((res) => res.passed);
-      const codingScore = allPassed ? 10 : 0;
-
-      const newCodingResult = { codeId: currentCodeId, score: codingScore, total: 10 };
-      const existingIndex = testResult.codingResults.findIndex((result) => result.codeId === currentCodeId);
-      let updatedCodingResults;
-      if (existingIndex !== -1) {
-        updatedCodingResults = [...testResult.codingResults];
-        updatedCodingResults[existingIndex] = newCodingResult;
-      } else {
-        updatedCodingResults = [...testResult.codingResults, newCodingResult];
-      }
-
-      const updatedCodingAnswered = updatedCodingResults.length;
-      const updatedCodingCorrect = updatedCodingResults.filter((r) => r.score > 0).length;
-      const updatedCodingWrong = updatedCodingResults.filter((r) => r.score === 0).length;
-      const updatedCodingNotAnswered = effectiveCodingIds.length - updatedCodingAnswered;
-      const updatedCodingNotVisited = effectiveCodingIds.length - updatedCodingAnswered;
-
-      const updatedTestResult = {
-        ...testResult,
-        codingResults: updatedCodingResults,
-        result_user_id: userId || testResult.result_user_id,
-        result_test_id: testId || testResult.result_test_id,
-        result_score: testResult.mcqCorrect + updatedCodingResults.reduce((sum, result) => sum + result.score, 0),
-        result_total_score: testResult.result_total_score,
-        result_poc_id: pocId || testResult.result_poc_id,
-        codingAnswered: updatedCodingAnswered,
-        codingNotAnswered: updatedCodingNotAnswered,
-        codingNotVisited: updatedCodingNotVisited,
-        codingCorrect: updatedCodingCorrect,
-        codingWrong: updatedCodingWrong,
-        studentName: studentName || testResult.studentName,
-      };
-
-      setTestResult(updatedTestResult);
-      localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
-
-      setSnackbarMessage("Code compiled and evaluated successfully!");
-      setSnackbarSeverity("success");
-      return true;
-    } catch (error) {
-      console.error("Compile error:", error);
-      setOutput(`Error running code: ${error.message}`);
-      setSnackbarMessage("Error during code compilation.");
-      setSnackbarSeverity("warning");
-      return false;
-    } finally {
-      setLoading(false);
-      setOpenProgressDialog(false);
-      setSnackbarOpen(true);
+    // Ensure at least one test case
+    if (formattedTestCases.length === 0) {
+      console.warn(`⚠️ No valid test cases for ${currentCodeId}, using default empty test case`);
+      formattedTestCases.push({ input: "", expectedOutput: "" });
     }
-  };
 
-  // Handle code run
-  const handleRun = async (e) => {
-    e.preventDefault();
-    await compileAndEvaluate(codeId, input, language, testCases);
-  };
+    const submissionPayload = {
+      language: languageApiMap[codeLanguage] || codeLanguage,
+      code: codeInput || templates[codeLanguage] || "",
+      testCases: formattedTestCases,
+    };
 
-  // Compile all programs
-  const compileAllPrograms = async () => {
-    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
-    setLoading(true);
-    setOpenProgressDialog(true);
-    setOutput("Processing results...\nCompiling all programs...\n");
+    // Save payload to localStorage
+    localStorage.setItem(`code_${currentCodeId}`, JSON.stringify(submissionPayload));
+    console.log(`💾 Saved code payload for ${currentCodeId}:`, {
+      codeLength: submissionPayload.code.length,
+      language: submissionPayload.language,
+      testCases: submissionPayload.testCases.length,
+    });
 
-    let compilationErrors = 0;
+    // Compile code
+    const { results } = await compileCode(submissionPayload);
+    const formattedOutput = results.map(
+      (res, index) =>
+        `Test Case #${index + 1}:\nInput:\n${res.input}\nExpected Output:\n${res.expectedOutput}\nActual Output:\n${res.actualOutput}\nPassed: ${res.passed ? "✅" : "❌"}\n`
+    ).join("\n");
+    setOutput(formattedOutput);
 
+    // Calculate score
+    const allPassed = results.length > 0 && results.every(res => res.passed);
+    const codingScore = allPassed ? 10 : 0;
+
+    const newCodingResult = { codeId: currentCodeId, score: codingScore, total: 10 };
+    console.log(`📊 New coding result for ${currentCodeId}:`, newCodingResult);
+
+    // Get current test result
+    let currentTestResult = testResult;
     try {
-      for (const id of effectiveCodingIds) {
-        const savedPayload = localStorage.getItem(`code_${id}`);
-        let codeInput = templates[language];
-        let codeLanguage = language;
-        let codeTestCases = [];
+      const storedResult = localStorage.getItem("test_result");
+      if (storedResult) {
+        currentTestResult = JSON.parse(storedResult);
+      }
+    } catch (error) {
+      console.error("Error parsing stored test result:", error);
+    }
 
+    // Initialize codingResults if undefined
+    currentTestResult.codingResults = currentTestResult.codingResults || [];
+
+    // Update coding results
+    const existingIndex = currentTestResult.codingResults.findIndex(result => result.codeId === currentCodeId);
+    let updatedCodingResults = [...currentTestResult.codingResults];
+    if (existingIndex !== -1) {
+      updatedCodingResults[existingIndex] = newCodingResult;
+      console.log(`🔄 Updated existing result for ${currentCodeId} at index ${existingIndex}`);
+    } else {
+      updatedCodingResults.push(newCodingResult);
+      console.log(`➕ Added new result for ${currentCodeId}. Total results: ${updatedCodingResults.length}`);
+    }
+
+    // Ensure codingIds is initialized
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : (currentTestResult.codingIds || []);
+
+    // Update test result
+    const updatedTestResult = {
+      ...currentTestResult,
+      codingResults: updatedCodingResults,
+      result_user_id: userId || currentTestResult.result_user_id || "",
+      result_test_id: testId || currentTestResult.result_test_id || "",
+      result_score: (currentTestResult.mcqCorrect || 0) + updatedCodingResults.reduce((sum, result) => sum + result.score, 0),
+      result_total_score: currentTestResult.result_total_score || effectiveCodingIds.length * 10,
+      result_poc_id: pocId || currentTestResult.result_poc_id || "",
+      codingAnswered: updatedCodingResults.length,
+      codingNotAnswered: effectiveCodingIds.length - updatedCodingResults.length,
+      codingNotVisited : Math.max(0, effectiveCodingIds.length - updatedCodingResults.length),
+      codingCorrect: updatedCodingResults.filter(r => r.score > 0).length,
+      codingWrong: updatedCodingResults.filter(r => r.score === 0).length,
+      studentName: studentName || currentTestResult.studentName || "",
+    };
+
+    // Save and verify localStorage
+    localStorage.setItem("test_result", JSON.stringify(updatedTestResult));
+    const verifyResult = JSON.parse(localStorage.getItem("test_result") || "{}");
+    if (verifyResult.codingResults?.length !== updatedCodingResults.length) {
+      throw new Error(`Verification failed: Expected ${updatedCodingResults.length} results, got ${verifyResult.codingResults?.length || 0}`);
+    }
+    console.log(`✅ Successfully saved test result with ${verifyResult.codingResults.length} coding results`);
+
+    setTestResult(updatedTestResult);
+    setSnackbarMessage("Code compiled and evaluated successfully!");
+    setSnackbarSeverity("success");
+    return { success: true, testResult: updatedTestResult };
+  } catch (error) {
+    console.error("Compile error:", error);
+    setOutput(`Error running code: ${error.message}`);
+    setSnackbarMessage("Error during code compilation.");
+    setSnackbarSeverity("warning");
+    return { success: false, error: error.message };
+  } finally {
+    setLoading(false);
+    setOpenProgressDialog(false);
+    setSnackbarOpen(true);
+  }
+};
+
+// Handle code run
+const handleRun = async e => {
+  e.preventDefault();
+  return (await compileAndEvaluate(codeId, input, language, testCases)).success;
+};
+
+// Compile all programs
+const compileAllPrograms = async () => {
+  const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : (testResult.codingIds || []);
+  setLoading(true);
+  setOpenProgressDialog(true);
+  setOutput("Processing results...\nCompiling all programs...\n");
+
+  console.log(`🚀 Starting compilation for ${effectiveCodingIds.length} coding problems:`, effectiveCodingIds);
+
+  let compilationErrors = 0;
+  let processedResults = [];
+
+  try {
+    for (const [index, id] of effectiveCodingIds.entries()) {
+      console.log(`\n🔄 Processing program ${index + 1}/${effectiveCodingIds.length} - ID: ${id}`);
+      setOutput(prev => `${prev}\n📝 Processing program ${index + 1}/${effectiveCodingIds.length} (ID: ${id})...`);
+
+      // Initialize defaults
+      let codeInput = templates[language] || "";
+      let codeLanguage = language;
+      let codeTestCases = [{ testcase_input: "", testcase_output: "" }];
+
+      // Load saved payload
+      const savedPayload = localStorage.getItem(`code_${id}`);
+      if (savedPayload) {
         try {
-          const code = await fetchCodeById(id);
-          if (code.code_test_cases_id && code.code_test_cases_id.length > 0) {
-            const testCasePromises = code.code_test_cases_id.map(async (testcase_id) => {
-              try {
-                return await fetchTestCaseById(testcase_id);
-              } catch (err) {
-                console.error(`Error fetching test case ${testcase_id}:`, err);
-                return null;
-              }
-            });
-            const responses = await Promise.all(testCasePromises);
-            codeTestCases = responses.filter((tc) => tc && tc.testcase_input && tc.testcase_output);
-          }
-        } catch (err) {
-          console.error(`Error fetching code ${id}:`, err);
-          codeTestCases = [{ testcase_input: "", testcase_output: "" }];
+          const parsedPayload = JSON.parse(savedPayload);
+          codeInput = parsedPayload.code || templates[language] || "";
+          codeLanguage = Object.keys(languageApiMap).find(key => languageApiMap[key] === parsedPayload.language) || language;
+          console.log(`📂 Found saved payload for ${id}:`, {
+            codeLength: codeInput.length,
+            language: codeLanguage,
+          });
+          setOutput(prev => `${prev}\n   ✅ Using saved code (${codeInput.length} chars)`);
+        } catch (error) {
+          console.error(`❌ Error parsing saved payload for ${id}:`, error);
+          setOutput(prev => `${prev}\n   ⚠️ Error parsing saved code, using default`);
         }
+      } else {
+        console.log(`⚠️ No saved payload for ${id}, using default template`);
+        setOutput(prev => `${prev}\n   ⚠️ No saved code found, using default template`);
+        localStorage.setItem(`code_${id}`, JSON.stringify({
+          language: languageApiMap[language] || language,
+          code: templates[language] || "",
+          testCases: [{ input: "", expectedOutput: "" }],
+        }));
+      }
 
-        if (savedPayload) {
-          try {
-            const parsedPayload = JSON.parse(savedPayload);
-            codeInput = parsedPayload.code || templates[language];
-            codeLanguage = Object.keys(languageApiMap).find((key) => languageApiMap[key] === parsedPayload.language) || language;
-          } catch (error) {
-            console.error(`Error parsing saved payload for code ${id}:`, error);
-          }
+      // Fetch test cases
+      try {
+        const code = await fetchCodeById(id);
+        if (code?.code_test_cases_id?.length > 0) {
+          const testCasePromises = code.code_test_cases_id.map(async testcase_id => {
+            try {
+              const testCase = await fetchTestCaseById(testcase_id);
+              return testCase?.testcase_input && testCase?.testcase_output ? testCase : null;
+            } catch (err) {
+              console.error(`Error fetching test case ${testcase_id}:`, err);
+              return null;
+            }
+          });
+          const responses = await Promise.all(testCasePromises);
+          codeTestCases = responses.filter(tc => tc !== null);
+          console.log(`📋 Found ${codeTestCases.length} test cases for ${id}`);
+          setOutput(prev => `${prev}\n   📋 Found ${codeTestCases.length} test cases`);
+        } else {
+          console.warn(`⚠️ No test cases for ${id}, using default`);
+          setOutput(prev => `${prev}\n   ⚠️ No test cases found, using default`);
         }
+      } catch (err) {
+        console.error(`Error fetching code ${id}:`, err);
+        setOutput(prev => `${prev}\n   ⚠️ Error fetching test cases, using default`);
+      }
 
-        const success = await compileAndEvaluate(id, codeInput, codeLanguage, codeTestCases);
-        if (!success) {
-          compilationErrors++;
-          setOutput((prev) => `${prev}\nFailed to compile program ${id}`);
+      // Compile and evaluate
+      setOutput(prev => `${prev}\n   ⚙️ Compiling...`);
+      const compilationResult = await compileAndEvaluate(id, codeInput, codeLanguage, codeTestCases);
+
+      if (!compilationResult.success) {
+        compilationErrors++;
+        console.error(`❌ Compilation failed for ${id}:`, compilationResult.error);
+        setOutput(prev => `${prev}\n   ❌ Compilation failed: ${compilationResult.error}`);
+      } else {
+        processedResults.push(compilationResult);
+        console.log(`✅ Successfully compiled ${id} with score:`, compilationResult.testResult.codingResults.find(r => r.codeId === id)?.score || 0);
+        setOutput(prev => `${prev}\n   ✅ Compilation successful`);
+      }
+    }
+
+    // Final verification
+    console.log(`\n🔍 Final verification started`);
+    setOutput(prev => `${prev}\n\n🔄 Finalizing all results...`);
+
+    let finalTestResult = testResult;
+    try {
+      const storedResult = localStorage.getItem("test_result");
+      if (storedResult) {
+        finalTestResult = JSON.parse(storedResult);
+      }
+    } catch (error) {
+      console.error("❌ Error getting final test result:", error);
+    }
+
+    // Ensure all coding IDs have results
+    finalTestResult.codingResults = finalTestResult.codingResults || [];
+    const missingIds = effectiveCodingIds.filter(id => !finalTestResult.codingResults.some(result => result.codeId === id));
+    for (const missingId of missingIds) {
+      console.log(`🔧 Processing missing ID: ${missingId}`);
+      setOutput(prev => `${prev}\n🔧 Processing missing result for ${missingId}...`);
+
+      const savedCode = localStorage.getItem(`code_${missingId}`);
+      let score = 0;
+      if (savedCode) {
+        try {
+          const parsedCode = JSON.parse(savedCode);
+          if (parsedCode.code && parsedCode.code !== templates[language] && parsedCode.code.trim().length > (templates[language]?.length || 0)) {
+            score = 5; // Partial credit for attempted code
+            console.log(`💡 Giving partial credit (${score}) for attempted solution`);
+          }
+        } catch (error) {
+          console.error(`Error parsing saved code for ${missingId}:`, error);
         }
       }
-      setOutput((prev) => `${prev}\nCompilation completed with ${compilationErrors} error(s).\n`);
-      setSnackbarMessage(`Compilation completed with ${compilationErrors} error(s).`);
-      setSnackbarSeverity(compilationErrors > 0 ? "warning" : "success");
-      return true;
-    } catch (error) {
-      console.error("Error compiling all programs:", error);
-      setOutput((prev) => `${prev}\nError compiling programs: ${error.message}`);
-      setSnackbarMessage("Error compiling all programs.");
-      setSnackbarSeverity("warning");
-      return true;
-    } finally {
-      setLoading(false);
-      setOpenProgressDialog(false);
-      setSnackbarOpen(true);
+
+      finalTestResult.codingResults.push({
+        codeId: missingId,
+        score,
+        total: 10,
+      });
+      console.log(`➕ Added missing result:`, { codeId: missingId, score, total: 10 });
     }
-  };
 
-  // Handle final test submission
-  const handleFinalSubmit = async (isMalpractice = false) => {
-    if (hasSubmitted) return;
+    // Update counts
+   finalTestResult.codingAnswered = finalTestResult.codingResults.length;
+finalTestResult.codingCorrect = finalTestResult.codingResults.filter(r => r.score > 0).length;
+finalTestResult.codingWrong = finalTestResult.codingResults.filter(r => r.score === 0).length;
+finalTestResult.codingNotAnswered = Math.max(0, effectiveCodingIds.length - finalTestResult.codingAnswered);
+finalTestResult.codingNotVisited = Math.max(0, effectiveCodingIds.length - finalTestResult.codingAnswered);
+finalTestResult.result_score = (finalTestResult.mcqCorrect || 0) + finalTestResult.codingResults.reduce((sum, result) => sum + result.score, 0);
 
-    setLoading(true);
-    setOpenProgressDialog(true);
-    setOutput("Processing results...\n");
+    // Save updated result
+    localStorage.setItem("test_result", JSON.stringify(finalTestResult));
+    setTestResult(finalTestResult);
 
-    await compileAllPrograms();
+    console.log(`✅ Compilation completed with ${compilationErrors} error(s)`, {
+      codingResults: finalTestResult.codingResults.length,
+      totalScore: finalTestResult.result_score,
+    });
+    setOutput(prev => `${prev}\n✅ Compilation completed with ${compilationErrors} error(s)`);
+    setOutput(prev => `${prev}\n📈 Final coding results: ${finalTestResult.codingResults.length}/${effectiveCodingIds.length} programs processed`);
+    setOutput(prev => `${prev}\n🏆 Total score: ${finalTestResult.result_score}/${finalTestResult.result_total_score}`);
 
+    setSnackbarMessage(`Compilation completed. ${finalTestResult.codingResults.length}/${effectiveCodingIds.length} programs processed.`);
+    setSnackbarSeverity(compilationErrors > 0 ? "warning" : "success");
+
+    return {
+      success: true,
+      errors: compilationErrors,
+      processedCount: finalTestResult.codingResults.length,
+      expectedCount: effectiveCodingIds.length,
+      finalResult: finalTestResult,
+    };
+  } catch (error) {
+    console.error("❌ Error compiling all programs:", error);
+    setOutput(prev => `${prev}\n❌ Error compiling programs: ${error.message}`);
+    setSnackbarMessage("Error compiling all programs.");
+    setSnackbarSeverity("error");
+    return { success: false, error: error.message };
+  } finally {
+    setLoading(false);
+    setOpenProgressDialog(false);
+    setSnackbarOpen(true);
+  }
+};
+
+// Handle final submission
+const handleFinalSubmit = async (isMalpractice = false) => {
+  if (hasSubmitted) {
+    console.log(`⏹️ Submission already completed, ignoring duplicate call`);
+    return;
+  }
+
+  console.log(`🚀 Starting final submission process (malpractice: ${isMalpractice})`);
+  setLoading(true);
+  setOpenProgressDialog(true);
+  setOutput("🚀 Starting final submission process...\n");
+
+  try {
+    // Step 1: Compile all programs
+    setOutput(prev => `${prev}\n📝 Step 1: Compiling all programs...`);
+    console.log(`📝 Step 1: Starting compilation process`);
+
+    const compilationResult = await compileAllPrograms();
+    if (!compilationResult.success) {
+      throw new Error(`Compilation failed: ${compilationResult.error}`);
+    }
+
+    console.log(`✅ Compilation completed:`, {
+      success: compilationResult.success,
+      errors: compilationResult.errors,
+      processed: compilationResult.processedCount,
+      expected: compilationResult.expectedCount,
+    });
+
+    // Step 2: Show confirmation dialog if not malpractice
     if (!isMalpractice) {
+      console.log(`💬 Showing confirmation dialog`);
       setSubmitConfirmDialogOpen(true);
       setLoading(false);
       setOpenProgressDialog(false);
       return;
     }
 
+    // Step 3: Prepare submission data
+    setOutput(prev => `${prev}\n📤 Step 2: Preparing final submission...`);
+    console.log(`📤 Step 3: Preparing submission data`);
+
+    let finalTestResult = compilationResult.finalResult;
     try {
-      const resultData = {
-        result_user_id: testResult.result_user_id || userId || "",
-        result_test_id: testResult.result_test_id || testId || "",
-        result_poc_id: testResult.result_poc_id || pocId || "",
-        result_score: testResult.result_score || 0,
-        result_total_score: testResult.result_total_score || 0,
-        codingAnswered: testResult.codingAnswered || 0,
-        codingCorrect: testResult.codingCorrect || 0,
-        codingIds: testResult.codingIds || [],
-        codingNotAnswered: testResult.codingNotAnswered || 0,
-        codingNotVisited: testResult.codingNotVisited || 0,
-        codingWrong: testResult.codingWrong || 0,
-        marked: testResult.marked || 0,
-        mcqAnswered: testResult.mcqAnswered || 0,
-        mcqCorrect: testResult.mcqCorrect || 0,
-        mcqNotAnswered: testResult.mcqNotAnswered || 0,
-        mcqNotVisited: testResult.mcqNotVisited || 0,
-        mcqWrong: testResult.mcqWrong || 0,
-        studentName: testResult.studentName || studentName || "",
-        testLanguage: testResult.testLanguage || "",
-        testName: testResult.testName || "",
-        codingResults: testResult.codingResults || [],
-      };
-
-      setOutput((prev) => `${prev}\nSubmitting test for final evaluation...\n`);
-      await submitTestResult(resultData);
-
-      const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : testResult.codingIds;
-      effectiveCodingIds.forEach((id) => localStorage.removeItem(`code_${id}`));
-
-      setHasSubmitted(true);
-      setOutput((prev) => `${prev}\nTest submitted successfully!`);
-      setSnackbarMessage("Test submitted successfully!");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-
-      navigate("/test-result", { state: { resultData } });
+      const storedTestResult = localStorage.getItem("test_result");
+      if (storedTestResult) {
+        finalTestResult = JSON.parse(storedTestResult);
+      }
     } catch (error) {
-      console.error("Final submit error:", error);
-      setOutput((prev) => `${prev}\nError submitting test: ${error.message}`);
-      setSnackbarMessage(`Error during test submission: ${error.message}`);
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
-      setOpenProgressDialog(false);
+      console.error("❌ Error retrieving final test result:", error);
     }
-  };
 
+    const resultData = {
+      result_user_id: finalTestResult.result_user_id || userId || "",
+      result_test_id: finalTestResult.result_test_id || testId || "",
+      result_poc_id: finalTestResult.result_poc_id || pocId || "",
+      result_score: finalTestResult.result_score || 0,
+      result_total_score: finalTestResult.result_total_score || 0,
+      codingAnswered: finalTestResult.codingAnswered || 0,
+      codingCorrect: finalTestResult.codingCorrect || 0,
+      codingIds: finalTestResult.codingIds || [],
+      codingNotAnswered: finalTestResult.codingNotAnswered || 0,
+      codingNotVisited: finalTestResult.codingNotVisited || 0,
+      codingWrong: finalTestResult.codingWrong || 0,
+      marked: finalTestResult.marked || 0,
+      mcqAnswered: finalTestResult.mcqAnswered || 0,
+      mcqCorrect: finalTestResult.mcqCorrect || 0,
+      mcqNotAnswered: finalTestResult.mcqNotAnswered || 0,
+      mcqNotVisited: finalTestResult.mcqNotVisited || 0,
+      mcqWrong: finalTestResult.mcqWrong || 0,
+      studentName: finalTestResult.studentName || studentName || "",
+      testLanguage: finalTestResult.testLanguage || "",
+      testName: finalTestResult.testName || "",
+      codingResults: finalTestResult.codingResults || [],
+    };
+
+    // Log submission data
+    console.log(`📋 Final submission data:`, {
+      codingResults: resultData.codingResults.length,
+      totalScore: resultData.result_score,
+      codingIds: resultData.codingIds.length,
+    });
+    setOutput(prev => `${prev}\n📋 Final submission data:`);
+    setOutput(prev => `${prev}\n   - Coding Problems: ${resultData.codingIds.length}`);
+    setOutput(prev => `${prev}\n   - Coding Results: ${resultData.codingResults.length}`);
+    setOutput(prev => `${prev}\n   - Total Score: ${resultData.result_score}/${resultData.result_total_score}`);
+
+    // Step 4: Submit test
+    setOutput(prev => `${prev}\n🚀 Step 3: Submitting test...`);
+    console.log(`🚀 Submitting test result to server`);
+    await submitTestResult(resultData);
+    console.log(`✅ Test submitted successfully`);
+
+    // Step 5: Cleanup
+    setOutput(prev => `${prev}\n🧹 Step 4: Cleaning up...`);
+    console.log(`🧹 Cleaning up localStorage`);
+
+    const effectiveCodingIds = fetchedTestCodingIds.length > 0 ? fetchedTestCodingIds : (testResult.codingIds || []);
+    effectiveCodingIds.forEach(id => {
+      try {
+        localStorage.removeItem(`code_${id}`);
+        console.log(`🗑️ Removed code_${id} from localStorage`);
+      } catch (error) {
+        console.error(`❌ Error removing code_${id}:`, error);
+      }
+    });
+
+    // Success
+    setHasSubmitted(true);
+    setOutput(prev => `${prev}\n🎉 Test submitted successfully!`);
+    console.log(`🎉 Final submission completed successfully`);
+
+    setSnackbarMessage("Test submitted successfully!");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+
+    // Navigate to results
+    navigate("/test-result", { state: { resultData } });
+  } catch (error) {
+    console.error("💥 Final submit error:", error);
+    setOutput(prev => `${prev}\n💥 Error submitting test: ${error.message}`);
+    setSnackbarMessage(`Error during test submission: ${error.message}`);
+    setSnackbarSeverity("error");
+  } finally {
+    setLoading(false);
+    setOpenProgressDialog(false);
+    setSnackbarOpen(true);
+  }
+};
   // Confirm final submission
   const confirmFinalSubmit = async () => {
     setSubmitConfirmDialogOpen(false);
