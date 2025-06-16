@@ -3,8 +3,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
 import { createRoot } from "react-dom/client";
-import BackgroundImg from "../assests/cert_bg.jpg.jpg"; // Fixed typo
-import DigiSign from "../assests/DigiSign.png"; // Adjust path
+import BackgroundImg from "../assests/cert_bg.jpg.jpg";
+import DigiSign from "../assests/DigiSign.png";
 import { getUserById, getModuleById, fetchAggregateScores, fetchOrGenerateCertificates } from "../axios";
 import {
   Dialog,
@@ -67,7 +67,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
     <div
       style={{
         width: "100%",
-        maxWidth: "1123px",
+        maxWidth: "29.7cm",
         margin: "0 auto",
         transform: "scale(calc(100vw / 1200))",
         transformOrigin: "top center",
@@ -77,11 +77,11 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
       <div
         ref={forwardedRef}
         style={{
-          width: "1123px",
-          height: "794px",
+          width: "29.7cm",
+          height: "21cm",
           background: "transparent",
           position: "relative",
-          fontFamily: "Georgia, serif",
+          fontFamily: "Times New Roman",
           padding: "60px",
           boxSizing: "border-box",
           color: "#000",
@@ -102,24 +102,25 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
           }}
           onError={(e) => console.error("Failed to load background image:", e, BackgroundImg)}
         />
-        <h2 style={{ fontSize: "2.8rem", marginTop: "130px" }}>CERTIFICATE OF COMPLETION</h2>
-        <p style={{ fontSize: "1rem", fontStyle: "italic" }}>
-          Certificate ID: {certificateId}
-        </p>
-
-        <p style={{ fontSize: "1.5rem", fontWeight: "bold", marginTop: "10px" }}>
-          WE ARE PROUDLY PRESENT THIS SKILL WORKSHOP
-        </p>
-        <p style={{ fontSize: "1.5rem", fontWeight: "bold", marginTop: "10px" }}>CERTIFICATE TO</p>
-
-        <div style={{ display: "inline-block", textAlign: "center", marginTop: "10px" }}>
-          <h3 style={{ fontSize: "1.6rem", color: "#35b5ff", marginBottom: "5px" }}>
-            {userDetails.full_name?.toUpperCase()} ({userDetails.rollno})
-          </h3>
-          <div style={{ height: "2px", backgroundColor: "#35b5ff", width: "100%" }} />
+        <div style={{ marginTop: "130px", display: "flex", flexDirection: "column", alignItems: "flex-end", width: "fit-content", marginLeft: "auto", marginRight: "auto" }}>
+          <h2 style={{ fontSize: 47, charSpace: 0.1, margin: 0 }}>CERTIFICATE OF COMPLETION</h2>
+          <p style={{ fontSize: 27, fontStyle: "italic", fontFamily: "Charm", margin: "5px 0 0 0" }}>
+            Certificate ID: {certificateId}
+          </p>
         </div>
 
-        <p style={{ fontSize: "1.1rem", margin: "30px auto", width: "80%" }}>
+        <p style={{ fontSize: 27, fontWeight: "bold", marginTop: "10px" }}>
+          WE ARE PROUDLY PRESENT THIS SKILL WORKSHOP
+        </p>
+        <p style={{ fontSize: 27, fontWeight: "bold", marginTop: "5px" }}>CERTIFICATE TO</p>
+
+        <div style={{ display: "inline-block", textAlign: "center", marginTop: "5px" }}>
+          <h3 style={{ fontSize: 27, color: "black", fontWeight: "bold" }}>
+            {userDetails.full_name?.toUpperCase()} ({userDetails.rollno})
+          </h3>
+        </div>
+
+        <p style={{ fontSize: 27, margin: "10px auto", width: "80%" }}>
           Department of <strong>{userDetails.department}</strong> from <strong>{userDetails.college}</strong> on
           <strong> {moduleDetails.mod_name}</strong>. Obtained a mark of <strong>{percentage}%</strong>.<br />
           Duration: {moduleDetails.mod_duration}.
@@ -137,7 +138,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
             value={verificationUrl}
             size={100}
             level="H"
-            style={{ marginBottom: "10px" }}
+            style={{ marginBottom: "28px",marginLeft:"5px" }}
           />
         </div>
 
@@ -147,7 +148,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
             bottom: "40px",
             left: "200px",
             textAlign: "center",
-            fontSize: "1rem",
+            fontSize: 27,
           }}
         >
           <strong>{issueDate}</strong>
@@ -161,7 +162,7 @@ const CertificateTemplate = ({ forwardedRef, certificateId }) => {
             bottom: "40px",
             right: "60px",
             textAlign: "center",
-            fontSize: "1rem",
+            fontSize: 27,
           }}
         >
           <img
@@ -221,7 +222,7 @@ const generateCertificate = async (certificateId, setProgress, setError) => {
     const imgData = canvas.toDataURL("image/jpeg", 0.8);
     console.log(`Canvas data URL size: ${(imgData.length * 0.75 / 1024 / 1024).toFixed(2)} MB`);
 
-    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+    const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [297, 210], compress: true });
     console.log("Adding background to PDF:", background.src);
     pdf.addImage(background, "JPEG", 0, 0, 297, 210);
     pdf.addImage(imgData, "JPEG", 0, 0, 297, 210);
@@ -416,7 +417,7 @@ const CertificateGenerator = forwardRef((props, ref) => {
           {error ? (
             <Typography
               variant="body1"
-              color="error"
+color="error"
               sx={{
                 fontWeight: 500,
                 fontSize: { xs: "0.9rem", sm: "1rem" },

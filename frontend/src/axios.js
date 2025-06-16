@@ -19,6 +19,7 @@ export const signIn = async (userData) => {
 export const getTestById = async (testId) => {
   try {
     const response = await axios.get(`${BASE_URL}/test_gateway/test/get_by_test_id/${testId}`);
+    console.log("Test data fetched:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching test data:", error);
@@ -484,11 +485,12 @@ export const updateTest = async (testData) => {
 // Create test API call
 export const createTest = async (testData) => {
   try {
-    const response = await axios.put(`${BASE_URL}/testcase_gateway/test/create`, testData);
+    console.log('Sending test data:', testData);
+    const response = await axios.post(`${BASE_URL}/testcase_gateway/test/create`, testData);
     return response.data;
   } catch (error) {
     console.error("Create test error:", error);
-    throw error;
+    throw error.response?.data?.error || error.message;
   }
 };
 
@@ -535,6 +537,17 @@ export const updatePoc = async (updateData) => {
     throw error;
   }
 };
+// export const updatePoc = async (data) => {
+//   try {
+//     console.log('Sending update POC request:', data);
+//     const response = await axios.put(`${BASE_URL}/poc_gateway/poc/update_poc`, data);
+//     console.log('Update POC response:', response.data);
+//     return response.data;
+//   } catch (error) {
+//     console.error('Error updating POC:', error);
+//     throw error;
+//   }
+// };
 
 // Update expert
 export const updateExpert = async (updateData) => {

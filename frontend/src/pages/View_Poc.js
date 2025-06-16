@@ -8,23 +8,35 @@ import {
   Fab,
   Menu,
   MenuItem,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  CircularProgress,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { fetchAllPocs, getModuleById } from '../axios';
+import { fetchAllPocs, getModuleById, updatePoc } from '../axios';
 import Admin_Dashboard from '../components/AdminDash';
 import { useNavigate } from 'react-router-dom';
 import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
 
-const PocPage = () => {
+const View_Poc = () => {
   const [pocs, setPocs] = useState([]);
   const [filteredPocs, setFilteredPocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showLiveOnly, setShowLiveOnly] = useState(true); // Default to true
-  const [anchorEl, setAnchorEl] = useState(null); // For FAB menu
+  const [showLiveOnly, setShowLiveOnly] = useState(true);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusChangePending, setStatusChangePending] = useState(null);
+  const [selectedPocForStatus, setSelectedPocForStatus] = useState(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
   const navigate = useNavigate();
 
-  const today = new Date(); // Dynamically fetch today's date
+  const today = new Date();
 
   useEffect(() => {
     const getPocs = async () => {
@@ -33,12 +45,10 @@ const PocPage = () => {
         console.log('Full API Response:', response);
         if (Array.isArray(response.data)) {
           console.log('Fetched POCs:', response.data);
-          // Fetch module details for each POC
           const pocsWithModuleDetails = await Promise.all(
             response.data.map(async (poc) => {
               try {
                 const module = await getModuleById(poc.mod_id);
-                // Parse duration (e.g., "27/03/2025 - 28/03/2025")
                 const [startDateStr, endDateStr] = module.mod_duration.split(' - ');
                 const startDate = new Date(
                   startDateStr.split('/').reverse().join('-')
@@ -46,11 +56,9 @@ const PocPage = () => {
                 const endDate = new Date(
                   endDateStr.split('/').reverse().join('-')
                 );
-                // Normalize dates to remove time component for comparison
                 const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                 const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
                 const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-                // Check if today is the start date, end date, or within the duration
                 const isLive = todayDate.getTime() === startDateOnly.getTime() ||
                                todayDate.getTime() === endDateOnly.getTime() ||
                                (todayDate >= startDateOnly && todayDate <= endDateOnly);
@@ -72,7 +80,6 @@ const PocPage = () => {
             })
           );
           setPocs(pocsWithModuleDetails);
-          // Initially filter to show only Live POCs
           setFilteredPocs(pocsWithModuleDetails.filter((poc) => poc.status === 'Live'));
         } else {
           console.error('Expected an array, got:', response.data);
@@ -92,7 +99,6 @@ const PocPage = () => {
     getPocs();
   }, []);
 
-  // Handle toggle for showing only Live POCs
   useEffect(() => {
     if (showLiveOnly) {
       setFilteredPocs(pocs.filter((poc) => poc.status === 'Live'));
@@ -101,7 +107,6 @@ const PocPage = () => {
     }
   }, [showLiveOnly, pocs]);
 
-  // Handle FAB menu
   const handleFabClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -120,6 +125,98 @@ const PocPage = () => {
     handleFabMenuClose();
   };
 
+  const handleOpenStatusDialog = (poc, newStatus) => {
+    if (!poc || !poc.mod_poc_id) {
+      setError('Invalid POC selected for status update');
+      return;
+    }
+    console.log('Opening status dialog for POC:', poc.mod_poc_name, 'New status:', newStatus);
+    setSelectedPocForStatus(poc);
+    setStatusChangePending(newStatus);
+    setStatusDialogOpen(true);
+  };
+
+  const handleCloseStatusDialog = () => {
+    setStatusDialogOpen(false);
+    setSelectedPocForStatus(null);
+    setStatusChangePending(null);
+  };
+
+  const handleToggleCertStatus = async () => {
+    if (!selectedPocForStatus || !selectedPocForStatus.mod_poc_id) {
+      setError('No valid POC selected for status update');
+      handleCloseStatusDialog();
+      return;
+    }
+
+    try {
+      setUpdateLoading(true);
+      const updateData = {
+        mod_poc_id: selectedPocForStatus.mod_poc_id,
+        poc_certificate: {
+          cert_status: statusChangePending
+        }
+      };
+      console.log('Updating cert_status for POC:', updateData);
+
+      const response = await updatePoc(updateData);
+      console.log('POC update response:', response);
+
+      const responsePocs = await fetchAllPocs();
+      console.log('Refreshed POCs:', responsePocs.data);
+      if (Array.isArray(responsePocs.data)) {
+        const pocsWithModuleDetails = await Promise.all(
+          responsePocs.data.map(async (poc) => {
+            try {
+              const module = await getModuleById(poc.mod_id);
+              const [startDateStr, endDateStr] = module.mod_duration.split(' - ');
+              const startDate = new Date(
+                startDateStr.split('/').reverse().join('-')
+              );
+              const endDate = new Date(
+                endDateStr.split('/').reverse().join('-')
+              );
+              const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+              const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+              const isLive = todayDate.getTime() === startDateOnly.getTime() ||
+                             todayDate.getTime() === endDateOnly.getTime() ||
+                             (todayDate >= startDateOnly && todayDate <= endDateOnly);
+              return {
+                ...poc,
+                module_name: module.mod_name,
+                module_duration: module.mod_duration,
+                status: isLive ? 'Live' : 'Not Live',
+              };
+            } catch (err) {
+              console.error(`Error fetching module for POC ${poc.mod_poc_id}:`, err);
+              return {
+                ...poc,
+                module_name: 'N/A',
+                module_duration: 'N/A',
+                status: 'Unknown',
+              };
+            }
+          })
+        );
+        setPocs(pocsWithModuleDetails);
+        setFilteredPocs(showLiveOnly ? pocsWithModuleDetails.filter((poc) => poc.status === 'Live') : pocsWithModuleDetails);
+        setError(null);
+      } else {
+        setError('Invalid data format received from server after update');
+        setPocs([]);
+        setFilteredPocs([]);
+      }
+
+      handleCloseStatusDialog();
+    } catch (error) {
+      console.error('Error updating POC cert_status:', error);
+      setError(`Failed to update certificate status: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   const columns = [
     { field: 'mod_poc_name', headerName: 'Name', width: 150 },
     { field: 'mod_poc_role', headerName: 'Role', width: 100 },
@@ -129,11 +226,29 @@ const PocPage = () => {
     {
       field: 'poc_certificate',
       headerName: 'Certificate Status',
-      width: 150,
+      width: 200,
       renderCell: (params) => (
-        <Typography variant="body2">
-          {params.value?.cert_status ? 'Issued' : 'Not Issued'}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            label={params.value?.cert_status ? 'Issued' : 'Not Issued'}
+            color={params.value?.cert_status ? 'success' : 'default'}
+            size="small"
+            sx={{ borderColor: '#0b78b9', color: '#0b78b9' }}
+          />
+          <Switch
+            checked={params.value?.cert_status || false}
+            onChange={() => handleOpenStatusDialog(params.row, !params.value?.cert_status)}
+            disabled={updateLoading}
+            sx={{
+              '& .MuiSwitch-switchBase.Mui-checked': {
+                color: '#0b78b9',
+              },
+              '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                backgroundColor: '#0b78b9',
+              },
+            }}
+          />
+        </Box>
       ),
     },
     {
@@ -198,7 +313,7 @@ const PocPage = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: 3,
-          position: 'relative', // For FAB positioning
+          position: 'relative',
         }}
       >
         <Box
@@ -225,7 +340,6 @@ const PocPage = () => {
               <Switch
                 checked={showLiveOnly}
                 onChange={(e) => setShowLiveOnly(e.target.checked)}
-                color="primary"
                 sx={{
                   '& .MuiSwitch-switchBase.Mui-checked': {
                     color: '#0b78b9',
@@ -301,9 +415,7 @@ const PocPage = () => {
             />
           </Box>
         </Paper>
-        {/* Circular Floating Action Button */}
         <Fab
-          color="primary"
           aria-label="add"
           onClick={handleFabClick}
           sx={{
@@ -353,7 +465,7 @@ const PocPage = () => {
                 textTransform: 'none',
                 fontWeight: 'medium',
                 boxShadow: 'none',
-                pointerEvents: 'none', // Prevent FAB from capturing clicks
+                pointerEvents: 'none',
               }}
             >
               <AddIcon sx={{ mr: 1, color: '#0b78b9' }} />
@@ -380,7 +492,7 @@ const PocPage = () => {
                 textTransform: 'none',
                 fontWeight: 'medium',
                 boxShadow: 'none',
-                pointerEvents: 'none', // Prevent FAB from capturing clicks
+                pointerEvents: 'none',
               }}
             >
               <EditIcon sx={{ mr: 1, color: '#0b78b9' }} />
@@ -388,9 +500,43 @@ const PocPage = () => {
             </Fab>
           </MenuItem>
         </Menu>
+        <Dialog open={statusDialogOpen} onClose={handleCloseStatusDialog} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ backgroundColor: '#0b78b9', color: 'white', borderBottom: '1px solid #ddd' }}>
+            Confirm Certificate Status Change
+          </DialogTitle>
+          <DialogContent dividers>
+            <DialogContentText sx={{ fontSize: '16px' }}>
+              {statusChangePending
+                ? `Are you sure you want to activate certificate issuance for ${selectedPocForStatus?.mod_poc_name || 'this POC'}?`
+                : `Are you sure you want to deactivate certificate issuance for ${selectedPocForStatus?.mod_poc_name || 'this POC'}?`}
+            </DialogContentText>
+            {selectedPocForStatus && (
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                <strong>POC:</strong> {selectedPocForStatus.mod_poc_name || 'Unknown'} (ID: {selectedPocForStatus.mod_poc_id || 'N/A'})
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={handleCloseStatusDialog}
+              sx={{ color: '#0b78b9' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleToggleCertStatus}
+              variant="contained"
+              disabled={updateLoading}
+              sx={{ backgroundColor: '#0b78b9', '&:hover': { backgroundColor: '#095e8f' } }}
+            >
+              {updateLoading ? <CircularProgress size={24} sx={{ mr: 1 }} /> : null}
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </>
   );
 };
 
-export default PocPage;
+export default View_Poc;

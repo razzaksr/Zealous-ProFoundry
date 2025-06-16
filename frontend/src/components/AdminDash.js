@@ -132,7 +132,11 @@ export default function Admin_Dash() {
       text: "Test",
       icon: <Quiz />,
       color: "#fc7a46",
-      routes: [{ text: "View Test", path: "/test", icon: <Visibility /> }],
+      routes: [{ text: "View Test", path: "/test", icon: <Visibility /> }
+        , { text: "Add Test", path: "/add_test", icon: <Add /> }
+        , { text: "Update Test", path: "/update_test", icon: <Edit /> }
+      ],
+
     },
     {
       text: "User",
@@ -181,6 +185,14 @@ export default function Admin_Dash() {
         { text: "Add Testcase", path: "/add_testcase", icon: <Add /> },
       ],
     },
+      {
+    text: "Certificate",
+    icon: <Assignment />,
+    color: "#0c83c8",
+    routes: [
+      { text: "Generate Certificate", path: "/bulk_certificate", icon: <Add /> },
+    ],
+  }
   ];
 
   const drawerContent = (
@@ -310,7 +322,7 @@ export default function Admin_Dash() {
 
       <AppBar
         position="sticky"
-        sx={{ backgroundColor: "#fff", borderRadius: "36px" }}
+        sx={{ backgroundColor: "#fff"}}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Box display="flex" alignItems="center">

@@ -8,13 +8,17 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-  Input,
   FormControlLabel,
   Checkbox,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import { UploadFile } from "@mui/icons-material";
+import { Button as BootstrapButton, Row, Col } from "react-bootstrap";
 import Papa from "papaparse";
 import { addUser, bulkAddUsers } from "../axios";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Add_User = () => {
   const [formData, setFormData] = useState({
@@ -29,12 +33,18 @@ const Add_User = () => {
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
   const [csvData, setCsvData] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [csvLoading, setCsvLoading] = useState(false);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
   // Generate CSV and trigger download
   const generateAndDownloadCsv = (data, filename = "Credential_details.csv") => {
@@ -54,10 +64,7 @@ const Add_User = () => {
     ];
     const csvContent = csvRows.join("\n");
 
-    // Create Blob for download
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    
-    // Trigger download with explicit filename
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
@@ -65,23 +72,25 @@ const Add_User = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    // Clean up
     URL.revokeObjectURL(url);
   };
 
   // Handle download button click
   const handleDownloadCsv = () => {
-    // Use csvData for pre-creation download, exclude mobile_no and admin
     const downloadData = csvData.map((row) => ({
       full_name: row.full_name,
       email: row.email,
-      plain_password: "", // Password not available pre-creation
+      plain_password: "",
       department: row.department,
       college: row.college,
       rollno: row.rollno,
     }));
     generateAndDownloadCsv(downloadData, "Credential_details.csv");
+    setSnackbar({
+      open: true,
+      message: "CSV downloaded successfully!",
+      severity: "success",
+    });
   };
 
   // Form handling for single user
@@ -94,44 +103,71 @@ const Add_User = () => {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
+  const validateField = (name, value) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const mobileRegex = /^\d{10}$/;
+
+    switch (name) {
+      case "full_name":
+        return value.trim() ? "" : "Full name is required";
+      case "email":
+        if (!value.trim()) return "Email is required";
+        return emailRegex.test(value) ? "" : "Invalid email format";
+      case "mobile_no":
+        return value && !mobileRegex.test(value) ? "Mobile number must be 10 digits" : "";
+      case "department":
+        return formData.admin || value.trim() ? "" : "Department is required";
+      case "college":
+        return formData.admin || value.trim() ? "" : "College is required";
+      case "rollno":
+        return formData.admin || value.trim() ? "" : "Roll number is required";
+      case "password":
+        if (formData.admin && !value) return "Password is required for admin users";
+        if (value && value.length < 4) return "Password must be at least 4 characters";
+        return "";
+      default:
+        return "";
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.full_name.trim()) newErrors.full_name = "Full name is required";
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-    if (!formData.admin) {
-      if (!formData.department.trim()) newErrors.department = "Department is required";
-      if (!formData.college.trim()) newErrors.college = "College is required";
-      if (!formData.rollno.trim()) newErrors.rollno = "Roll number is required";
-      if (!formData.password && !formData.mobile_no.trim()) {
-        newErrors.mobile_no = "Mobile number is required when password is empty";
+    Object.keys(formData).forEach((key) => {
+      if (key !== "admin") {
+        newErrors[key] = validateField(key, formData[key]);
       }
-    }
-    if (formData.admin && !formData.password) {
-      newErrors.password = "Password is required for admin users";
-    } else if (formData.password && formData.password.length < 4) {
-      newErrors.password = "Password must be at least 4 characters";
+    });
+    if (!formData.admin && !formData.password && !formData.mobile_no.trim()) {
+      newErrors.mobile_no = "Mobile number is required when password is empty";
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).every((key) => !newErrors[key]);
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setSnackbar({
+        open: true,
+        message: Object.values(errors).find((err) => err) || "Please fix the errors",
+        severity: "error",
+      });
+      return;
+    }
 
     setLoading(true);
     try {
       const response = await addUser(formData);
-      console.log("User created:", response.data);
-      setSnackbarMessage(
-        `User created successfully! Password: ${response.data.plain_password}`
-      );
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        message: `User created successfully! Password: ${response.data.plain_password}`,
+        severity: "success",
+      });
       setFormData({
         full_name: "",
         department: "",
@@ -142,13 +178,14 @@ const Add_User = () => {
         mobile_no: "",
         admin: false,
       });
+      setErrors({});
     } catch (error) {
-      console.error("Error creating user:", error);
-      setSnackbarMessage(
-        error.response?.data?.msg || "Failed to create user: Server error"
-      );
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      const errorMsg = error.response?.data?.msg || "Failed to create user: Server error";
+      setSnackbar({
+        open: true,
+        message: errorMsg.includes("already exists") ? "User already exists" : errorMsg,
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -163,7 +200,7 @@ const Add_User = () => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      transformHeader: (header) => header.trim().toLowerCase(), // Normalize headers
+      transformHeader: (header) => header.trim().toLowerCase(),
       complete: (result) => {
         const expectedHeaders = [
           "full_name",
@@ -174,27 +211,23 @@ const Add_User = () => {
           "mobile_no",
           "admin",
         ];
-        const headers = Object.keys(result.data[0] || {}).map((h) =>
-          h.trim().toLowerCase()
-        );
+        const headers = Object.keys(result.data[0] || {}).map((h) => h.trim().toLowerCase());
         const isValid = expectedHeaders.every((h) =>
           h === "admin" ? true : headers.includes(h)
-        ); // admin is optional
+        );
 
         if (!isValid) {
-          setSnackbarMessage(
-            "Invalid CSV format. Expected headers: " +
-              expectedHeaders.join(", ") +
-              " (admin optional)"
-          );
-          setSnackbarSeverity("error");
-          setSnackbarOpen(true);
+          setSnackbar({
+            open: true,
+            message: `Invalid CSV format. Expected headers: ${expectedHeaders.join(", ")} (admin optional)`,
+            severity: "error",
+          });
           setCsvLoading(false);
           return;
         }
 
         const formattedData = result.data.map((row, index) => ({
-          id: index, // Unique ID for DataGrid (numeric)
+          id: index,
           full_name: row.full_name || "",
           department: row.department || "",
           college: row.college || "",
@@ -205,17 +238,20 @@ const Add_User = () => {
         }));
 
         setCsvData(formattedData);
-        setSelectedRows([]); // Reset selection on new upload
-        setSnackbarMessage("CSV loaded successfully!");
-        setSnackbarSeverity("success");
-        setSnackbarOpen(true);
+        setSelectedRows([]);
+        setSnackbar({
+          open: true,
+          message: "CSV loaded successfully!",
+          severity: "success",
+        });
         setCsvLoading(false);
       },
       error: (error) => {
-        console.error("CSV parsing error:", error);
-        setSnackbarMessage("Failed to parse CSV file");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          message: "Failed to parse CSV file",
+          severity: "error",
+        });
         setCsvLoading(false);
       },
     });
@@ -223,9 +259,11 @@ const Add_User = () => {
 
   const handleBulkCreate = async (selectedOnly = false) => {
     if (csvData.length === 0) {
-      setSnackbarMessage("No CSV data to process");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        message: "No CSV data to process",
+        severity: "error",
+      });
       return;
     }
 
@@ -235,13 +273,12 @@ const Add_User = () => {
         ? csvData.filter((row) => selectedRows.includes(row.id))
         : csvData;
 
-      console.log("Selected rows:", selectedRows); // Debug
-      console.log("Users to create:", usersToCreate); // Debug
-
       if (usersToCreate.length === 0) {
-        setSnackbarMessage("No users selected");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        setSnackbar({
+          open: true,
+          message: "No users selected",
+          severity: "error",
+        });
         setLoading(false);
         return;
       }
@@ -249,42 +286,34 @@ const Add_User = () => {
       const response = await bulkAddUsers(usersToCreate);
       const { successes, failures } = response.data;
 
-      // Generate and download CSV for successful users
       if (successes.length > 0) {
-        console.log("Generating CSV for successes:", successes); // Debug
         generateAndDownloadCsv(successes, "Credential_details.csv");
       }
 
       let message = `Bulk creation completed: ${successes.length} succeeded, ${failures.length} failed.`;
       if (successes.length > 0) {
-        message +=
-          "\nPasswords: " +
-          successes
-            .map((s) => `${s.email}: ${s.plain_password}`)
-            .join("; ");
+        message += `\nPasswords: ${successes.map((s) => `${s.email}: ${s.plain_password}`).join("; ")}`;
       }
       if (failures.length > 0) {
-        message +=
-          "\nFailures: " +
-          failures.map((f) => `${f.email}: ${f.msg}`).join("; ");
+        message += `\nFailures: ${failures.map((f) => `${f.email}: ${f.msg}`).join("; ")}`;
       }
 
-      setSnackbarMessage(message);
-      setSnackbarSeverity(failures.length > 0 ? "warning" : "success");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        message,
+        severity: failures.length > 0 ? "warning" : "success",
+      });
 
-      // Clear CSV data and selection on success
       if (successes.length > 0) {
         setCsvData([]);
         setSelectedRows([]);
       }
     } catch (error) {
-      console.error("Error in bulk user creation:", error);
-      setSnackbarMessage(
-        error.response?.data?.msg || "Failed to create users: Server error"
-      );
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.msg || "Failed to create users: Server error",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -292,236 +321,374 @@ const Add_User = () => {
 
   // DataGrid columns
   const columns = [
-    { field: "full_name", headerName: "Full Name", width: 150 },
-    { field: "department", headerName: "Department", width: 120 },
-    { field: "college", headerName: "College", width: 200 },
-    { field: "rollno", headerName: "Roll Number", width: 120 },
-    { field: "email", headerName: "Email", width: 200 },
-    { field: "mobile_no", headerName: "Mobile Number", width: 150 },
-    { field: "admin", headerName: "Admin", width: 100, type: "boolean" },
+    { field: "full_name", headerName: "Full Name", width: isMobile ? 100 : 150 },
+    { field: "department", headerName: "Department", width: isMobile ? 80 : 120 },
+    { field: "college", headerName: "College", width: isMobile ? 120 : 200 },
+    { field: "rollno", headerName: "Roll Number", width: isMobile ? 80 : 120 },
+    { field: "email", headerName: "Email", width: isMobile ? 120 : 200 },
+    { field: "mobile_no", headerName: "Mobile Number", width: isMobile ? 100 : 150 },
+    { field: "admin", headerName: "Admin", width: isMobile ? 70 : 100, type: "boolean" },
   ];
 
   return (
-    <Box sx={{ padding: 4, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: `linear-gradient(135deg, rgba(12, 131, 200, 0.05) 0%, rgba(252, 122, 70, 0.05) 100%)`,
+        py: isMobile ? 2 : 4,
+        px: isMobile ? 1 : 2,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+      className="d-flex justify-content-center"
+    >
       {/* Single User Form */}
       <Paper
         elevation={3}
-        sx={{ p: 4, maxWidth: 600, mx: "auto", borderRadius: "16px", mb: 4 }}
+        sx={{
+          p: isMobile ? 2 : 4,
+          maxWidth: isMobile ? "100%" : 600,
+          mx: "auto",
+          borderRadius: "12px",
+          mb: isMobile ? 2 : 4,
+          background: "rgba(255, 255, 255, 0.95)",
+        }}
+        className="shadow-sm"
       >
         <Typography
-          variant="h5"
+          variant={isMobile ? "h6" : "h5"}
           align="center"
-          sx={{ mb: 4, fontWeight: "bold" }}
+          sx={{ mb: isMobile ? 2 : 3, fontWeight: "bold", color: theme.palette.primary.main }}
+          className="mb-3"
         >
           Add User
         </Typography>
         <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Full Name"
-            name="full_name"
-            value={formData.full_name}
-            onChange={handleChange}
-            error={!!errors.full_name}
-            helperText={errors.full_name}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="Department"
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            error={!!errors.department}
-            helperText={errors.department}
-            margin="normal"
-            disabled={formData.admin}
-          />
-          <TextField
-            fullWidth
-            label="College"
-            name="college"
-            value={formData.college}
-            onChange={handleChange}
-            error={!!errors.college}
-            helperText={errors.college}
-            margin="normal"
-            disabled={formData.admin}
-          />
-          <TextField
-            fullWidth
-            label="Roll Number"
-            name="rollno"
-            value={formData.rollno}
-            onChange={handleChange}
-            error={!!errors.rollno}
-            helperText={errors.rollno}
-            margin="normal"
-            disabled={formData.admin}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            error={!!errors.email}
-            helperText={errors.email}
-            margin="normal"
-            required
-          />
-          <TextField
-            fullWidth
-            label="Mobile Number"
-            name="mobile_no"
-            value={formData.mobile_no}
-            onChange={handleChange}
-            error={!!errors.mobile_no}
-            helperText={errors.mobile_no}
-            margin="normal"
-          />
-          <TextField
-            fullWidth
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={!!errors.password}
-            helperText={errors.password || "Optional for non-admin users"}
-            margin="normal"
-            required={formData.admin}
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="admin"
-                checked={formData.admin}
+          <Row>
+            <Col xs={12} sm={6} className="mb-2">
+              <TextField
+                fullWidth
+                label="Full Name"
+                name="full_name"
+                value={formData.full_name}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.full_name}
+                helperText={errors.full_name || "Enter full name"}
+                required
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
               />
-            }
-            label="Admin User"
-            sx={{ mt: 2 }}
-          />
-          <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading}
-              sx={{ px: 4, py: 1.5 }}
-              startIcon={
-                loading ? <CircularProgress size={20} color="inherit" /> : null
-              }
-            >
-              {loading ? "Adding User..." : "Add User"}
-            </Button>
-          </Box>
+            </Col>
+            <Col xs={12} sm={6} className="mb-2">
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.email}
+                helperText={errors.email || "Enter email address"}
+                required
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
+              />
+            </Col>
+            <Col xs={12} sm={6} className="mb-2">
+              <TextField
+                fullWidth
+                label="Department"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.department}
+                helperText={errors.department || (formData.admin ? "Disabled for admins" : "Enter department")}
+                disabled={formData.admin}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
+              />
+            </Col>
+            <Col xs={12} sm={6} className="mb-2">
+              <TextField
+                fullWidth
+                label="College"
+                name="college"
+                value={formData.college}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.college}
+                helperText={errors.college || (formData.admin ? "Disabled for admins" : "Enter college")}
+                disabled={formData.admin}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
+              />
+            </Col>
+            <Col xs={12} sm={6} className="mb-2">
+              <TextField
+                fullWidth
+                label="Roll Number"
+                name="rollno"
+                value={formData.rollno}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.rollno}
+                helperText={errors.rollno || (formData.admin ? "Disabled for admins" : "Enter roll number")}
+                disabled={formData.admin}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
+              />
+            </Col>
+            <Col xs={12} sm={6} className="mb-2">
+              <TextField
+                fullWidth
+                label="Mobile Number"
+                name="mobile_no"
+                value={formData.mobile_no}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.mobile_no}
+                helperText={errors.mobile_no || "Enter 10-digit mobile number"}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
+              />
+            </Col>
+            <Col xs={12} className="mb-2">
+              <TextField
+                fullWidth
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={!!errors.password}
+                helperText={errors.password || (formData.admin ? "Required for admins" : "Optional for non-admins")}
+                required={formData.admin}
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                className="form-control"
+              />
+            </Col>
+            <Col xs={12} className="mb-3">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="admin"
+                    checked={formData.admin}
+                    onChange={handleChange}
+                    color="primary"
+                  />
+                }
+                label="Admin User"
+                className="ms-2"
+              />
+            </Col>
+            <Col xs={12} className="d-flex justify-content-center">
+              <BootstrapButton
+                variant="primary"
+                type="submit"
+                disabled={loading}
+                className={`btn ${isMobile ? "btn-sm" : ""} shadow-sm`}
+                style={{
+                  padding: isMobile ? "6px 16px" : "8px 24px",
+                  fontSize: isMobile ? "0.8rem" : "0.9rem",
+                  borderRadius: "8px",
+                }}
+              >
+                {loading ? (
+                  <>
+                    <CircularProgress size={16} color="inherit" className="me-2" />
+                    Adding...
+                  </>
+                ) : (
+                  "Add User"
+                )}
+              </BootstrapButton>
+            </Col>
+          </Row>
         </form>
       </Paper>
 
       {/* CSV Upload and Bulk Creation */}
       <Paper
         elevation={3}
-        sx={{ p: 4, maxWidth: 1200, mx: "auto", borderRadius: "16px" }}
+        sx={{
+          p: isMobile ? 2 : 4,
+          maxWidth: isMobile ? "100%" : 900,
+          mx: "auto",
+          borderRadius: "12px",
+          background: "rgba(255, 255, 255, 0.95)",
+        }}
+        className="shadow-sm"
       >
         <Typography
-          variant="h5"
+          variant={isMobile ? "h6" : "h5"}
           align="center"
-          sx={{ mb: 4, fontWeight: "bold" }}
+          sx={{ mb: isMobile ? 2 : 3, fontWeight: "bold", color: theme.palette.primary.main }}
+          className="mb-3"
         >
           Bulk Add Non-Admin Users via CSV
         </Typography>
-        <Box sx={{ mb: 4 }}>
-          <Input
-            type="file"
-            accept=".csv"
-            onChange={handleCsvUpload}
-            disabled={csvLoading}
-            sx={{ mb: 2 }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            Upload a CSV with headers: full_name, department, college, rollno,
-            email, mobile_no, admin (admin optional)
-          </Typography>
-        </Box>
+        <Row className="mb-3">
+          <Col xs={12}>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCsvUpload}
+              disabled={csvLoading}
+              style={{ display: "none" }}
+              id="csv-upload"
+            />
+            <label htmlFor="csv-upload">
+              <Button
+                variant="outlined"
+                component="span"
+                color="primary"
+                disabled={csvLoading}
+                startIcon={<UploadFile />}
+                className={`btn btn-outline-primary ${isMobile ? "btn-sm" : ""} shadow-sm`}
+                sx={{
+                  px: isMobile ? 2 : 3,
+                  py: isMobile ? 0.5 : 0.75,
+                  fontSize: isMobile ? "0.8rem" : "0.9rem",
+                  textTransform: "none",
+                  borderRadius: "8px",
+                }}
+              >
+                {csvLoading ? "Uploading..." : "Upload CSV"}
+              </Button>
+            </label>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 1, fontSize: isMobile ? "0.75rem" : "0.875rem" }}
+              className="mt-2"
+            >
+              Upload a CSV with headers: full_name, department, college, rollno, email, mobile_no, admin (admin optional)
+            </Typography>
+          </Col>
+        </Row>
         {csvData.length > 0 && (
           <>
-            <Box sx={{ height: 400, width: "100%", mb: 4 }}>
+            <Box
+              sx={{
+                height: isMobile ? 250 : 350,
+                width: "100%",
+                mb: isMobile ? 2 : 3,
+                overflowX: "auto",
+              }}
+              className="table-responsive"
+            >
               <DataGrid
                 rows={csvData}
                 columns={columns}
-                pageSizeOptions={[10, 20, 50]}
+                pageSizeOptions={[5, 10, 20]}
                 checkboxSelection
-                onRowSelectionModelChange={(newSelection) => {
-                  console.log("New selection:", newSelection); // Debug
-                  setSelectedRows(newSelection);
-                }}
+                onRowSelectionModelChange={(newSelection) => setSelectedRows(newSelection)}
                 rowSelectionModel={selectedRows}
                 loading={csvLoading}
                 sx={{
                   "& .MuiDataGrid-columnHeaders": {
-                    backgroundColor: "#1565c0",
+                    backgroundColor: theme.palette.primary.main,
                     color: "white",
                     fontWeight: "bold",
+                    fontSize: isMobile ? "0.75rem" : "0.875rem",
                   },
+                  "& .MuiDataGrid-cell": {
+                    fontSize: isMobile ? "0.7rem" : "0.8rem",
+                  },
+                  borderRadius: "8px",
                 }}
               />
             </Box>
-            <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleBulkCreate(false)}
-                disabled={loading || csvData.length === 0}
-                startIcon={
-                  loading ? <CircularProgress size={20} color="inherit" /> : null
-                }
-              >
-                {loading ? "Creating..." : "Create All"}
-              </Button>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={() => handleBulkCreate(true)}
-                disabled={loading || selectedRows.length === 0}
-                startIcon={
-                  loading ? <CircularProgress size={20} color="inherit" /> : null
-                }
-              >
-                {loading
-                  ? "Creating..."
-                  : `Create Selected (${selectedRows.length})`}
-              </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleDownloadCsv}
-                disabled={csvData.length === 0}
-              >
-                Download CSV
-              </Button>
-            </Box>
+            <Row className="justify-content-center g-2">
+              <Col xs="auto">
+                <BootstrapButton
+                  variant="primary"
+                  onClick={() => handleBulkCreate(false)}
+                  disabled={loading || csvData.length === 0}
+                  className={`btn ${isMobile ? "btn-sm" : ""} shadow-sm`}
+                  style={{
+                    padding: isMobile ? "6px 16px" : "8px 24px",
+                    fontSize: isMobile ? "0.8rem" : "0.9rem",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <CircularProgress size={16} color="inherit" className="me-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create All"
+                  )}
+                </BootstrapButton>
+              </Col>
+              <Col xs="auto">
+                <BootstrapButton
+                  variant="secondary"
+                  onClick={() => handleBulkCreate(true)}
+                  disabled={loading || selectedRows.length === 0}
+                  className={`btn ${isMobile ? "btn-sm" : ""} shadow-sm`}
+                  style={{
+                    padding: isMobile ? "6px 16px" : "8px 24px",
+                    fontSize: isMobile ? "0.8rem" : "0.9rem",
+                    borderRadius: "8px",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <CircularProgress size={16} color="inherit" className="me-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    `Create Selected (${selectedRows.length})`
+                  )}
+                </BootstrapButton>
+              </Col>
+              <Col xs="auto">
+                <BootstrapButton
+                  variant="outline-primary"
+                  onClick={handleDownloadCsv}
+                  disabled={csvData.length === 0}
+                  className={`btn ${isMobile ? "btn-sm" : ""} shadow-sm`}
+                  style={{
+                    padding: isMobile ? "6px 16px" : "8px 24px",
+                    fontSize: isMobile ? "0.8rem" : "0.9rem",
+                    borderRadius: "8px",
+                  }}
+                >
+                  Download CSV
+                </BootstrapButton>
+              </Col>
+            </Row>
           </>
         )}
       </Paper>
 
-      {/* Snackbar notification */}
       <Snackbar
-        open={snackbarOpen}
+        open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
           variant="filled"
-          sx={{ width: "100%", whiteSpace: "pre-wrap" }}
+          sx={{ width: "100%", whiteSpace: "pre-wrap", fontSize: isMobile ? "0.75rem" : "0.875rem" }}
         >
-          {snackbarMessage}
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>

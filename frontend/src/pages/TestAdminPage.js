@@ -80,35 +80,49 @@ const UpdateTestModule = () => {
       }
     };
 
-    const fetchCodes = async () => {
-      try {
-        const response = await fetchAllCodes();
-        console.log('Coding API response:', response);
-        if (isMounted) {
-          console.log('Processing data:', response.data); // Debug log
-          const formattedRows = response.data.map(item => ({
-            id: item._id || item.code_id || `temp-${Math.random()}`,
-            code_id: item.code_id || 'N/A',
-            problem: item.code_problem_statement || 'No description',
-            tags: Array.isArray(item.code_tags) ? item.code_tags.join(', ') : '',
-            testCasesCount: Array.isArray(item.code_test_cases_id) ? item.code_test_cases_id.length : 0,
-          }));
-          console.log('Formatted coding rows:', formattedRows);
-          setCodes(formattedRows);
-          setLoading(prev => ({ ...prev, codes: false }));
-          setError(prev => ({ ...prev, codes: null }));
-        }
-      } catch (error) {
-        if (isMounted) {
-          setError(prev => ({ ...prev, codes: error.message }));
-          setLoading(prev => ({ ...prev, codes: false }));
-          setCodes([]); // Ensure codes is empty on error
-          setSnackbarMessage(`Error fetching codes: ${error.message}`);
-          setSnackbarSeverity('error');
-          setSnackbarOpen(true);
-        }
+const fetchCodes = async () => {
+  try {
+    const response = await fetchAllCodes();
+    console.log('Coding API response:', response);
+    if (isMounted) {
+      // Fix: The data is in response.codes, not response.data
+      const codesData = response.codes || response.data || [];
+      console.log('Processing data:', codesData); // Debug log
+      
+      // Add validation to ensure codesData is an array
+      if (!Array.isArray(codesData)) {
+        console.error('Expected array but got:', typeof codesData, codesData);
+        setCodes([]);
+        setLoading(prev => ({ ...prev, codes: false }));
+        setError(prev => ({ ...prev, codes: 'Invalid data format received' }));
+        return;
       }
-    };
+      
+      const formattedRows = codesData.map((item, index) => ({
+        id: item._id || item.code_id || `temp-${index}`,
+        code_id: item.code_id || 'N/A',
+        problem: item.code_problem_statement || 'No description',
+        tags: Array.isArray(item.code_tags) ? item.code_tags.join(', ') : (item.code_tags || ''),
+        testCasesCount: Array.isArray(item.code_test_cases_id) ? item.code_test_cases_id.length : 0,
+      }));
+      
+      console.log('Formatted coding rows:', formattedRows);
+      setCodes(formattedRows);
+      setLoading(prev => ({ ...prev, codes: false }));
+      setError(prev => ({ ...prev, codes: null }));
+    }
+  } catch (error) {
+    console.error('Error fetching codes:', error);
+    if (isMounted) {
+      setError(prev => ({ ...prev, codes: error.message }));
+      setLoading(prev => ({ ...prev, codes: false }));
+      setCodes([]); // Ensure codes is empty on error
+      setSnackbarMessage(`Error fetching codes: ${error.message}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  }
+};
 
     const fetchMcqs = async () => {
       try {

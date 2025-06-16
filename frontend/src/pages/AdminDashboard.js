@@ -153,6 +153,7 @@ export default function AdminDashboard() {
         { text: 'View POC', path: '/poc', icon: 'fas fa-eye', type: 'View' },
         { text: 'Add POC', path: '/add_poc', icon: 'fas fa-plus', type: 'Add' },
         { text: 'Update POC', path: '/update_poc', icon: 'fas fa-edit', type: 'Update' },
+         { text: 'Test Allocation', path: '/test_allocate', icon: 'fas fa-edit', type: 'Allocate' },
       ],
     },
     {

@@ -4,13 +4,29 @@ const Test = require('../models/Test');
 
 // Create Test
 router.post('/create', async (req, res) => {
-    try {
-        const newTest = new Test(req.body);
-        await newTest.save();
-        res.status(201).json({ message: 'Test created successfully', test: newTest });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+  try {
+    console.log('Request body:', req.body);
+    const { test_id, test_name, test_language, test_mcq_id, test_coding_id, test_total_score, status } = req.body;
+    if (!test_id || !test_name || !test_language || !test_total_score) {
+      return res.status(400).json({ error: 'Missing required fields: test_id, test_name, test_language, test_total_score' });
     }
+    if (!Array.isArray(test_mcq_id) || !Array.isArray(test_coding_id)) {
+      return res.status(400).json({ error: 'test_mcq_id and test_coding_id must be arrays' });
+    }
+    if (!['active', 'disabled'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status: must be "active" or "disabled"' });
+    }
+
+    const newTest = new Test(req.body);
+    await newTest.save();
+    res.status(201).json({ message: 'Test created successfully', test: newTest });
+  } catch (error) {
+    console.error('Error creating test:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Test ID already exists' });
+    }
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get All Tests
@@ -70,38 +86,64 @@ router.put('/update', async (req, res) => {
     try {
         const { test_id, mcq_id, coding_test_id, ...updateData } = req.body;
 
+        // Validate test_id
         if (!test_id) {
             return res.status(400).json({ success: false, msg: "test_id is required" });
         }
 
+        // Find the test
         const test = await Test.findOne({ test_id });
         if (!test) {
             return res.status(404).json({ success: false, msg: "Test not found" });
         }
 
-        // Replace MCQ IDs if provided
-        if (mcq_id) {
-            const newMcqIds = (Array.isArray(mcq_id) ? mcq_id : [mcq_id])
-                .filter(id => id && id.trim() !== "");
-            test.test_mcq_id = [...new Set(newMcqIds)];
+        // Prepare update operations
+        const updateOperations = { $set: { ...updateData } };
+
+        // Set MCQ IDs
+        if (mcq_id !== undefined) {
+            const newMcqIds = Array.isArray(mcq_id)
+                ? [...new Set(mcq_id.filter(id => id && typeof id === 'string' && id.trim() !== ''))]
+                : (mcq_id && typeof mcq_id === 'string' && mcq_id.trim() !== '') ? [mcq_id] : [];
+            updateOperations.$set.test_mcq_id = newMcqIds;
         }
 
-        // Replace Coding Test IDs if provided
-        if (coding_test_id) {
-            const newCodingIds = (Array.isArray(coding_test_id) ? coding_test_id : [coding_test_id])
-                .filter(id => id && id.trim() !== "");
-            test.test_coding_id = [...new Set(newCodingIds)];
+        // Set Coding Test IDs
+        if (coding_test_id !== undefined) {
+            const newCodingIds = Array.isArray(coding_test_id)
+                ? [...new Set(coding_test_id.filter(id => id && typeof id === 'string' && id.trim() !== ''))]
+                : (coding_test_id && typeof coding_test_id === 'string' && coding_test_id.trim() !== '') ? [coding_test_id] : [];
+            updateOperations.$set.test_coding_id = newCodingIds;
         }
 
-        // Update other fields
-        Object.assign(test, updateData);
+        // Validate if there are any updates to perform
+        if (Object.keys(updateOperations.$set).length === 0) {
+            return res.status(400).json({ success: false, msg: "No valid update data provided" });
+        }
 
-        await test.save();
+        // Perform the update
+        const updatedTest = await Test.findOneAndUpdate(
+            { test_id },
+            updateOperations,
+            { new: true, runValidators: true }
+        );
 
-        res.status(200).json({ success: true, msg: "Test updated successfully", test });
+        if (!updatedTest) {
+            return res.status(404).json({ success: false, msg: "Failed to update test" });
+        }
+
+        res.status(200).json({
+            success: true,
+            msg: "Test updated successfully",
+            test: updatedTest
+        });
     } catch (error) {
         console.error("Update Error:", error);
-        res.status(500).json({ success: false, msg: "Server Error", error: error.message });
+        res.status(500).json({
+            success: false,
+            msg: "Server Error",
+            error: error.message
+        });
     }
 });
 

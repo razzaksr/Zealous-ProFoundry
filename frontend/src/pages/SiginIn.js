@@ -1,5 +1,4 @@
-import  React from "react"
-
+import React from "react"
 import { useState, useEffect } from "react"
 import {
   Box,
@@ -15,12 +14,13 @@ import {
   useTheme,
   CircularProgress,
   Container,
+  Snackbar,
+  Alert,
 } from "@mui/material"
 import { Mail, Lock, Eye, EyeOff } from "lucide-react"
-import Logo from "../assests/Zealous.png";
-import { signIn } from "../axios";
-import { useNavigate } from "react-router-dom";
-
+import Logo from "../assests/Zealous.png"
+import { signIn } from "../axios"
+import { useNavigate } from "react-router-dom"
 
 export default function ZealousSignIn() {
   const [showPassword, setShowPassword] = useState(false)
@@ -28,13 +28,14 @@ export default function ZealousSignIn() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [errors, setErrors] = useState({ email: false, password: false })
+  const [errors, setErrors] = useState({ email: "", password: "" })
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "error" })
 
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const isTablet = useMediaQuery(theme.breakpoints.down("md"))
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   // Animation on mount - with a slight delay to ensure DOM is ready
   useEffect(() => {
@@ -50,40 +51,74 @@ export default function ZealousSignIn() {
   }
 
   const validateForm = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     const newErrors = {
-      email: email.trim() === "",
-      password: password.trim() === "",
-    };
-    setErrors(newErrors);
-    return !newErrors.email && !newErrors.password;
-  };
+      email: email.trim() === "" ? "Email is required" : !emailRegex.test(email) ? "Invalid email format" : "",
+      password: password.trim() === "" ? "Password is required" : "",
+    }
+    setErrors(newErrors)
+    return !newErrors.email && !newErrors.password
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!validateForm()) {
-      return;
+      setSnackbar({
+        open: true,
+        message: errors.email || errors.password,
+        severity: "error",
+      })
+      return
     }
-    
-    setIsLoading(true); // Show loading state
+
+    setIsLoading(true)
     const userData = {
       email,
       password,
-    };
-    
-    try {
-      const data = await signIn(userData);
-      if (data) {
-        localStorage.setItem("isLoggedIn","true");
-        localStorage.setItem("true", JSON.stringify(data));
-        window.location.assign("/landing");
+    }
 
+    try {
+      const data = await signIn(userData)
+      if (data) {
+        setSnackbar({
+          open: true,
+          message: "Login successful",
+          severity: "success",
+        })
+        localStorage.setItem("isLoggedIn", "true")
+        localStorage.setItem("true", JSON.stringify(data))
+        setTimeout(() => {
+          window.location.assign("/landing")
+        }, 1500) // Delay navigation to show success message
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error:", error)
+      let errorMessage = "An unexpected error occurred"
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMessage = "User not found"
+        } else if (error.response.status === 400) {
+          errorMessage = "Invalid password"
+        } else if (error.response.status === 500) {
+          errorMessage = error.response.data.msg || "Server error"
+        }
+      }
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      })
     } finally {
-      setIsLoading(false); // Reset loading state
+      setIsLoading(false)
     }
-  };
+  }
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return
+    }
+    setSnackbar({ ...snackbar, open: false })
+  }
 
   return (
     <Box
@@ -279,12 +314,12 @@ export default function ZealousSignIn() {
                 transitionDelay: "0.3s",
               }}
             >
-                      <img
-                        src={Logo}
-                        alt="Logo"
-                        className="logo"
-                        style={{ width: "200px", height: "100px" }}
-                      />
+              <img
+                src={Logo}
+                alt="Logo"
+                className="logo"
+                style={{ width: "200px", height: "100px" }}
+              />
             </Box>
 
             <Typography
@@ -321,6 +356,8 @@ export default function ZealousSignIn() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                error={!!errors.email}
+                helperText={errors.email}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -367,6 +404,8 @@ export default function ZealousSignIn() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                error={!!errors.password}
+                helperText={errors.password}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -517,49 +556,47 @@ export default function ZealousSignIn() {
                   transitionDelay: "1s",
                 }}
               >
-
-                  <Typography
-                    sx={{
-                      color: "#fc7a46",
-                      fontWeight: 500,
-                      position: "relative",
-                      "&::after": {
-                        content: '""',
-                        position: "absolute",
-                        bottom: "-2px",
-                        left: 0,
-                        width: "0%",
-                        height: "2px",
-                        backgroundColor: "#fc7a46",
-                        transition: "width 0.3s ease",
-                      },
-                      "&:hover::after": {
-                        width: "100%",
-                      },
-                    }}
-                  >
-                    Learn, Practice, Implement, Career
-                  </Typography>
-
+                <Typography
+                  sx={{
+                    color: "#fc7a46",
+                    fontWeight: 500,
+                    position: "relative",
+                    "&::after": {
+                      content: '""',
+                      position: "absolute",
+                      bottom: "-2px",
+                      left: 0,
+                      width: "0%",
+                      height: "2px",
+                      backgroundColor: "#fc7a46",
+                      transition: "width 0.3s ease",
+                    },
+                    "&:hover::after": {
+                      width: "100%",
+                    },
+                  }}
+                >
+                  Learn, Practice, Implement, Career
+                </Typography>
               </Box>
             </form>
           </CardContent>
         </Card>
 
-        {/* <Typography
-          variant="body2"
-          sx={{
-            textAlign: "center",
-            mt: 3,
-            color: "rgba(0,0,0,0.5)",
-            fontSize: "0.75rem",
-            opacity: mounted ? 1 : 0,
-            transition: "opacity 0.5s ease-out",
-            transitionDelay: "1.2s",
-          }}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: "top", horizontal: "center" }}
         >
-          © {new Date().getFullYear()} Zealous Tech Corp. All rights reserved.
-        </Typography> */}
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbar.severity}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
     </Box>
   )

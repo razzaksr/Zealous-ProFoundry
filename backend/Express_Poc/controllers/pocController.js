@@ -46,16 +46,17 @@ router.get('/get_poc_by_poc_id/:mod_poc_id', async (req, res) => {
 router.put("/update_poc", async (req, res) => {
   try {
     const { mod_poc_id } = req.body;
-    if (!mod_poc_id) return res.status(400).json({ message: "mod_poc_id is required" });
+    if (!mod_poc_id) return res.status(400).json({ error: "mod_poc_id is required" });
 
-    // Get the existing POC document
+    console.log('Received update request for POC:', req.body);
+
     const existingPoc = await Poc.findOne({ mod_poc_id });
-    if (!existingPoc) return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
+    if (!existingPoc) return res.status(404).json({ error: `POC with ID ${mod_poc_id} not found` });
 
-    // Prepare update operations
+    console.log('Existing POC:', existingPoc);
+
     const updateOperations = {};
 
-    // Handle each field specifically based on the schema
     if (req.body.mod_id !== undefined) {
       updateOperations.$set = updateOperations.$set || {};
       updateOperations.$set.mod_id = req.body.mod_id;
@@ -81,12 +82,22 @@ router.put("/update_poc", async (req, res) => {
       updateOperations.$set.mod_poc_mobile = req.body.mod_poc_mobile;
     }
 
-    if (req.body.poc_certificate !== undefined) {
+    if (req.body.poc_certificate !== undefined && typeof req.body.poc_certificate === 'object') {
       updateOperations.$set = updateOperations.$set || {};
-      updateOperations.$set.poc_certificate = req.body.poc_certificate;
+      if (req.body.poc_certificate.cert_status !== undefined) {
+        if (!existingPoc.poc_certificate || !existingPoc.poc_certificate.cert_id) {
+          return res.status(400).json({ error: `Existing POC is missing required cert_id: ${mod_poc_id}` });
+        }
+        updateOperations.$set['poc_certificate.cert_status'] = req.body.poc_certificate.cert_status;
+        updateOperations.$set['poc_certificate.cert_id'] = req.body.poc_certificate.cert_id || existingPoc.poc_certificate.cert_id;
+      } else {
+        if (!req.body.poc_certificate.cert_id) {
+          return res.status(400).json({ error: "cert_id is required when updating poc_certificate" });
+        }
+        updateOperations.$set.poc_certificate = req.body.poc_certificate;
+      }
     }
 
-    // Handle array fields - append instead of replace
     if (req.body.mod_images && Array.isArray(req.body.mod_images) && req.body.mod_images.length > 0) {
       updateOperations.$push = updateOperations.$push || {};
       updateOperations.$push.mod_images = { $each: req.body.mod_images };
@@ -107,19 +118,18 @@ router.put("/update_poc", async (req, res) => {
       updateOperations.$push.attendance = { $each: req.body.attendance };
     }
 
-    // Handle certificates Map
     if (req.body.certificates && typeof req.body.certificates === 'object') {
-      // For Maps, we need to set each key individually
       Object.entries(req.body.certificates).forEach(([key, value]) => {
         updateOperations.$set = updateOperations.$set || {};
         updateOperations.$set[`certificates.${key}`] = value;
       });
     }
 
-    // Only perform update if there are operations to do
     if (Object.keys(updateOperations).length === 0) {
-      return res.status(400).json({ message: "No valid update data provided" });
+      return res.status(400).json({ error: "No valid update data provided" });
     }
+
+    console.log('Update Operations:', updateOperations);
 
     const updatedPoc = await Poc.findOneAndUpdate(
       { mod_poc_id },
@@ -130,8 +140,11 @@ router.put("/update_poc", async (req, res) => {
       }
     );
 
+    console.log('Updated POC:', updatedPoc);
+
     res.json(updatedPoc);
   } catch (error) {
+    console.error('Error updating POC:', error);
     res.status(400).json({ error: error.message });
   }
 });

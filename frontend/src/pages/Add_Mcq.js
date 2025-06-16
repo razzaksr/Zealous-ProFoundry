@@ -50,7 +50,7 @@ const Add_Mcq = () => {
     };
   
     try {
-      const response = await fetch('http://localhost:8000/mcq/add_mcq', {
+      const response = await fetch('http://localhost:8086/mcq_gateway/mcq/add_mcq', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -8,6 +8,8 @@ import {
   Button,
   Snackbar,
   Alert,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import Admin_Dashboard from "../components/AdminDash";
 import { addPOC } from "../axios";
@@ -17,6 +19,8 @@ const Add_POC = () => {
   const [pocRole, setPocRole] = useState("");
   const [pocEmail, setPocEmail] = useState("");
   const [pocMobile, setPocMobile] = useState("");
+  const [certId, setCertId] = useState("");
+  const [certStatus, setCertStatus] = useState(false);
   const [openSuccess, setOpenSuccess] = useState(false);
   const [openError, setOpenError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("Please fill all fields correctly.");
@@ -37,7 +41,10 @@ const Add_POC = () => {
       mod_tests: [],
       mod_users: [],
       attendance: [],
-      poc_certificate: null,
+      poc_certificate: certId ? {
+        cert_id: certId,
+        cert_status: certStatus
+      } : null,
       certificates: {},
     };
 
@@ -58,6 +65,8 @@ const Add_POC = () => {
     setPocRole("");
     setPocEmail("");
     setPocMobile("");
+    setCertId("");
+    setCertStatus(false);
   };
 
   return (
@@ -119,6 +128,29 @@ const Add_POC = () => {
               onChange={(e) => setPocMobile(e.target.value)}
               sx={{ mb: 2 }}
               required
+            />
+
+            <TextField
+              fullWidth
+              label="Certificate ID"
+              variant="outlined"
+              value={certId}
+              onChange={(e) => setCertId(e.target.value)}
+              sx={{ mb: 2 }}
+              placeholder="e.g., CET/DEMO/"
+              helperText="Leave empty if no certificate"
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={certStatus}
+                  onChange={(e) => setCertStatus(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Certificate Status (Active/Inactive)"
+              sx={{ mb: 2 }}
             />
 
             <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 2 }}>

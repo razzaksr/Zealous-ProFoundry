@@ -30,7 +30,7 @@ import Add_POC from "./pages/Add_Poc";
 import Codingpage from "./pages/Coding";
 import Testcase_page from "./pages/View_testcase";
 import Update_coding from "./pages/Update_coding";
-import UpdateTestModule from "./pages/Update_testmodule";
+import UpdateTestModule from "./pages/Update_Test";
 import Update_Poc from "./pages/Update_Poc";
 import Add_Expert from "./pages/Add_Expert";
 import Add_User from "./pages/Add_User";
@@ -41,6 +41,8 @@ import ClassPerformance from "./pages/reportAndPieGen";
 import AttendanceAnalytics from "./pages/attendanceComponent";
 import TrainingForm from "./pages/report_gen";
 import IndividualReport from "./pages/columnChart";
+import Add_Test from "./pages/Add_Test";
+import PocAndTestDataGrids from "./pages/Test_Allocation";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -78,9 +80,9 @@ root.render(
               <Route path="/add_coding" element={<Add_Coding />} />
               <Route path="/add_expert" element={<Add_Expert />} />
               <Route path="/add_poc" element={<Add_POC />} />
+              <Route path="/add_test" element={<Add_Test />} />
               <Route path="/add_user" element={<Add_User />} />
               <Route path="/update_coding" element={<Update_coding />} />
-              <Route path="/update_testmodule" element={<UpdateTestModule />} />
               <Route path="/update_poc" element={<Update_Poc />} />
               <Route path="/update_expert" element={<Update_Expert />} />
               <Route path="/update_organization" element={<Update_Organization />} />
@@ -88,6 +90,9 @@ root.render(
               <Route path="/student/:report_id" element={<IndividualReport />} />
               <Route path="/attendance" element={<AttendanceAnalytics />} />
               <Route path="/reportGen" element={<TrainingForm />} />
+              <Route path="/test_allocate" element={<PocAndTestDataGrids />} />
+              <Route path="/update_test" element={<UpdateTestModule />} />
+              <Route path="/bulk_certificate" element={<BulkCertificateGenerator />} />
               <Route path="*" element={<Navigate to="/landing" />} />
           </Routes>
         </BrowserRouter>

@@ -28,7 +28,7 @@ Content-Type: application/json
 
 {
   "email": "dp@gmail.com",
-  "password": "0000"
+  "password": "000"
 }
 
 ### Get All Users
