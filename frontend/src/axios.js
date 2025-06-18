@@ -549,6 +549,16 @@ export const updatePoc = async (updateData) => {
 //   }
 // };
 
+// Update Test
+export const updateTestPoc = async (data) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/poc_gateway/poc/update_test`, data);
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.message || 'Failed to update tests');
+  }
+};
+
 // Update expert
 export const updateExpert = async (updateData) => {
   try {

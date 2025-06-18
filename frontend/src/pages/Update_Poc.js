@@ -25,7 +25,6 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import { fetchAllPocs, fetchPocById, fetchAllUsers, fetchAllModules, updatePoc } from '../axios';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import ListAltIcon from '@mui/icons-material/ListAlt';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import PersonIcon from '@mui/icons-material/Person';
@@ -169,7 +168,7 @@ const Update_Poc = () => {
         setPocDetailsFetched(true);
       } catch (error) {
         console.error('Error fetching initial POC details:', error);
-        setSnackbarMessage(`Error fetching POC details: ${error}`);
+        setSnackbarMessage(`Error fetching POC details: ${error.message}`);
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
         setSelectedPocIds([]);
@@ -265,7 +264,7 @@ const Update_Poc = () => {
       return true;
     } catch (error) {
       console.error('Error fetching POC details:', error);
-      setSnackbarMessage(`Error fetching POC details: ${error}`);
+      setSnackbarMessage(`Error fetching POC details: ${error.message}`);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       setLoading(prev => ({ ...prev, pocDetails: false }));
@@ -370,6 +369,29 @@ const Update_Poc = () => {
       return;
     }
 
+    // Refresh users to ensure valid user_ids
+    try {
+      const response = await fetchAllUsers();
+      setUsers(response.data || []);
+    } catch (error) {
+      console.error('Error refreshing users:', error);
+      setSnackbarMessage('Error refreshing user data');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Validate selectedUserIds
+    const validUserIds = users.map(user => user.user_id);
+    const invalidUserIds = selectedUserIds.filter(id => !validUserIds.includes(id) || !id);
+    if (invalidUserIds.length > 0) {
+      console.error('Invalid user_ids:', invalidUserIds);
+      setSnackbarMessage(`Invalid user selections: ${invalidUserIds.join(', ')}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+      return;
+    }
+
     const updateData = {
       mod_poc_id: selectedPoc.mod_poc_id,
     };
@@ -382,9 +404,8 @@ const Update_Poc = () => {
       }
     }
 
-    if (selectedUserIds.length > 0) {
-      updateData.mod_users = selectedUserIds;
-    }
+    updateData.mod_users = selectedUserIds;
+    console.log('Sending update POC payload:', updateData);
 
     setUpdateLoading(true);
     setPreviewDialogOpen(false);
@@ -536,7 +557,6 @@ const Update_Poc = () => {
                     const updatedSelection = newSelection.length > 0 ? [newSelection[newSelection.length - 1]] : [];
                     setSelectedPocIds(updatedSelection);
                     localStorage.setItem('selectedPocIds', JSON.stringify(updatedSelection));
-                    // Clear user selections to avoid stale data, but preserve module selection
                     setSelectedUserIds([]);
                     localStorage.removeItem('selectedUserIds');
                     setPocDetailsFetched(false);
@@ -581,8 +601,12 @@ const Update_Poc = () => {
                   rowSelectionModel={getUserSelectionModel()}
                   onRowSelectionModelChange={(newSelection) => {
                     const updatedSelection = newSelection
-                      .map(id => users.find(u => u._id === id)?.user_id)
-                      .filter(Boolean);
+                      .map(id => {
+                        const user = users.find(u => u._id === id);
+                        return user?.user_id;
+                      })
+                      .filter(id => id && typeof id === 'string');
+                    console.log('User selection updated:', updatedSelection);
                     setSelectedUserIds(updatedSelection);
                     localStorage.setItem('selectedUserIds', JSON.stringify(updatedSelection));
                   }}
@@ -819,4 +843,4 @@ const Update_Poc = () => {
   );
 };
 
-export default Update_Poc;  
+export default Update_Poc;

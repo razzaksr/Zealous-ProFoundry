@@ -106,6 +106,7 @@ export default function Admin_Dash() {
         { text: "View POC", path: "/poc", icon: <Visibility /> },
         { text: "Add POC", path: "/add_poc", icon: <Add /> },
         { text: "Update POC", path: "/update_poc", icon: <Edit /> },
+        
       ],
     },
     {
@@ -134,7 +135,8 @@ export default function Admin_Dash() {
       color: "#fc7a46",
       routes: [{ text: "View Test", path: "/test", icon: <Visibility /> }
         , { text: "Add Test", path: "/add_test", icon: <Add /> }
-        , { text: "Update Test", path: "/update_test", icon: <Edit /> }
+        , { text: "Update Test", path: "/update_test", icon: <Edit /> },
+                { text: "Allocate Test", path: "/allocate_test", icon: <Edit /> }
       ],
 
     },

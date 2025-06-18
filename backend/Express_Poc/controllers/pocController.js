@@ -42,18 +42,17 @@ router.get('/get_poc_by_poc_id/:mod_poc_id', async (req, res) => {
   }
 });
 
-// update_poc
 router.put("/update_poc", async (req, res) => {
   try {
     const { mod_poc_id } = req.body;
-    if (!mod_poc_id) return res.status(400).json({ error: "mod_poc_id is required" });
+    if (!mod_poc_id) return res.status(400).json({ message: "mod_poc_id is required" });
 
-    console.log('Received update request for POC:', req.body);
+    console.log('Received update request for POC:', JSON.stringify(req.body, null, 2));
 
     const existingPoc = await Poc.findOne({ mod_poc_id });
-    if (!existingPoc) return res.status(404).json({ error: `POC with ID ${mod_poc_id} not found` });
+    if (!existingPoc) return res.status(404).json({ message: `POC with ID ${mod_poc_id} not found` });
 
-    console.log('Existing POC:', existingPoc);
+    console.log('Existing POC mod_users:', existingPoc.mod_users);
 
     const updateOperations = {};
 
@@ -85,14 +84,13 @@ router.put("/update_poc", async (req, res) => {
     if (req.body.poc_certificate !== undefined && typeof req.body.poc_certificate === 'object') {
       updateOperations.$set = updateOperations.$set || {};
       if (req.body.poc_certificate.cert_status !== undefined) {
-        if (!existingPoc.poc_certificate || !existingPoc.poc_certificate.cert_id) {
-          return res.status(400).json({ error: `Existing POC is missing required cert_id: ${mod_poc_id}` });
-        }
         updateOperations.$set['poc_certificate.cert_status'] = req.body.poc_certificate.cert_status;
-        updateOperations.$set['poc_certificate.cert_id'] = req.body.poc_certificate.cert_id || existingPoc.poc_certificate.cert_id;
+        if (!existingPoc.poc_certificate || !existingPoc.poc_certificate.cert_id) {
+          updateOperations.$set['poc_certificate.cert_id'] = `${mod_poc_id}`;
+        }
       } else {
         if (!req.body.poc_certificate.cert_id) {
-          return res.status(400).json({ error: "cert_id is required when updating poc_certificate" });
+          return res.status(400).json({ message: "cert_id is required when updating entire poc_certificate" });
         }
         updateOperations.$set.poc_certificate = req.body.poc_certificate;
       }
@@ -108,9 +106,22 @@ router.put("/update_poc", async (req, res) => {
       updateOperations.$push.mod_tests = { $each: req.body.mod_tests };
     }
 
-    if (req.body.mod_users && Array.isArray(req.body.mod_users) && req.body.mod_users.length > 0) {
-      updateOperations.$push = updateOperations.$push || {};
-      updateOperations.$push.mod_users = { $each: req.body.mod_users };
+    if (req.body.mod_users && Array.isArray(req.body.mod_users)) {
+      // Temporary: Skip validation for debugging
+      /*
+      if (req.body.mod_users.length > 0) {
+        const validUsers = await User.find({ user_id: { $in: req.body.mod_users } }).select('user_id');
+        const validUserIds = validUsers.map(user => user.user_id);
+        const invalidUserIds = req.body.mod_users.filter(id => !validUserIds.includes(id));
+        if (invalidUserIds.length > 0) {
+          console.error('Invalid user_ids detected:', invalidUserIds);
+          return res.status(400).json({ message: `Invalid user_ids: ${invalidUserIds.join(', ')}` });
+        }
+      }
+      */
+      updateOperations.$set = updateOperations.$set || {};
+      updateOperations.$set.mod_users = req.body.mod_users.map(id => String(id)); // Ensure string
+      console.log('Setting mod_users to:', updateOperations.$set.mod_users);
     }
 
     if (req.body.attendance && Array.isArray(req.body.attendance) && req.body.attendance.length > 0) {
@@ -126,10 +137,10 @@ router.put("/update_poc", async (req, res) => {
     }
 
     if (Object.keys(updateOperations).length === 0) {
-      return res.status(400).json({ error: "No valid update data provided" });
+      return res.status(400).json({ message: "No valid update data provided" });
     }
 
-    console.log('Update Operations:', updateOperations);
+    console.log('Update Operations:', JSON.stringify(updateOperations, null, 2));
 
     const updatedPoc = await Poc.findOneAndUpdate(
       { mod_poc_id },
@@ -140,53 +151,60 @@ router.put("/update_poc", async (req, res) => {
       }
     );
 
-    console.log('Updated POC:', updatedPoc);
+    console.log('Updated POC mod_users:', updatedPoc.mod_users);
 
     res.json(updatedPoc);
   } catch (error) {
     console.error('Error updating POC:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ message: error.message });
   }
 });
 
-// Updated to handle array of test objects instead of just test_ids
+module.exports = router;
+
+// Updated to allow empty test_id array
 router.put("/update_test", async (req, res) => {
   try {
-    const { mod_poc_id, test_id } = req.body; // Changed from 'tests' to 'test_id' to match request
+    const { mod_poc_id, test_id } = req.body;
 
-    if (!mod_poc_id || !Array.isArray(test_id) || test_id.length === 0) {
-      return res.status(400).json({ 
-        message: "mod_poc_id and test_id (non-empty array of {test_id, assigned_date}) are required" 
+    if (!mod_poc_id || !Array.isArray(test_id)) {
+      return res.status(400).json({
+        message: "mod_poc_id and test_id (array of {test_id, assigned_date}) are required"
       });
     }
 
-    // Validate test objects
-    const invalidTests = test_id.some(test => !test.test_id || !test.assigned_date);
-    if (invalidTests) {
-      return res.status(400).json({ 
-        message: "Each test must have test_id and assigned_date" 
-      });
+    // Validate test objects only if array is not empty
+    if (test_id.length > 0) {
+      const invalidTests = test_id.some(test => !test.test_id || !test.assigned_date);
+      if (invalidTests) {
+        return res.status(400).json({
+          message: "Each test must have test_id and assigned_date"
+        });
+      }
     }
 
     const existingPoc = await Poc.findOne({ mod_poc_id });
-    if (!existingPoc) return res.status(404).json({ 
-      message: "POC not found with the provided mod_poc_id" 
-    });
+    if (!existingPoc) {
+      return res.status(404).json({
+        message: "POC not found with the provided mod_poc_id"
+      });
+    }
 
-    existingPoc.mod_tests = test_id; // Assign the array directly since it matches the schema
+    existingPoc.mod_tests = test_id; // Can now be an empty array
     await existingPoc.save();
 
-    res.status(200).json({ 
-      message: "POC tests updated successfully", 
-      updated_tests: existingPoc.mod_tests 
+    res.status(200).json({
+      message: "POC tests updated successfully",
+      updated_tests: existingPoc.mod_tests
     });
   } catch (error) {
-    res.status(500).json({ 
-      message: "Internal Server Error", 
-      error: error.message 
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message
     });
   }
 });
+
 
 // No change needed - still clears the mod_tests array+
 

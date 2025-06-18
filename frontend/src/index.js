@@ -43,6 +43,7 @@ import TrainingForm from "./pages/report_gen";
 import IndividualReport from "./pages/columnChart";
 import Add_Test from "./pages/Add_Test";
 import PocAndTestDataGrids from "./pages/Test_Allocation";
+import Allocate_Test from "./pages/Allocate_Test";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -93,6 +94,7 @@ root.render(
               <Route path="/test_allocate" element={<PocAndTestDataGrids />} />
               <Route path="/update_test" element={<UpdateTestModule />} />
               <Route path="/bulk_certificate" element={<BulkCertificateGenerator />} />
+              <Route path="/allocate_test" element={<Allocate_Test />} />
               <Route path="*" element={<Navigate to="/landing" />} />
           </Routes>
         </BrowserRouter>
