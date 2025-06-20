@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Grid, 
-  Typography, 
-  Box, 
-  Button, 
-  Paper, 
-  InputBase, 
+import {
+  Grid,
+  Typography,
+  Box,
+  Button,
+  Paper,
+  TextField,
   Container,
-  Tabs, 
-  Tab,
   Card,
   CardContent,
+  IconButton,
 } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
@@ -19,141 +18,116 @@ import {
   Visibility,
   Edit,
   Search,
-  Dashboard as DashboardIcon
+  Dashboard as DashboardIcon,
+  Clear,
 } from '@mui/icons-material';
 import AdminDash from '../components/AdminDash';
 
 // Custom styled components
-const StyledSearch = styled('div')(({ theme }) => ({
-  position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.white, 0.15),
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.common.white, 0.25),
-  },
-  marginRight: theme.spacing(2),
-  marginLeft: 0,
-  width: '100%',
-  [theme.breakpoints.up('sm')]: {
-    marginLeft: theme.spacing(3),
-    width: 'auto',
-  },
-  border: `1px solid ${theme.palette.divider}`,
+const StyledContainer = styled(Container)(({ theme }) => ({
+  paddingTop: theme.spacing(4),
+  paddingBottom: theme.spacing(4),
+  backgroundColor: '#f5f7fa',
+  minHeight: '100vh',
 }));
 
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0, 2),
-  height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
+const SearchBarWrapper = styled(Paper)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
+  padding: theme.spacing(1),
+  marginBottom: theme.spacing(4),
+  backgroundColor: '#ffffff',
+  borderRadius: '12px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+  maxWidth: '600px',
+  marginLeft: 'auto',
+  marginRight: 'auto',
 }));
 
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: 'inherit',
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  flex: 1,
+  '& .MuiInputBase-root': {
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+  },
   '& .MuiInputBase-input': {
-    padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-    transition: theme.transitions.create('width'),
-    width: '100%',
-    [theme.breakpoints.up('md')]: {
-      width: '20ch',
+    padding: theme.spacing(1.5),
+    fontSize: '1rem',
+    color: '#333',
+  },
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      border: 'none',
     },
   },
 }));
 
 const DashboardCard = styled(Card)(({ theme }) => ({
   backgroundColor: '#ffffff',
-  borderRadius: '0.75rem',
-  boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.1)',
-  transition: 'transform 0.3s, box-shadow 0.3s',
+  borderRadius: '12px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
   '&:hover': {
-    transform: 'translateY(-0.5rem)',
-    boxShadow: '0 1rem 2rem rgba(0, 0, 0, 0.15)',
+    transform: 'translateY(-4px)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
   },
 }));
 
-const CardHeaderCustom = styled(Box)(({ theme, color }) => ({
-  backgroundColor: color,
+const CardHeader = styled(Box)(({ theme, color }) => ({
+  background: `linear-gradient(135deg, ${color} 0%, ${alpha(color, 0.8)} 100%)`,
   color: '#ffffff',
-  padding: '1.5rem',
-  textAlign: 'center',
-  borderRadius: '0.75rem 0.75rem 0 0',
-}));
-
-const IconWrapper = styled(Box)(({ theme }) => ({
-  width: '4rem',
-  height: '4rem',
-  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  borderRadius: '50%',
+  padding: theme.spacing(2),
+  borderRadius: '12px 12px 0 0',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  margin: '0 auto 1rem',
-  '& i': {
-    fontSize: '1.5rem',
-    color: '#ffffff',
-  },
+  gap: theme.spacing(2),
 }));
 
-const ActionButton = styled(Button)(({ theme }) => ({
-  backgroundColor: '#f8f9fa',
-  border: '1px solid rgba(0, 0, 0, 0.1)',
-  borderRadius: '0.5rem',
-  padding: '0.75rem 1.25rem',
-  display: 'flex',
-  alignItems: 'center',
+const ActionButton = styled(Button)(({ theme, color }) => ({
+  borderRadius: '8px',
+  padding: theme.spacing(1.5),
   textTransform: 'none',
-  fontWeight: 600,
+  fontWeight: 500,
+  fontSize: '0.95rem',
   color: '#333',
+  backgroundColor: '#f8f9fa',
+  border: `1px solid ${alpha('#000', 0.1)}`,
+  display: 'flex',
   justifyContent: 'space-between',
-  transition: 'background-color 0.2s, color 0.2s, transform 0.2s',
+  alignItems: 'center',
+  transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: ({ color }) => 
-      color === '#0c83c8' ? '#fc7a46' : color === '#fc7a46' ? '#0c83c8' : color,
-    color: ({ color }) => 
-      color === '#0c83c8' ? '#0c83c8' : color === '#fc7a46' ? '#fc7a46' : '#333',
-    transform: 'translateX(0.5rem)',
-    '& i': {
-      color: ({ color }) => 
-        color === '#0c83c8' ? '#0c83c8' : color === '#fc7a46' ? '#fc7a46' : '#333',
+    backgroundColor: alpha(color, 0.1),
+    color: color,
+    borderColor: color,
+    transform: 'translateX(4px)',
+    '& svg': {
+      color: color,
     },
   },
-  '& i:first-child': {
-    marginRight: '0.75rem',
-  },
-  '& .action-arrow': {
-    opacity: 0,
-    transition: 'opacity 0.2s',
-  },
-  '&:hover .action-arrow': {
-    opacity: 1,
+  '& svg': {
+    marginRight: theme.spacing(1),
+    fontSize: '1.2rem',
   },
 }));
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
-  
-  const actionTypes = ['All', 'View', 'Add', 'Update'];
 
-  // Routes from Admin_Dash
   const menuItems = [
     {
       text: 'POC',
       icon: 'fas fa-clipboard-list',
       color: '#0c83c8',
       routes: [
-        { text: 'View POC', path: '/poc', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add POC', path: '/add_poc', icon: 'fas fa-plus', type: 'Add' },
-        { text: 'Update POC', path: '/update_poc', icon: 'fas fa-edit', type: 'Update' },
-         { text: 'Test Allocation', path: '/test_allocate', icon: 'fas fa-edit', type: 'Allocate' },
+        { text: 'View POC', path: '/poc', icon: <Visibility />, type: 'View' },
+        { text: 'Add POC', path: '/add_poc', icon: <Add />, type: 'Add' },
+        { text: 'Update POC', path: '/update_poc', icon: <Edit />, type: 'Update' },
+        { text: 'Test Allocation', path: '/test_allocate', icon: <Edit />, type: 'Allocate' },
       ],
     },
     {
@@ -161,9 +135,9 @@ export default function AdminDashboard() {
       icon: 'fas fa-building',
       color: '#fc7a46',
       routes: [
-        { text: 'View Organization', path: '/organization', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add Organization', path: '/add_organisation', icon: 'fas fa-plus', type: 'Add' },
-        { text: 'Update Organization', path: '/update_organization', icon: 'fas fa-edit', type: 'Update' },
+        { text: 'View Organization', path: '/organization', icon: <Visibility />, type: 'View' },
+        { text: 'Add Organization', path: '/add_organisation', icon: <Add />, type: 'Add' },
+        { text: 'Update Organization', path: '/update_organization', icon: <Edit />, type: 'Update' },
       ],
     },
     {
@@ -171,9 +145,9 @@ export default function AdminDashboard() {
       icon: 'fas fa-book',
       color: '#0c83c8',
       routes: [
-        { text: 'View Module', path: '/module', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add Module', path: '/add_module', icon: 'fas fa-plus', type: 'Add' },
-        { text: 'Update Module', path: '/update_testmodule', icon: 'fas fa-edit', type: 'Update' },
+        { text: 'View Module', path: '/module', icon: <Visibility />, type: 'View' },
+        { text: 'Add Module', path: '/add_module', icon: <Add />, type: 'Add' },
+        { text: 'Update Module', path: '/update_module', icon: <Edit />, type: 'Update' },
       ],
     },
     {
@@ -181,7 +155,9 @@ export default function AdminDashboard() {
       icon: 'fas fa-question-circle',
       color: '#fc7a46',
       routes: [
-        { text: 'View Test', path: '/test', icon: 'fas fa-eye', type: 'View' },
+        { text: 'View Test', path: '/test', icon: <Visibility />, type: 'View' },
+        { text: 'Add Test', path: '/add_test', icon: <Add />, type: 'Add' },
+        { text: 'Update Test', path: '/update_test', icon: <Edit />, type: 'Update' },
       ],
     },
     {
@@ -189,8 +165,8 @@ export default function AdminDashboard() {
       icon: 'fas fa-user',
       color: '#0c83c8',
       routes: [
-        { text: 'View User', path: '/user', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add User', path: '/add_user', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'View User', path: '/user', icon: <Visibility />, type: 'View' },
+        { text: 'Add User', path: '/add_user', icon: <Add />, type: 'Add' },
       ],
     },
     {
@@ -198,9 +174,9 @@ export default function AdminDashboard() {
       icon: 'fas fa-users',
       color: '#fc7a46',
       routes: [
-        { text: 'View Expert', path: '/expert', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add Expert', path: '/add_expert', icon: 'fas fa-plus', type: 'Add' },
-        { text: 'Update Expert', path: '/update_expert', icon: 'fas fa-edit', type: 'Update' },
+        { text: 'View Expert', path: '/expert', icon: <Visibility />, type: 'View' },
+        { text: 'Add Expert', path: '/add_expert', icon: <Add />, type: 'Add' },
+        { text: 'Update Expert', path: '/update_expert', icon: <Edit />, type: 'Update' },
       ],
     },
     {
@@ -208,8 +184,8 @@ export default function AdminDashboard() {
       icon: 'fas fa-question-circle',
       color: '#0c83c8',
       routes: [
-        { text: 'View MCQ', path: '/mcq-admin', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add MCQ', path: '/add_mcq', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'View MCQ', path: '/mcq-admin', icon: <Visibility />, type: 'View' },
+        { text: 'Add MCQ', path: '/add_mcq', icon: <Add />, type: 'Add' },
       ],
     },
     {
@@ -217,9 +193,9 @@ export default function AdminDashboard() {
       icon: 'fas fa-code',
       color: '#fc7a46',
       routes: [
-        { text: 'View Coding', path: '/codingpage', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add Coding', path: '/add_coding', icon: 'fas fa-plus', type: 'Add' },
-        { text: 'Update Coding', path: '/update_coding', icon: 'fas fa-edit', type: 'Update' },
+        { text: 'View Coding', path: '/codingpage', icon: <Visibility />, type: 'View' },
+        { text: 'Add Coding', path: '/add_coding', icon: <Add />, type: 'Add' },
+        { text: 'Update Coding', path: '/update_coding', icon: <Edit />, type: 'Update' },
       ],
     },
     {
@@ -227,31 +203,45 @@ export default function AdminDashboard() {
       icon: 'fas fa-bug',
       color: '#0c83c8',
       routes: [
-        { text: 'View Testcase', path: '/testcasepage', icon: 'fas fa-eye', type: 'View' },
-        { text: 'Add Testcase', path: '/add_testcase', icon: 'fas fa-plus', type: 'Add' },
+        { text: 'View Testcase', path: '/testcasepage', icon: <Visibility />, type: 'View' },
+        { text: 'Add Testcase', path: '/add_testcase', icon: <Add />, type: 'Add' },
+      ],
+    },
+    {
+      text: 'Report',
+      icon: 'fas fa-folder-open',
+      color: '#fc7a46',
+      routes: [
+        { text: 'Report Generation', path: '/reportAndPieGen', icon: <Visibility />, type: 'View' },
+        { text: 'Create Master Report', path: '/reportGen', icon: <Add />, type: 'Add' },
+      ],
+    },
+    {
+      text: 'Certificate',
+      icon: 'fas fa-award',
+      color: '#0c83c8',
+      routes: [
+        { text: 'Certificate Generation', path: '/bulk_certificate', icon: <Add />, type: 'View' },
       ],
     },
   ];
 
-  // Filter items based on search and active tab
+  // Filter items based on search
   const filteredMenuItems = menuItems.filter(item => {
-    const matchesSearch = 
+    return (
       item.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.routes.some(route => 
+      item.routes.some(route =>
         route.text.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    const matchesTab = 
-      activeTab === 0 || 
-      item.routes.some(route => actionTypes[activeTab] === route.type);
-    return matchesSearch && matchesTab;
+      )
+    );
   });
 
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
   return (
@@ -261,90 +251,85 @@ export default function AdminDashboard() {
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         rel="stylesheet"
       />
-      <Box sx={{ flexGrow: 1 }}>
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-          {/* Tabs for filtering */}
-          <Paper sx={{ mb: 4 }}>
-            <StyledSearch>
-              <SearchIconWrapper>
-                <Search />
-              </SearchIconWrapper>
-              <StyledInputBase
-                placeholder="Search actions…"
-                inputProps={{ 'aria-label': 'search' }}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </StyledSearch>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              indicatorColor="primary"
-              textColor="primary"
-              variant="fullWidth"
-            >
-              {actionTypes.map((type, index) => (
-                <Tab 
-                  key={type} 
-                  label={type} 
-                  icon={
-                    index > 0 ? (
-                      type === 'View' ? <Visibility /> :
-                      type === 'Add' ? <Add /> :
-                      type === 'Update' ? <Edit /> : null
-                    ) : <DashboardIcon />
-                  } 
-                  iconPosition="start"
-                />
-              ))}
-            </Tabs>
-          </Paper>
+      <StyledContainer maxWidth="xl">
+        <Typography
+          variant="h4"
+          component="h1"
+          sx={{
+            mb: 4,
+            fontWeight: 700,
+            color: '#1a1a1a',
+            textAlign: 'center',
+          }}
+        >
+          Admin Dashboard
+        </Typography>
 
-          {/* Dashboard grid */}
-          <Grid container spacing={4}>
-            {filteredMenuItems.map((item, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={`${item.text}-${index}`}>
-                <DashboardCard>
-                  <CardHeaderCustom color={item.color}>
-                    <IconWrapper>
-                      <i className={item.icon}></i>
-                    </IconWrapper>
-                    <Typography variant="h5" component="h2">
-                      {item.text}
-                    </Typography>
-                  </CardHeaderCustom>
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {item.routes.map((route) => (
-                        (activeTab === 0 || route.type === actionTypes[activeTab]) && (
-                          <ActionButton
-                            key={route.text}
-                            fullWidth
-                            onClick={() => handleNavigation(route.path)}
-                            color={item.color}
-                          >
-                            <i className={route.icon}></i>
-                            <span>{route.text}</span>
-                            <i className="fas fa-arrow-right action-arrow"></i>
-                          </ActionButton>
-                        )
-                      ))}
-                    </Box>
-                  </CardContent>
-                </DashboardCard>
-              </Grid>
-            ))}
-          </Grid>
-          
-          {filteredMenuItems.length === 0 && (
-            <Box textAlign="center" py={8}>
-              <Typography variant="h6" color="text.secondary">
-                No dashboard items match your search.
-              </Typography>
-            </Box>
-          )}
-        </Container>
-      </Box>
+        <SearchBarWrapper>
+          <Search sx={{ ml: 2, color: '#666' }} />
+          <StyledTextField
+            placeholder="Search actions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              endAdornment: searchTerm && (
+                <IconButton onClick={handleClearSearch} size="small">
+                  <Clear />
+                </IconButton>
+              ),
+            }}
+          />
+        </SearchBarWrapper>
+
+        <Grid container spacing={3}>
+          {filteredMenuItems.map((item, index) => (
+            <Grid item xs={12} sm={6} md={4} key={`${item.text}-${index}`}>
+              <DashboardCard>
+                <CardHeader color={item.color}>
+                  <i
+                    className={item.icon}
+                    style={{ fontSize: '1.5rem' }}
+                  ></i>
+                  <Typography variant="h6" fontWeight={600}>
+                    {item.text}
+                  </Typography>
+                </CardHeader>
+                <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {item.routes.map((route) => (
+                      <ActionButton
+                        key={route.text}
+                        fullWidth
+                        onClick={() => handleNavigation(route.path)}
+                        color={item.color}
+                      >
+                        {route.icon}
+                        <span>{route.text}</span>
+                      </ActionButton>
+                    ))}
+                  </Box>
+                </CardContent>
+              </DashboardCard>
+            </Grid>
+          ))}
+        </Grid>
+
+        {filteredMenuItems.length === 0 && (
+          <Box textAlign="center" py={8}>
+            <Typography variant="h6" color="text.secondary">
+              No dashboard items match your search.
+            </Typography>
+            <Button
+              variant="text"
+              color="primary"
+              onClick={handleClearSearch}
+              sx={{ mt: 2 }}
+            >
+              Clear Search
+            </Button>
+          </Box>
+        )}
+      </StyledContainer>
     </>
   );
 }

@@ -58,6 +58,8 @@ import {
 import { Bar } from "react-chartjs-2";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { fetchStudents, sendStudentRankings } from "../axios";
+import AdminDashboard from "./AdminDashboard";
+import Admin_Dash from "../components/AdminDash";
 
 // Register Chart.js components
 ChartJS.register(
@@ -146,8 +148,7 @@ const DailyPerformanceCharts = ({
           borderWidth: 1,
           callbacks: {
             label: (context) =>
-              `${context.dataset.label}: ${context.raw} / ${
-                context.dataset.maxScores[context.dataIndex]
+              `${context.dataset.label}: ${context.raw} / ${context.dataset.maxScores[context.dataIndex]
               }`,
             title: (tooltipItems) => {
               return (
@@ -367,6 +368,7 @@ const DailyPerformanceCharts = ({
   const dailyData = getDailyData();
 
   return (
+
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
         <Box
@@ -397,9 +399,8 @@ const DailyPerformanceCharts = ({
               const url = URL.createObjectURL(pdfBlob);
               const link = document.createElement("a");
               link.href = url;
-              link.download = `Performance_DailyCharts_${
-                selectedModule || "AllModules"
-              }_${new Date().toISOString().split("T")[0]}.pdf`;
+              link.download = `Performance_DailyCharts_${selectedModule || "AllModules"
+                }_${new Date().toISOString().split("T")[0]}.pdf`;
               link.click();
               URL.revokeObjectURL(url);
             }
@@ -630,7 +631,7 @@ const ClassPerformance = () => {
     const fetchStudentsData = async () => {
       try {
         const data = await fetchStudents();
-  
+
         const enhancedData = data.map((student) => {
           const totalScoredMarks = student.tests.reduce(
             (sum, test) => sum + test.scored_mark,
@@ -641,11 +642,11 @@ const ClassPerformance = () => {
             0
           );
           const totalTestDays = student.tests.length;
-  
+
           const totalDays = student.details?.total_days || 0;
           const attendTestDays = student.details?.attend_test_days || 0;
           const notAttendTestDays = student.details?.not_attend_test_days || 0;
-  
+
           return {
             ...student,
             totalScoredMarks,
@@ -656,38 +657,38 @@ const ClassPerformance = () => {
             notAttendTestDays,
           };
         });
-  
+
         setStudents(enhancedData);
-  
+
         const uniqueColleges = [
           ...new Set(enhancedData.map((s) => s.college_name)),
         ];
         setColleges(uniqueColleges);
-  
+
         setLoading(false);
-  
+
         setTimeout(() => {
           setLoadedData(true);
         }, 300);
-  
+
         if (selectedCollege) {
           const filtered = enhancedData.filter(
             (student) => student.college_name === selectedCollege
           );
-  
+
           const uniqueModules = [
             ...new Set(filtered.map((s) => s.module_name)),
           ];
-  
+
           const pocMap = new Map();
           filtered.forEach((s) => {
             if (!pocMap.has(s.module_poc_name)) {
               pocMap.set(s.module_poc_name, s.module_poc_id);
             }
           });
-  
+
           const uniquePocs = Array.from(pocMap, ([name, id]) => ({ name, id }));
-  
+
           setModules(uniqueModules);
           setPocs(uniquePocs);
         } else {
@@ -700,9 +701,9 @@ const ClassPerformance = () => {
         console.error("Error fetching data:", err);
       }
     };
-  
+
     fetchStudentsData();
-  
+
     setSelectedModule("");
     setSelectedPoc("");
   }, [selectedCollege]);
@@ -737,7 +738,7 @@ const ClassPerformance = () => {
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
         .map((student) => student.name);
-  
+
       await sendStudentRankings(pocId, studentNames);
       alert("Top 10 student rankings sent successfully!");
     } catch (error) {
@@ -1063,9 +1064,8 @@ const ClassPerformance = () => {
       const performanceUrl = URL.createObjectURL(performanceBlob);
       const performanceLink = document.createElement("a");
       performanceLink.href = performanceUrl;
-      performanceLink.download = `Performance_Distribution_${
-        selectedModule || "all_modules"
-      }_${new Date().toISOString().split("T")[0]}.pdf`;
+      performanceLink.download = `Performance_Distribution_${selectedModule || "all_modules"
+        }_${new Date().toISOString().split("T")[0]}.pdf`;
       performanceLink.click();
       URL.revokeObjectURL(performanceUrl);
 
@@ -1074,9 +1074,8 @@ const ClassPerformance = () => {
       const dailyBreakdownUrl = URL.createObjectURL(dailyBreakdownBlob);
       const dailyBreakdownLink = document.createElement("a");
       dailyBreakdownLink.href = dailyBreakdownUrl;
-      dailyBreakdownLink.download = `Daily_Performance_Breakdown_${
-        selectedModule || "all_modules"
-      }_${new Date().toISOString().split("T")[0]}.pdf`;
+      dailyBreakdownLink.download = `Daily_Performance_Breakdown_${selectedModule || "all_modules"
+        }_${new Date().toISOString().split("T")[0]}.pdf`;
       dailyBreakdownLink.click();
       URL.revokeObjectURL(dailyBreakdownUrl);
 
@@ -1307,6 +1306,8 @@ const ClassPerformance = () => {
   const allFiltersSelected = selectedCollege && selectedModule && selectedPoc;
 
   return (
+   <>
+   <Admin_Dash/>
     <Box
       sx={{
         bgcolor: themeColors.background,
@@ -1360,7 +1361,7 @@ const ClassPerformance = () => {
                     }}
                   >
                     <SchoolIcon
-                      sx={{ fontSize: 32, color: themeColors.primary }}
+                      sx={{ fontSize: 32, color: '#fc7a46' }}
                     />
                   </Box>
                   <Box>
@@ -1495,9 +1496,9 @@ const ClassPerformance = () => {
                                 borderColor: themeColors.primary,
                               },
                               "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-                                {
-                                  borderColor: themeColors.primary,
-                                },
+                              {
+                                borderColor: themeColors.primary,
+                              },
                             },
                           }}
                         >
@@ -1539,9 +1540,9 @@ const ClassPerformance = () => {
                                 borderColor: themeColors.primary,
                               },
                               "&.Mui-focused .MuiOutlinedInput-notchedOutline":
-                                {
-                                  borderColor: themeColors.primary,
-                                },
+                              {
+                                borderColor: themeColors.primary,
+                              },
                             },
                           }}
                         >
@@ -1635,11 +1636,10 @@ const ClassPerformance = () => {
                         <StatBox
                           title="Average Score"
                           value={parseFloat(classMetrics.avgScore).toFixed(1)}
-                          subtitle={`out of ${
-                            classMetrics.totalMarks
+                          subtitle={`out of ${classMetrics.totalMarks
                               ? classMetrics.totalMarks.toFixed(0)
                               : 0
-                          }`}
+                            }`}
                           icon={
                             <TrendingUpIcon
                               sx={{ color: themeColors.secondary }}
@@ -1705,9 +1705,9 @@ const ClassPerformance = () => {
                                   sx={{
                                     backgroundColor: alpha(
                                       PERFORMANCE_COLORS[
-                                        getPerformanceCategory(
-                                          classMetrics.avgPercentage
-                                        )
+                                      getPerformanceCategory(
+                                        classMetrics.avgPercentage
+                                      )
                                       ],
                                       0.1
                                     ),
@@ -1722,9 +1722,9 @@ const ClassPerformance = () => {
                                     sx={{
                                       color:
                                         PERFORMANCE_COLORS[
-                                          getPerformanceCategory(
-                                            classMetrics.avgPercentage
-                                          )
+                                        getPerformanceCategory(
+                                          classMetrics.avgPercentage
+                                        )
                                         ],
                                     }}
                                   />
@@ -1748,17 +1748,17 @@ const ClassPerformance = () => {
                                     px: 2,
                                     backgroundColor:
                                       PERFORMANCE_COLORS[
-                                        getPerformanceCategory(
-                                          classMetrics.avgPercentage
-                                        )
+                                      getPerformanceCategory(
+                                        classMetrics.avgPercentage
+                                      )
                                       ],
                                     color: "white",
                                     borderRadius: "12px",
                                     boxShadow: `0 3px 10px ${alpha(
                                       PERFORMANCE_COLORS[
-                                        getPerformanceCategory(
-                                          classMetrics.avgPercentage
-                                        )
+                                      getPerformanceCategory(
+                                        classMetrics.avgPercentage
+                                      )
                                       ],
                                       0.4
                                     )}`,
@@ -2187,8 +2187,8 @@ const ClassPerformance = () => {
                                           index === 0
                                             ? "#f59e0b"
                                             : index === 1
-                                            ? "#94a3b8"
-                                            : "#d97706",
+                                              ? "#94a3b8"
+                                              : "#d97706",
                                           0.08
                                         ),
                                       }),
@@ -2209,16 +2209,16 @@ const ClassPerformance = () => {
                                               ? index === 0
                                                 ? alpha("#f59e0b", 0.2)
                                                 : index === 1
-                                                ? alpha("#94a3b8", 0.2)
-                                                : alpha("#d97706", 0.2)
+                                                  ? alpha("#94a3b8", 0.2)
+                                                  : alpha("#d97706", 0.2)
                                               : "transparent",
                                           color:
                                             index < 3
                                               ? index === 0
                                                 ? "#f59e0b"
                                                 : index === 1
-                                                ? "#64748b"
-                                                : "#d97706"
+                                                  ? "#64748b"
+                                                  : "#d97706"
                                               : "text.primary",
                                         }}
                                       >
@@ -2390,9 +2390,8 @@ const ClassPerformance = () => {
                             const url = URL.createObjectURL(pdfBlob);
                             const link = document.createElement("a");
                             link.href = url;
-                            link.download = `Daily_Performance_Breakdown_${
-                              selectedModule || "all_modules"
-                            }_${new Date().toISOString().split("T")[0]}.pdf`;
+                            link.download = `Daily_Performance_Breakdown_${selectedModule || "all_modules"
+                              }_${new Date().toISOString().split("T")[0]}.pdf`;
                             link.click();
                             URL.revokeObjectURL(url);
                           }}
@@ -2406,8 +2405,8 @@ const ClassPerformance = () => {
                           Export to PDF
                         </Button>
                       </Box>
-                      // Continuation from the truncated code in the Daily
-                      Performance Breakdown section
+                      {/* // Continuation from the truncated code in the Daily
+                      Performance Breakdown section */}
                       {filteredStudents.length === 0 ? (
                         <Alert severity="info" sx={{ borderRadius: 2 }}>
                           <Typography variant="body2">
@@ -2525,8 +2524,8 @@ const ClassPerformance = () => {
                                           const percentage =
                                             test.total_mark > 0
                                               ? (test.scored_mark /
-                                                  test.total_mark) *
-                                                100
+                                                test.total_mark) *
+                                              100
                                               : 0;
                                           const performance =
                                             getPerformanceCategory(percentage);
@@ -2611,23 +2610,26 @@ const ClassPerformance = () => {
                   sx={{
                     mt: 4,
                     borderRadius: 2,
-                    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15)",
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)', // custom background
+                    color: 'white', // makes text readable
+                    boxShadow: '0 4px 12px rgba(12, 131, 200, 0.3)', // subtle blue shadow
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight="medium">
                     Please select all filters
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 1 }}>
-                    Select a college, module, and POC to view detailed
-                    performance data.
+                    Select a college, module, and POC to view detailed performance data.
                   </Typography>
                 </Alert>
               </Grow>
+
             )}
           </Paper>
         </Fade>
       </Container>
     </Box>
+   </>
   );
 };
 

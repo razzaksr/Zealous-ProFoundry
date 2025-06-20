@@ -19,6 +19,7 @@ import html2canvas from 'html2canvas';
 import { useLocation } from "react-router-dom";
 import jsPDF from 'jspdf';
 import { fetchAttendanceData } from "../axios"; // Import the API function
+import Admin_Dash from "../components/AdminDash";
 
 // Register Chart.js components
 ChartJS.register(
@@ -903,7 +904,9 @@ const AttendanceAnalytics = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+  <>
+  <Admin_Dash/>
+  <ThemeProvider theme={theme}>
       <Box sx={{
         minHeight: '100vh',
         backgroundColor: theme.palette.background.default,
@@ -1040,6 +1043,8 @@ const AttendanceAnalytics = () => {
         </motion.div>
       </Box>
     </ThemeProvider>
+    </>
+    
   );
 };
 

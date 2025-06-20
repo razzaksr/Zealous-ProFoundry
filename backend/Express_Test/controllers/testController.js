@@ -1,14 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const Test = require('../models/Test');
+const { v4: uuidv4 } = require('uuid');
 
 // Create Test
 router.post('/create', async (req, res) => {
   try {
     console.log('Request body:', req.body);
-    const { test_id, test_name, test_language, test_mcq_id, test_coding_id, test_total_score, status } = req.body;
-    if (!test_id || !test_name || !test_language || !test_total_score) {
-      return res.status(400).json({ error: 'Missing required fields: test_id, test_name, test_language, test_total_score' });
+    let { test_name, test_language, test_mcq_id, test_coding_id, test_total_score, status, test_id } = req.body;
+
+    // Generate test_id if not provided
+    if (!test_id) {
+      test_id = uuidv4();
+    }
+
+    // Validate required fields
+    if (!test_name || !test_language || !test_total_score) {
+      return res.status(400).json({ error: 'Missing required fields: test_name, test_language, test_total_score' });
     }
     if (!Array.isArray(test_mcq_id) || !Array.isArray(test_coding_id)) {
       return res.status(400).json({ error: 'test_mcq_id and test_coding_id must be arrays' });
@@ -17,7 +25,15 @@ router.post('/create', async (req, res) => {
       return res.status(400).json({ error: 'Invalid status: must be "active" or "disabled"' });
     }
 
-    const newTest = new Test(req.body);
+    const newTest = new Test({
+      test_id,
+      test_name,
+      test_language,
+      test_mcq_id,
+      test_coding_id,
+      test_total_score,
+      status,
+    });
     await newTest.save();
     res.status(201).json({ message: 'Test created successfully', test: newTest });
   } catch (error) {
@@ -28,6 +44,7 @@ router.post('/create', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // Get All Tests
 router.get('/all', async (req, res) => {

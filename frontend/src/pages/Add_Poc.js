@@ -11,6 +11,7 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
+import { User, Mail, Phone, BadgeCheck, ShieldCheck } from "lucide-react";
 import Admin_Dashboard from "../components/AdminDash";
 import { addPOC } from "../axios";
 
@@ -41,10 +42,12 @@ const Add_POC = () => {
       mod_tests: [],
       mod_users: [],
       attendance: [],
-      poc_certificate: certId ? {
-        cert_id: certId,
-        cert_status: certStatus
-      } : null,
+      poc_certificate: certId
+        ? {
+          cert_id: certId,
+          cert_status: certStatus,
+        }
+        : null,
       certificates: {},
     };
 
@@ -72,74 +75,101 @@ const Add_POC = () => {
   return (
     <>
       <Admin_Dashboard />
-      <Container maxWidth="sm" sx={{ py: 4, minHeight: "90vh" }}>
-        <Paper elevation={6} sx={{ borderRadius: 4 }}>
+      <Container maxWidth="sm" sx={{ py: 5 }}>
+        <Paper elevation={8} sx={{ borderRadius: 4, overflow: "hidden" }}>
+          {/* Header */}
           <Box
             sx={{
               p: 3,
-              background: "linear-gradient(90deg, #3f51b5, #5c6bc0)",
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
+              background: "linear-gradient(90deg, #0c83c8, #fc7a46)",
               color: "white",
             }}
           >
-            <Typography variant="h5" fontWeight={600}>
-              Add POC
+
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              textAlign="center"
+            >
+              <span style={{ color: "#fff", padding: "4px 12px", borderRadius: 8 }}>
+                Add POC
+              </span>
             </Typography>
-            <Typography variant="subtitle2">
-              Enter Point of Contact information
+
+            <Typography variant="subtitle2"
+              textAlign="center">
+              Fill the details of your Point of Contact
             </Typography>
           </Box>
 
-          <Box sx={{ p: 3 }}>
-            <TextField
-              fullWidth
-              label="POC Name"
-              variant="outlined"
-              value={pocName}
-              onChange={(e) => setPocName(e.target.value)}
-              sx={{ mb: 2 }}
-              required
-            />
-            <TextField
-              fullWidth
-              label="POC Role"
-              variant="outlined"
-              value={pocRole}
-              onChange={(e) => setPocRole(e.target.value)}
-              sx={{ mb: 2 }}
-              required
-            />
-            <TextField
-              fullWidth
-              label="POC Email"
-              variant="outlined"
-              type="email"
-              value={pocEmail}
-              onChange={(e) => setPocEmail(e.target.value)}
-              sx={{ mb: 2 }}
-              required
-            />
-            <TextField
-              fullWidth
-              label="POC Mobile"
-              variant="outlined"
-              value={pocMobile}
-              onChange={(e) => setPocMobile(e.target.value)}
-              sx={{ mb: 2 }}
-              required
-            />
+          {/* Form */}
+          <Box sx={{ p: 4 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <User size={20} color="#0c83c8" style={{ marginBottom: 20 }} />
+              <TextField
+                fullWidth
+                label="POC Name"
+                variant="outlined"
+                value={pocName}
+                onChange={(e) => setPocName(e.target.value)}
+                sx={{ mb: 3 }}
+                required
+              />
+            </Box>
 
-            <TextField
-              fullWidth
-              label="Certificate ID"
-              variant="outlined"
-              value={certId}
-              onChange={(e) => setCertId(e.target.value)}
-              sx={{ mb: 2 }}
-              placeholder="e.g., CET/DEMO/"
-              helperText="Leave empty if no certificate"
-            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <BadgeCheck size={20} color="#0c83c8" style={{ marginBottom: 20 }}  />
+              <TextField
+                fullWidth
+                label="POC Role"
+                variant="outlined"
+                value={pocRole}
+                onChange={(e) => setPocRole(e.target.value)}
+                sx={{ mb: 3 }}
+                required
+              />
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Mail size={20} color="#0c83c8" style={{ marginBottom: 20 }}  />
+              <TextField
+                fullWidth
+                label="POC Email"
+                type="email"
+                variant="outlined"
+                value={pocEmail}
+                onChange={(e) => setPocEmail(e.target.value)}
+                sx={{ mb: 3 }}
+                required
+              />
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Phone size={20} color="#0c83c8"  style={{ marginBottom: 20 }} />
+              <TextField
+                fullWidth
+                label="POC Mobile"
+                variant="outlined"
+                value={pocMobile}
+                onChange={(e) => setPocMobile(e.target.value)}
+                sx={{ mb: 3 }}
+                required
+              />
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <ShieldCheck size={20} color="#0c83c8" style={{ marginBottom: 20 }}  />
+              <TextField
+                fullWidth
+                label="Certificate ID"
+                variant="outlined"
+                value={certId}
+                onChange={(e) => setCertId(e.target.value)}
+                placeholder="e.g., CET/DEMO/"
+                helperText="Leave empty if no certificate"
+                sx={{ mb: 3 }}
+              />
+            </Box>
 
             <FormControlLabel
               control={
@@ -150,14 +180,32 @@ const Add_POC = () => {
                 />
               }
               label="Certificate Status (Active/Inactive)"
-              sx={{ mb: 2 }}
+              sx={{ mb: 3 }}
             />
 
-            <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 2 }}>
-              <Button variant="outlined" onClick={handleClear}>
+            {/* Action Buttons */}
+            <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 3 }}>
+              <Button
+                variant="outlined"
+                onClick={handleClear}
+                sx={{ px: 4, borderRadius: 3 }}
+              >
                 Clear
               </Button>
-              <Button variant="contained" onClick={handleSubmit}>
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                sx={{
+                  px: 4,
+                  borderRadius: 3,
+                  background: "linear-gradient(90deg, #0c83c8, #fc7a46)",
+                  color: "white",
+                  fontWeight: 600,
+                  "&:hover": {
+                    background: "linear-gradient(90deg, #fc7a46, #0c83c8)",
+                  },
+                }}
+              >
                 Submit
               </Button>
             </Box>
@@ -170,14 +218,19 @@ const Add_POC = () => {
           autoHideDuration={3000}
           onClose={() => setOpenSuccess(false)}
         >
-          <Alert severity="success">POC added successfully!</Alert>
+          <Alert severity="success" sx={{ width: "100%" }}>
+            POC added successfully!
+          </Alert>
         </Snackbar>
+
         <Snackbar
           open={openError}
           autoHideDuration={3000}
           onClose={() => setOpenError(false)}
         >
-          <Alert severity="error">{errorMessage}</Alert>
+          <Alert severity="error" sx={{ width: "100%" }}>
+            {errorMessage}
+          </Alert>
         </Snackbar>
       </Container>
     </>

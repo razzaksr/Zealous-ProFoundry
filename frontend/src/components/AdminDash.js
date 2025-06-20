@@ -34,6 +34,7 @@ import {
   Add,
   Edit,
   Visibility,
+  FolderOpen,
 } from "@mui/icons-material";
 import CertificateGenerator from "./certificate";
 import { useNavigate } from "react-router-dom";
@@ -97,6 +98,10 @@ export default function Admin_Dash() {
     setOpenMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
   };
 
+  const handleLogoClick = () => {
+    navigate("/");
+  };
+
   const menuItems = [
     {
       text: "POC",
@@ -106,7 +111,6 @@ export default function Admin_Dash() {
         { text: "View POC", path: "/poc", icon: <Visibility /> },
         { text: "Add POC", path: "/add_poc", icon: <Add /> },
         { text: "Update POC", path: "/update_poc", icon: <Edit /> },
-        
       ],
     },
     {
@@ -126,19 +130,19 @@ export default function Admin_Dash() {
       routes: [
         { text: "View Module", path: "/module", icon: <Visibility /> },
         { text: "Add Module", path: "/add_module", icon: <Add /> },
-        { text: "Update Module", path: "/update_testmodule", icon: <Edit /> },
+        { text: "Update Module", path: "/update_module", icon: <Edit /> },
       ],
     },
     {
       text: "Test",
       icon: <Quiz />,
       color: "#fc7a46",
-      routes: [{ text: "View Test", path: "/test", icon: <Visibility /> }
-        , { text: "Add Test", path: "/add_test", icon: <Add /> }
-        , { text: "Update Test", path: "/update_test", icon: <Edit /> },
-                { text: "Allocate Test", path: "/allocate_test", icon: <Edit /> }
+      routes: [
+        { text: "View Test", path: "/test", icon: <Visibility /> },
+        { text: "Add Test", path: "/add_test", icon: <Add /> },
+        { text: "Update Test", path: "/update_test", icon: <Edit /> },
+        { text: "Allocate Test", path: "/allocate_test", icon: <Edit /> },
       ],
-
     },
     {
       text: "User",
@@ -187,14 +191,24 @@ export default function Admin_Dash() {
         { text: "Add Testcase", path: "/add_testcase", icon: <Add /> },
       ],
     },
-      {
-    text: "Certificate",
-    icon: <Assignment />,
-    color: "#0c83c8",
-    routes: [
-      { text: "Generate Certificate", path: "/bulk_certificate", icon: <Add /> },
-    ],
-  }
+        {
+      text: "Report",
+      icon: <FolderOpen />,
+      color: "#fc7a46",
+      routes: [
+        { text: "Report Generation", path: "/reportAndPieGen", icon: <Add /> },
+        { text: "Create Master Report", path: "/reportGen", icon: <Add /> },
+      ],
+    },
+    {
+      text: "Certificate",
+      icon: <Assignment />,
+      color: "#0c83c8",
+      routes: [
+        { text: "Generate Certificate", path: "/bulk_certificate", icon: <Add /> },
+      ],
+    },
+
   ];
 
   const drawerContent = (
@@ -336,7 +350,14 @@ export default function Admin_Dash() {
             >
               <MenuIcon sx={{ color: "#0b78b9" }} />
             </IconButton>
-            <img src={Image} alt="Zealous Logo" width={150} height={67} />
+            <img
+              src={Image}
+              alt="Zealous Logo"
+              width={150}
+              height={67}
+              style={{ cursor: "pointer" }}
+              onClick={handleLogoClick}
+            />
           </Box>
 
           <Box display="flex" alignItems="center">

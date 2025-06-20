@@ -105,3 +105,16 @@ router.get("/get_org_name_by_id/:mod_id", async (req, res) => {
 });
 
 module.exports = router;
+
+
+router.get("/get_all_org_name", async (req, res) => {
+  try {
+    const organizations = await Organization.find();
+    res.json(organizations.map(org => ({
+      org_id: org.org_id,
+      org_name: org.org_name
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});

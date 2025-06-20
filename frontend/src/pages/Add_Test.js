@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
   Paper,
-  Tooltip,
-  Chip,
+  TextField,
+  Button,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Button,
   IconButton,
   CircularProgress,
   Alert,
@@ -30,23 +29,32 @@ import {
   styled,
   Menu,
   MenuItem,
-  TextField,
   Switch,
   FormControlLabel,
-} from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
-import { fetchAllCodes, fetchAllMcqs, createTest } from "../axios";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CloseIcon from "@mui/icons-material/Close";
-import SaveIcon from "@mui/icons-material/Save";
-import QuizIcon from "@mui/icons-material/Quiz";
-import CodeIcon from "@mui/icons-material/Code";
-import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import AddIcon from "@mui/icons-material/Add";
-import Admin_Dashboard from "../components/AdminDash";
-import { stepConnectorClasses } from "@mui/material/StepConnector";
-import { v4 as uuidv4 } from "uuid";
+  InputAdornment,
+  useTheme,
+  useMediaQuery,
+} from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import {
+  FileText,
+  Code,
+  HelpCircle,
+  CheckCircle,
+  Plus,
+  Save,
+  X,
+  Copy,
+  Tag,
+  Check,
+  Calendar,
+  List,
+  Search,
+  Users,
+} from 'lucide-react';
+import { fetchAllCodes, fetchAllMcqs, createTest } from '../axios';
+import Admin_Dashboard from '../components/AdminDash';
+import { stepConnectorClasses } from '@mui/material/StepConnector';
 
 // Custom Stepper Connector
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
@@ -55,12 +63,12 @@ const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
   },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundColor: '#0c83c8',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundColor: '#0c83c8',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -86,38 +94,38 @@ const ColorlibStepIconRoot = styled('div')(({ theme, ownerState }) => ({
   '&:hover': {
     transform: 'scale(1.1)',
   },
-  ...(ownerState.active || ownerState.completed ? {
-    backgroundColor: '#0c83c8',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
-  } : {}),
+  ...(ownerState.active || ownerState.completed
+    ? {
+        background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.25)',
+      }
+    : {}),
 }));
 
 function ColorlibStepIcon(props) {
   const { active, completed, className, icon } = props;
 
   const icons = {
-    1: <QuizIcon />,
-    2: <CodeIcon />,
-    3: <QuestionAnswerIcon />,
-    4: <CheckCircleIcon />,
+    1: <FileText size={24} />,
+    2: <Code size={24} />,
+    3: <HelpCircle size={24} />,
+    4: <CheckCircle size={24} />,
   };
 
   return (
-    <Tooltip title={steps[icon - 1]}>
-      <ColorlibStepIconRoot ownerState={{ completed, active }} className={className}>
-        {icons[String(icon)]}
-      </ColorlibStepIconRoot>
-    </Tooltip>
+    <ColorlibStepIconRoot ownerState={{ completed, active }} className={className}>
+      {icons[String(icon)]}
+    </ColorlibStepIconRoot>
   );
 }
 
 const steps = ['Enter Test Details', 'Select Coding Problems', 'Select MCQs', 'Review and Confirm'];
 
-// Styled FAB for hover effect
+// Styled FAB
 const StyledFab = styled(Fab)(({ theme }) => ({
-  backgroundColor: '#0c83c8',
+  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
   '&:hover': {
-    backgroundColor: '#095e8f',
+    background: 'linear-gradient(90deg, #fc7a46, #0c83c8)',
     transform: 'scale(1.1)',
   },
   transition: 'all 0.3s ease',
@@ -127,28 +135,33 @@ const StyledFab = styled(Fab)(({ theme }) => ({
 
 const AddTestModule = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [testDetails, setTestDetails] = useState({
-    test_name: "",
-    test_language: "",
-    test_id: uuidv4(),
-    status: "active",
+    test_name: '',
+    test_language: '',
+    status: 'active',
   });
   const [codes, setCodes] = useState([]);
+  const [filteredCodes, setFilteredCodes] = useState([]);
   const [mcqs, setMcqs] = useState([]);
+  const [filteredMcqs, setFilteredMcqs] = useState([]);
   const [loading, setLoading] = useState({
     codes: true,
     mcqs: true,
   });
+  const [codeSearchQuery, setCodeSearchQuery] = useState('');
+  const [mcqSearchQuery, setMcqSearchQuery] = useState('');
   const [selectedCodeIds, setSelectedCodeIds] = useState([]);
   const [selectedMcqIds, setSelectedMcqIds] = useState([]);
   const [createLoading, setCreateLoading] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [detailsDialogTitle, setDetailsDialogTitle] = useState("");
+  const [detailsDialogTitle, setDetailsDialogTitle] = useState('');
   const [detailsDialogContent, setDetailsDialogContent] = useState([]);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [activeStep, setActiveStep] = useState(0);
   const [dataGridKey, setDataGridKey] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -157,38 +170,36 @@ const AddTestModule = () => {
   useEffect(() => {
     const fetchCodes = async () => {
       try {
-        console.log("Fetching coding problems...");
         const codeResponse = await fetchAllCodes();
-        console.log("Code response:", codeResponse);
         const codesArray = codeResponse.codes || [];
         if (!Array.isArray(codesArray)) {
-          console.error("Codes data is not an array:", codesArray);
           setCodes([]);
         } else {
-          const formattedRows = codesArray.map((item, index) => {
-            const row = {
-              id: item._id || `temp-id-${index}`,
-              code_id: item.code_id || "N/A",
-              problem: item.code_problem_statement || "N/A",
-              testCases: (Array.isArray(item.code_test_cases_id) ? item.code_test_cases_id : Array.isArray(item.code_test_cases) ? item.code_test_cases : []).join(", ") || "None",
-              tags: (Array.isArray(item.code_tags) ? item.code_tags : []).join(", ") || "None",
-              createdAt: item.createdAt ? new Date(item.createdAt).toLocaleString() : "N/A",
-              updatedAt: item.updatedAt ? new Date(item.updatedAt).toLocaleString() : "N/A",
-            };
-            console.log(`Mapped code item ${index}:`, row);
-            return row;
-          });
-          console.log("Formatted codes:", formattedRows);
+          const formattedRows = codesArray.map((item, index) => ({
+            id: item._id || `temp-id-${index}`,
+            code_id: item.code_id || 'N/A',
+            problem: item.code_problem_statement || 'N/A',
+            testCasesCount:
+              (Array.isArray(item.code_test_cases_id)
+                ? item.code_test_cases_id.length
+                : Array.isArray(item.code_test_cases)
+                ? item.code_test_cases.length
+                : 0) || 0,
+            tags: (Array.isArray(item.code_tags) ? item.code_tags : []).join(', ') || 'None',
+            createdAt: item.createdAt ? new Date(item.createdAt).toLocaleString() : 'N/A',
+            updatedAt: item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'N/A',
+          }));
           setCodes(formattedRows);
-          setDataGridKey(prev => prev + 1);
+          setFilteredCodes(formattedRows);
+          setDataGridKey((prev) => prev + 1);
         }
-        setLoading(prev => ({ ...prev, codes: false }));
+        setLoading((prev) => ({ ...prev, codes: false }));
       } catch (error) {
-        console.error("Error fetching codes:", error);
         setCodes([]);
-        setLoading(prev => ({ ...prev, codes: false }));
-        setSnackbarMessage("Failed to fetch codes: " + error);
-        setSnackbarSeverity("error");
+        setFilteredCodes([]);
+        setLoading((prev) => ({ ...prev, codes: false }));
+        setSnackbarMessage('Failed to fetch codes: ' + error.message);
+        setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     };
@@ -201,61 +212,80 @@ const AddTestModule = () => {
         const mcqResponse = await fetchAllMcqs();
         const mcqData = mcqResponse.data?.mcqs || mcqResponse.data || [];
         if (!Array.isArray(mcqData)) {
-          console.error("MCQs data is not an array:", mcqData);
           setMcqs([]);
         } else {
           setMcqs(mcqData);
+          setFilteredMcqs(mcqData);
         }
-        setLoading(prev => ({ ...prev, mcqs: false }));
+        setLoading((prev) => ({ ...prev, mcqs: false }));
       } catch (error) {
-        console.error("Error fetching MCQs:", error);
         setMcqs([]);
-        setLoading(prev => ({ ...prev, mcqs: false }));
-        setSnackbarMessage("Failed to fetch MCQs: " + error);
-        setSnackbarSeverity("error");
+        setFilteredMcqs([]);
+        setLoading((prev) => ({ ...prev, mcqs: false }));
+        setSnackbarMessage('Failed to fetch MCQs: ' + error.message);
+        setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     };
     fetchMcqs();
   }, []);
 
+  useEffect(() => {
+    const filtered = codes.filter((code) =>
+      Object.values(code)
+        .join(' ')
+        .toLowerCase()
+        .includes(codeSearchQuery.toLowerCase())
+    );
+    setFilteredCodes(filtered);
+  }, [codeSearchQuery, codes]);
+
+  useEffect(() => {
+    const filtered = mcqs.filter((mcq) =>
+      Object.values(mcq)
+        .join(' ')
+        .toLowerCase()
+        .includes(mcqSearchQuery.toLowerCase())
+    );
+    setFilteredMcqs(filtered);
+  }, [mcqSearchQuery, mcqs]);
+
   const validateForm = () => {
     const errors = {};
     if (!testDetails.test_name.trim()) {
-      errors.test_name = "Test name is required";
+      errors.test_name = 'Test name is required';
     }
     if (!testDetails.test_language.trim()) {
-      errors.test_language = "Test language is required";
+      errors.test_language = 'Test language is required';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleInputChange = e => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setTestDetails(prev => ({ ...prev, [name]: value }));
-    setFormErrors(prev => ({ ...prev, [name]: "" }));
+    setTestDetails((prev) => ({ ...prev, [name]: value }));
+    setFormErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const handleStatusToggle = () => {
-    setTestDetails(prev => ({
+    setTestDetails((prev) => ({
       ...prev,
-      status: prev.status === "active" ? "disabled" : "active",
+      status: prev.status === 'active' ? 'disabled' : 'active',
     }));
   };
 
-  const handleCopyToClipboard = text => {
+  const handleCopyToClipboard = (text) => {
     navigator.clipboard
       .writeText(text)
       .then(() => {
-        setSnackbarMessage("Copied to clipboard!");
-        setSnackbarSeverity("success");
+        setSnackbarMessage('Copied to clipboard!');
+        setSnackbarSeverity('success');
         setSnackbarOpen(true);
       })
-      .catch(err => {
-        console.error("Error copying to clipboard:", err);
-        setSnackbarMessage("Failed to copy to clipboard");
-        setSnackbarSeverity("error");
+      .catch((err) => {
+        setSnackbarMessage('Failed to copy to clipboard');
+        setSnackbarSeverity('error');
         setSnackbarOpen(true);
       });
   };
@@ -272,8 +302,8 @@ const AddTestModule = () => {
 
   const handleOpenPreviewDialog = () => {
     if (!validateForm()) {
-      setSnackbarMessage("Please fill in all required fields");
-      setSnackbarSeverity("error");
+      setSnackbarMessage('Please fill in all required fields');
+      setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
     }
@@ -286,16 +316,16 @@ const AddTestModule = () => {
 
   const handleNext = () => {
     if (activeStep === 0 && !validateForm()) {
-      setSnackbarMessage("Please fill in all required fields");
-      setSnackbarSeverity("error");
+      setSnackbarMessage('Please fill in all required fields');
+      setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
     }
-    setActiveStep(prev => prev + 1);
+    setActiveStep((prev) => prev + 1);
   };
 
   const handlePrevious = () => {
-    setActiveStep(prev => prev - 1);
+    setActiveStep((prev) => prev - 1);
   };
 
   const calculateTotalScore = () => {
@@ -306,23 +336,22 @@ const AddTestModule = () => {
 
   const handleCreateTest = async () => {
     if (!validateForm()) {
-      setSnackbarMessage("Please fill in all required fields");
-      setSnackbarSeverity("error");
+      setSnackbarMessage('Please fill in all required fields');
+      setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
     }
 
     try {
       const newMcqIds = mcqs
-        .filter(mcq => selectedMcqIds.includes(mcq._id))
-        .map(mcq => mcq.mcq_id);
+        .filter((mcq) => selectedMcqIds.includes(mcq._id))
+        .map((mcq) => mcq.mcq_id);
 
       const newCodeIds = codes
-        .filter(code => selectedCodeIds.includes(code.id))
-        .map(code => code.code_id);
+        .filter((code) => selectedCodeIds.includes(code.id))
+        .map((code) => code.code_id);
 
       const testData = {
-        test_id: testDetails.test_id,
         test_name: testDetails.test_name,
         test_language: testDetails.test_language,
         test_mcq_id: newMcqIds,
@@ -335,30 +364,28 @@ const AddTestModule = () => {
       setPreviewDialogOpen(false);
 
       await createTest(testData);
-      setSnackbarMessage("Test created successfully!");
-      setSnackbarSeverity("success");
+      setSnackbarMessage('Test created successfully!');
+      setSnackbarSeverity('success');
 
       setTestDetails({
-        test_name: "",
-        test_language: "",
-        test_id: uuidv4(),
-        status: "active",
+        test_name: '',
+        test_language: '',
+        status: 'active',
       });
       setSelectedCodeIds([]);
       setSelectedMcqIds([]);
       setActiveStep(0);
-      setDataGridKey(prev => prev + 1);
+      setDataGridKey((prev) => prev + 1);
     } catch (error) {
-      console.error("Error creating test:", error);
-      setSnackbarMessage(`Failed to create test: ${error}`);
-      setSnackbarSeverity("error");
+      setSnackbarMessage(`Failed to create test: ${error.message}`);
+      setSnackbarSeverity('error');
     } finally {
       setCreateLoading(false);
       setSnackbarOpen(true);
     }
   };
 
-  const handleAddMenuOpen = event => {
+  const handleAddMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -366,55 +393,168 @@ const AddTestModule = () => {
     setAnchorEl(null);
   };
 
-  const handleNavigate = path => {
+  const handleNavigate = (path) => {
     navigate(path);
     handleAddMenuClose();
   };
 
   const codeColumns = [
-    { field: "code_id", headerName: "Code ID", minWidth: 200, flex: 1 },
-    { field: "problem", headerName: "Problem Statement", minWidth: 300, flex: 1.5 },
-    { field: "testCases", headerName: "Test Cases ID", minWidth: 250, flex: 1 },
-    { field: "tags", headerName: "Tags", minWidth: 200, flex: 1 },
-    { field: "createdAt", headerName: "Created At", minWidth: 180, flex: 0.8 },
-    { field: "updatedAt", headerName: "Updated At", minWidth: 180, flex: 0.8 },
+    {
+      field: 'problem',
+      headerName: 'Problem Statement',
+      minWidth: isMobile ? 200 : 300,
+      flex: 1.5,
+      renderHeader: () => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <FileText size={16} color="white" />
+          <Typography variant="inherit" fontWeight="bold">
+            Problem Statement
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'testCasesCount',
+      headerName: 'No of Test Cases',
+      minWidth: isMobile ? 150 : 200,
+      flex: 1,
+      renderHeader: () => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Check size={16} color="white" />
+          <Typography variant="inherit" fontWeight="bold">
+            No of Test Cases
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'tags',
+      headerName: 'Tags',
+      minWidth: isMobile ? 150 : 200,
+      flex: 1,
+      renderHeader: () => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Tag size={16} color="white" />
+          <Typography variant="inherit" fontWeight="bold">
+            Tags
+          </Typography>
+        </Box>
+      ),
+    },
+    // {
+    //   field: 'createdAt',
+    //   headerName: 'Created At',
+    //   minWidth: isMobile ? 150 : 180,
+    //   flex: 0.8,
+    //   renderHeader: () => (
+    //     <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    //       <Calendar size={16} color="white" />
+    //       <Typography variant="inherit" fontWeight="bold">
+    //         Created At
+    //       </Typography>
+    //     </Box>
+    //   ),
+    // },
+    // {
+    //   field: 'updatedAt',
+    //   headerName: 'Updated At',
+    //   minWidth: isMobile ? 150 : 180,
+    //   flex: 0.8,
+    //   renderHeader: () => (
+    //     <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    //       <Calendar size={16} color="white" />
+    //       <Typography variant="inherit" fontWeight="bold">
+    //         Updated At
+    //       </Typography>
+    //     </Box>
+    //   ),
+    // },
   ];
 
   const mcqColumns = [
-    { field: "mcq_question", headerName: "Question", minWidth: 300, flex: 1.5 },
     {
-      field: "mcq_options",
-      headerName: "Options",
-      minWidth: 250,
+      field: 'mcq_question',
+      headerName: 'Question',
+      minWidth: isMobile ? 200 : 300,
       flex: 1,
-      valueGetter: params =>
-        params.value && Array.isArray(params.value)
-          ? params.value.join(", ")
-          : "None",
     },
-    { field: "mcq_answer", headerName: "Answer", minWidth: 150, flex: 0.6 },
     {
-      field: "mcq_tag",
-      headerName: "Tags",
-      minWidth: 200,
-      flex: 1,
-      valueGetter: params =>
-        params.value && Array.isArray(params.value)
-          ? params.value.join(", ")
-          : "None",
+      field: 'mcq_options',
+      headerName: 'Options',
+      minWidth: isMobile ? 150 : 250,
+      flex: 0.8,
+      renderCell: (params) => {
+        const options = params.row.mcq_options;
+        if (Array.isArray(options) && options.length > 0) {
+          return (
+            <Box sx={{ py: 1 }}>
+              {options.map((option, index) => (
+                <Typography
+                  key={index}
+                  variant="body2"
+                  sx={{
+                    fontSize: isMobile ? '12px' : '14px',
+                    display: 'block',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {String.fromCharCode(65 + index)}. {option}
+                </Typography>
+              ))}
+            </Box>
+          );
+        }
+        return <Typography variant="body2">No options</Typography>;
+      },
     },
-    { field: "mcq_id", headerName: "MCQ ID", minWidth: 250, flex: 1 },
+    {
+      field: 'mcq_answer',
+      headerName: 'Answer',
+      minWidth: isMobile ? 100 : 150,
+      flex: 0.5,
+    },
+    {
+      field: 'mcq_tag',
+      headerName: 'Tags',
+      minWidth: isMobile ? 120 : 200,
+      flex: 0.6,
+      renderCell: (params) => {
+        const tags = params.row.mcq_tag;
+        if (Array.isArray(tags) && tags.length > 0) {
+          return (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, py: 1 }}>
+              {tags.map((tag, index) => (
+                <Typography
+                  key={index}
+                  variant="caption"
+                  sx={{
+                    backgroundColor: '#e3f2fd',
+                    color: '#0c83c8',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: '12px',
+                    fontSize: isMobile ? '10px' : '12px',
+                    fontWeight: 500,
+                  }}
+                >
+                  {tag}
+                </Typography>
+              ))}
+            </Box>
+          );
+        }
+        return <Typography variant="body2">No tags</Typography>;
+      },
+    },
   ];
 
   const dataGridSx = {
+    borderRadius: '8px',
     '& .MuiDataGrid-columnHeaders': {
-      backgroundColor: '#0c83c8',
-      color: 'white',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+      color: '#0c83c8',
       fontWeight: 'bold',
-      fontSize: { xs: '14px', sm: '16px' },
-    },
-    '& .MuiDataGrid-columnHeaderTitle': {
-      fontWeight: 'bold',
+      fontSize: isMobile ? '14px' : '15px',
     },
     '& .MuiDataGrid-row': {
       '&:nth-of-type(odd)': {
@@ -424,8 +564,9 @@ const AddTestModule = () => {
         backgroundColor: '#e3f2fd',
       },
     },
-    borderRadius: '12px',
-    fontSize: { xs: '12px', sm: '14px' },
+    '& .MuiDataGrid-cell': {
+      fontSize: isMobile ? '12px' : '14px',
+    },
   };
 
   return (
@@ -433,55 +574,60 @@ const AddTestModule = () => {
       <Admin_Dashboard />
       <Box
         sx={{
-          padding: { xs: 2, sm: 3, md: 4 },
-          backgroundColor: '#f5f5f5',
           minHeight: '100vh',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          backgroundColor: '#f5f5f5',
+          py: 6,
+          px: { xs: 2, sm: 6 },
         }}
       >
-        <Typography
-          variant="h4"
-          align="center"
-          sx={{
-            mb: { xs: 2, sm: 3, md: 4 },
-            fontWeight: 'bold',
-            color: 'white',
-            backgroundColor: '#0c83c8',
-            width: '100%',
-            py: 2,
-            borderRadius: '12px 12px 0 0',
-            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
-          }}
-        >
-          Add Test
-        </Typography>
         <Paper
           sx={{
-            p: { xs: 1, sm: 2, md: 3 },
-            borderRadius: '12px',
+            p: { xs: 2, sm: 3, md: 4 },
+            borderRadius: '16px',
             boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
-            mb: 4,
             width: '100%',
             maxWidth: '1600px',
             bgcolor: 'white',
           }}
         >
+          <Paper
+            elevation={4}
+            sx={{
+              mb: 4,
+              p: 3,
+              background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+              color: 'white',
+              borderRadius: '16px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Users size={24} />
+              <Typography variant="h5" fontWeight={600}>
+                <span style={{ color: '#fff' }}>Add </span>
+                <span style={{ padding: '4px 8px', borderRadius: '6px' }}>Test</span>
+              </Typography>
+            </Box>
+            <Typography variant="subtitle2" sx={{ mt: 1 }}>
+              Create a new test with coding problems and MCQs
+            </Typography>
+          </Paper>
           <Stepper
             alternativeLabel
             activeStep={activeStep}
             connector={<ColorlibConnector />}
             sx={{ mb: 4, px: { xs: 1, sm: 2 } }}
           >
-            {steps.map(label => (
+            {steps.map((label) => (
               <Step key={label}>
                 <StepLabel
                   StepIconComponent={ColorlibStepIcon}
                   sx={{
                     '& .MuiStepLabel-label': {
-                      fontSize: { xs: '12px', sm: '14px', md: '16px' },
+                      fontSize: isMobile ? '12px' : '14px',
                     },
                   }}
                 >
@@ -490,29 +636,31 @@ const AddTestModule = () => {
               </Step>
             ))}
           </Stepper>
-        </Paper>
-        <Paper
-          sx={{
-            p: { xs: 1, sm: 2, md: 3 },
-            borderRadius: '12px',
-            boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
-            width: '100%',
-            maxWidth: '1600px',
-            bgcolor: 'white',
-          }}
-        >
+
           {activeStep === 0 && (
             <Box sx={{ mb: 2 }}>
-              <Typography
-                variant="h6"
+              <Box
                 sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
                   mb: 2,
-                  color: '#0c83c8',
-                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
                 }}
               >
-                Enter Test Details
-              </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    fontSize: isMobile ? '1.2rem' : '1.5rem',
+                    textAlign: 'center',
+                  }}
+                >
+                  Enter Test Details
+                </Typography>
+              </Box>
+
               <Box
                 sx={{
                   display: 'flex',
@@ -531,7 +679,23 @@ const AddTestModule = () => {
                   helperText={formErrors.test_name}
                   fullWidth
                   required
-                  sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FileText size={16} color="#0c83c8" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      '& fieldset': { borderColor: '#0c83c8' },
+                      '&:hover fieldset': { borderColor: '#fc7a46' },
+                      '&.Mui-focused fieldset': { borderColor: '#0c83c8' },
+                    },
+                  }}
                 />
                 <TextField
                   label="Test Language"
@@ -542,33 +706,41 @@ const AddTestModule = () => {
                   helperText={formErrors.test_language}
                   fullWidth
                   required
-                  sx={{ fontSize: { xs: '12px', sm: '14px' } }}
-                />
-                <TextField
-                  label="Test ID"
-                  name="test_id"
-                  value={testDetails.test_id}
-                  disabled
-                  fullWidth
-                  sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+                  variant="outlined"
+                  size={isMobile ? 'small' : 'medium'}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Code size={16} color="#0c83c8" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      '& fieldset': { borderColor: '#0c83c8' },
+                      '&:hover fieldset': { borderColor: '#fc7a46' },
+                      '&.Mui-focused fieldset': { borderColor: '#0c83c8' },
+                    },
+                  }}
                 />
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={testDetails.status === "active"}
+                      checked={testDetails.status === 'active'}
                       onChange={handleStatusToggle}
                       sx={{
                         '& .MuiSwitch-switchBase.Mui-checked': {
                           color: '#0c83c8',
                         },
                         '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                          backgroundColor: '#0c83c8',
+                          background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
                         },
                       }}
                     />
                   }
-                  label={`Status: ${testDetails.status === "active" ? "Active" : "Disabled"}`}
-                  sx={{ fontSize: { xs: '12px', sm: '14px' } }}
+                  label={`Status: ${testDetails.status === 'active' ? 'Active' : 'Disabled'}`}
+                  sx={{ fontSize: isMobile ? '12px' : '14px' }}
                 />
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, flexWrap: 'wrap', gap: 1 }}>
@@ -576,10 +748,12 @@ const AddTestModule = () => {
                   variant="contained"
                   onClick={handleNext}
                   sx={{
-                    backgroundColor: '#0c83c8',
-                    '&:hover': { backgroundColor: '#095e8f', transform: 'scale(1.05)' },
-                    transition: 'all 0.3s ease',
-                    fontSize: { xs: '12px', sm: '14px' },
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    px: isMobile ? 2 : 3,
+                    py: isMobile ? 0.5 : 0.75,
                   }}
                 >
                   Next
@@ -593,54 +767,76 @@ const AddTestModule = () => {
                 variant="h6"
                 sx={{
                   mb: 2,
-                  color: '#0c83c8',
-                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontSize: isMobile ? '1.2rem' : '1.5rem',
                 }}
               >
                 Select Coding Problems
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                <Tooltip title="Add New Coding Problem">
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => navigate('/add-coding')}
-                    sx={{
-                      backgroundColor: '#0c83c8',
-                      '&:hover': { backgroundColor: '#095e8f', transform: 'scale(1.05)' },
-                      transition: 'all 0.3s ease',
-                      fontSize: { xs: '12px', sm: '14px' },
-                      px: { xs: 1, sm: 2 },
-                    }}
-                  >
-                    Add Coding Problem
-                  </Button>
-                </Tooltip>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Search coding problems..."
+                  value={codeSearchQuery}
+                  onChange={(e) => setCodeSearchQuery(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={20} color="#0c83c8" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    maxWidth: 400,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      '& fieldset': { borderColor: '#0c83c8' },
+                      '&:hover fieldset': { borderColor: '#fc7a46' },
+                      '&.Mui-focused fieldset': { borderColor: '#0c83c8' },
+                    },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<Plus size={16} />}
+                  onClick={() => navigate('/add_coding')}
+                  sx={{
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    px: isMobile ? 1 : 2,
+                  }}
+                >
+                  Add Coding Problem
+                </Button>
               </Box>
-              <Box sx={{ height: { xs: 300, sm: 400 }, width: '100%' }}>
-                {console.log("Rendering coding problems:", { loading: loading.codes, codesLength: codes.length, codes })}
+              <Box sx={{ height: isMobile ? 300 : 400, width: '100%' }}>
                 {loading.codes ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                     <CircularProgress sx={{ color: '#0c83c8' }} />
                   </Box>
-                ) : codes.length === 0 ? (
+                ) : filteredCodes.length === 0 ? (
                   <Typography variant="body1" color="error" sx={{ textAlign: 'center', mt: 2 }}>
                     No coding problems found. Please add some coding problems.
                   </Typography>
                 ) : (
                   <DataGrid
                     key={`code-grid-${dataGridKey}`}
-                    rows={codes}
+                    rows={filteredCodes}
                     columns={codeColumns}
                     initialState={{
                       pagination: { paginationModel: { pageSize: 10 } },
                     }}
                     pageSizeOptions={[10, 20, 50]}
                     loading={loading.codes}
-                    getRowId={row => row.id}
+                    getRowId={(row) => row.id}
                     checkboxSelection
                     rowSelectionModel={selectedCodeIds}
-                    onRowSelectionModelChange={newSelection => {
+                    onRowSelectionModelChange={(newSelection) => {
                       setSelectedCodeIds(newSelection);
                     }}
                     sx={dataGridSx}
@@ -654,8 +850,9 @@ const AddTestModule = () => {
                   sx={{
                     color: '#0c83c8',
                     borderColor: '#0c83c8',
-                    fontSize: { xs: '12px', sm: '14px' },
-                    '&:hover': { borderColor: '#095e8f', color: '#095e8f' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    '&:hover': { borderColor: '#fc7a46', color: '#fc7a46' },
                   }}
                 >
                   Previous
@@ -664,10 +861,12 @@ const AddTestModule = () => {
                   variant="contained"
                   onClick={handleNext}
                   sx={{
-                    backgroundColor: '#0c83c8',
-                    '&:hover': { backgroundColor: '#095e8f', transform: 'scale(1.05)' },
-                    transition: 'all 0.3s ease',
-                    fontSize: { xs: '12px', sm: '14px' },
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    px: isMobile ? 2 : 3,
+                    py: isMobile ? 0.5 : 0.75,
                   }}
                 >
                   Next
@@ -681,53 +880,77 @@ const AddTestModule = () => {
                 variant="h6"
                 sx={{
                   mb: 2,
-                  color: '#0c83c8',
-                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontSize: isMobile ? '1.2rem' : '1.5rem',
                 }}
               >
                 Select MCQs
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-                <Tooltip title="Add New MCQ">
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => navigate('/add-mcq')}
-                    sx={{
-                      backgroundColor: '#0c83c8',
-                      '&:hover': { backgroundColor: '#095e8f', transform: 'scale(1.05)' },
-                      transition: 'all 0.3s ease',
-                      fontSize: { xs: '12px', sm: '14px' },
-                      px: { xs: 1, sm: 2 },
-                    }}
-                  >
-                    Add MCQ
-                  </Button>
-                </Tooltip>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Search MCQs..."
+                  value={mcqSearchQuery}
+                  onChange={(e) => setMcqSearchQuery(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={20} color="#0c83c8" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    maxWidth: 400,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                      '& fieldset': { borderColor: '#0c83c8' },
+                      '&:hover fieldset': { borderColor: '#fc7a46' },
+                      '&.Mui-focused fieldset': { borderColor: '#0c83c8' },
+                    },
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<Plus size={16} />}
+                  onClick={() => navigate('/add_mcq')}
+                  sx={{
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    px: isMobile ? 1 : 2,
+                  }}
+                >
+                  Add MCQ
+                </Button>
               </Box>
-              <Box sx={{ height: { xs: 300, sm: 400 }, width: '100%' }}>
+              <Box sx={{ height: isMobile ? 300 : 400, width: '100%' }}>
                 {loading.mcqs ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                     <CircularProgress sx={{ color: '#0c83c8' }} />
                   </Box>
-                ) : mcqs.length === 0 ? (
+                ) : filteredMcqs.length === 0 ? (
                   <Typography variant="body1" color="error" sx={{ textAlign: 'center', mt: 2 }}>
                     No MCQs found. Please add some MCQs.
                   </Typography>
                 ) : (
                   <DataGrid
                     key={`mcq-grid-${dataGridKey}`}
-                    rows={mcqs}
+                    rows={filteredMcqs}
                     columns={mcqColumns}
                     initialState={{
                       pagination: { paginationModel: { pageSize: 10 } },
                     }}
                     pageSizeOptions={[10, 20, 50]}
                     loading={loading.mcqs}
-                    getRowId={row => row._id}
+                    getRowId={(row) => row._id}
                     checkboxSelection
+                    rowHeight={80}
                     rowSelectionModel={selectedMcqIds}
-                    onRowSelectionModelChange={newSelection => {
+                    onRowSelectionModelChange={(newSelection) => {
                       setSelectedMcqIds(newSelection);
                     }}
                     sx={dataGridSx}
@@ -741,8 +964,9 @@ const AddTestModule = () => {
                   sx={{
                     color: '#0c83c8',
                     borderColor: '#0c83c8',
-                    fontSize: { xs: '12px', sm: '14px' },
-                    '&:hover': { borderColor: '#095e8f', color: '#095e8f' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    '&:hover': { borderColor: '#fc7a46', color: '#fc7a46' },
                   }}
                 >
                   Previous
@@ -751,10 +975,12 @@ const AddTestModule = () => {
                   variant="contained"
                   onClick={handleNext}
                   sx={{
-                    backgroundColor: '#0c83c8',
-                    '&:hover': { backgroundColor: '#095e8f', transform: 'scale(1.05)' },
-                    transition: 'all 0.3s ease',
-                    fontSize: { xs: '12px', sm: '14px' },
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    px: isMobile ? 2 : 3,
+                    py: isMobile ? 0.5 : 0.75,
                   }}
                 >
                   Next
@@ -768,8 +994,10 @@ const AddTestModule = () => {
                 variant="h6"
                 sx={{
                   mb: 2,
-                  color: '#0c83c8',
-                  fontSize: { xs: '1.2rem', sm: '1.5rem' },
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontSize: isMobile ? '1.2rem' : '1.5rem',
                 }}
               >
                 Review and Confirm
@@ -778,7 +1006,7 @@ const AddTestModule = () => {
                 variant="body1"
                 sx={{
                   mb: 3,
-                  fontSize: { xs: '14px', sm: '16px' },
+                  fontSize: isMobile ? '14px' : '16px',
                 }}
               >
                 Please review your selections below before confirming the creation.
@@ -788,8 +1016,10 @@ const AddTestModule = () => {
                 sx={{
                   mb: 3,
                   fontWeight: 'bold',
-                  color: '#0c83c8',
-                  fontSize: { xs: '14px', sm: '16px' },
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontSize: isMobile ? '14px' : '16px',
                 }}
               >
                 Total Score: {calculateTotalScore()} ({selectedMcqIds.length} MCQs x 1 + {selectedCodeIds.length} Coding x 10)
@@ -809,16 +1039,21 @@ const AddTestModule = () => {
                   sx={{
                     mb: 1,
                     fontWeight: 'bold',
-                    fontSize: { xs: '14px', sm: '16px' },
+                    fontSize: isMobile ? '14px' : '16px',
                   }}
                 >
                   Test Details
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Typography variant="body2"><strong>Name:</strong> {testDetails.test_name || 'N/A'}</Typography>
-                  <Typography variant="body2"><strong>Language:</strong> {testDetails.test_language || 'N/A'}</Typography>
-                  <Typography variant="body2"><strong>Status:</strong> {testDetails.status || 'Unknown'}</Typography>
-                  <Typography variant="body2"><strong>Test ID:</strong> {testDetails.test_id || 'N/A'}</Typography>
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                    <strong>Name:</strong> {testDetails.test_name || 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                    <strong>Language:</strong> {testDetails.test_language || 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                    <strong>Status:</strong> {testDetails.status || 'Unknown'}
+                  </Typography>
                 </Box>
               </Box>
 
@@ -836,7 +1071,7 @@ const AddTestModule = () => {
                   sx={{
                     mb: 1,
                     fontWeight: 'bold',
-                    fontSize: { xs: '14px', sm: '16px' },
+                    fontSize: isMobile ? '14px' : '16px',
                   }}
                 >
                   Selected Coding Problems
@@ -845,29 +1080,44 @@ const AddTestModule = () => {
                   <TableContainer>
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: '#0c83c8' }}>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Code ID</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Problem Statement</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Test Cases ID</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Tags</TableCell>
+                        <TableRow sx={{ background: 'linear-gradient(90deg, #0c83c8, #fc7a46)' }}>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <FileText size={16} />
+                              Problem Statement
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Check size={16} />
+                              No of Test Cases
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Tag size={16} />
+                              Tags
+                            </Box>
+                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {codes
-                          .filter(code => selectedCodeIds.includes(code.id))
-                          .map(code => (
+                          .filter((code) => selectedCodeIds.includes(code.id))
+                          .map((code) => (
                             <TableRow key={code.id}>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{code.code_id || 'N/A'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{code.problem || 'N/A'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{code.testCases || 'N/A'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{code.tags || 'N/A'}</TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>{code.problem || 'N/A'}</TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>{code.testCasesCount || 0}</TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>{code.tags || 'N/A'}</TableCell>
                             </TableRow>
                           ))}
                       </TableBody>
                     </Table>
                   </TableContainer>
                 ) : (
-                  <Typography variant="body2" color="error">No Coding Problems selected</Typography>
+                  <Typography variant="body2" color="error" sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                    No Coding Problems selected
+                  </Typography>
                 )}
               </Box>
 
@@ -885,7 +1135,7 @@ const AddTestModule = () => {
                   sx={{
                     mb: 1,
                     fontWeight: 'bold',
-                    fontSize: { xs: '14px', sm: '16px' },
+                    fontSize: isMobile ? '14px' : '16px',
                   }}
                 >
                   Selected MCQs
@@ -894,31 +1144,55 @@ const AddTestModule = () => {
                   <TableContainer>
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: '#0c83c8' }}>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Question</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Options</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Answer</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>Tags</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: { xs: '12px', sm: '14px' } }}>MCQ ID</TableCell>
+                        <TableRow sx={{ background: 'linear-gradient(90deg, #0c83c8, #fc7a46)' }}>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <HelpCircle size={16} />
+                              Question
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <List size={16} />
+                              Options
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Check size={16} />
+                              Answer
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ color: 'white', fontWeight: 'bold', fontSize: isMobile ? '12px' : '14px' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Tag size={16} />
+                              Tags
+                            </Box>
+                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {mcqs
-                          .filter(mcq => selectedMcqIds.includes(mcq._id))
-                          .map(mcq => (
+                          .filter((mcq) => selectedMcqIds.includes(mcq._id))
+                          .map((mcq) => (
                             <TableRow key={mcq._id}>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{mcq.mcq_question || 'N/A'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{mcq.mcq_options?.length ? mcq.mcq_options.join(", ") : 'None'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{mcq.mcq_answer || 'N/A'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{mcq.mcq_tag?.length ? mcq.mcq_tag.join(", ") : 'None'}</TableCell>
-                              <TableCell sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{mcq.mcq_id || 'N/A'}</TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>{mcq.mcq_question || 'N/A'}</TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                                {mcq.mcq_options?.length ? mcq.mcq_options.join(', ') : 'None'}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>{mcq.mcq_answer || 'N/A'}</TableCell>
+                              <TableCell sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                                {mcq.mcq_tag?.length ? mcq.mcq_tag.join(', ') : 'None'}
+                              </TableCell>
                             </TableRow>
                           ))}
                       </TableBody>
                     </Table>
                   </TableContainer>
                 ) : (
-                  <Typography variant="body2" color="error">No MCQs selected</Typography>
+                  <Typography variant="body2" color="error" sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                    No MCQs selected
+                  </Typography>
                 )}
               </Box>
 
@@ -929,8 +1203,9 @@ const AddTestModule = () => {
                   sx={{
                     color: '#0c83c8',
                     borderColor: '#0c83c8',
-                    fontSize: { xs: '12px', sm: '14px' },
-                    '&:hover': { borderColor: '#095e8f', color: '#095e8f' },
+                    fontSize: isMobile ? '12px' : '14px',
+                    borderRadius: '8px',
+                    '&:hover': { borderColor: '#fc7a46', color: '#fc7a46' },
                   }}
                 >
                   Previous
@@ -939,6 +1214,7 @@ const AddTestModule = () => {
             </Box>
           )}
         </Paper>
+
         <StyledFab
           onClick={activeStep === 3 ? handleOpenPreviewDialog : handleAddMenuOpen}
           disabled={activeStep === 3 && createLoading}
@@ -949,16 +1225,9 @@ const AddTestModule = () => {
             zIndex: 1000,
           }}
         >
-          {activeStep === 3 ? (
-            createLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              <SaveIcon />
-            )
-          ) : (
-            <AddIcon />
-          )}
+          {activeStep === 3 ? (createLoading ? <CircularProgress size={24} color="#ffff" /> : <Save size={24} color="#ffff" />) : <Plus size={24} color="#ffff" />}
         </StyledFab>
+
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -979,33 +1248,37 @@ const AddTestModule = () => {
           }}
         >
           <MenuItem
-            onClick={() => handleNavigate('/add-test')}
+            onClick={() => handleNavigate('/add_test')}
             sx={{
               '&:hover': { backgroundColor: '#e3f2fd' },
-              fontSize: { xs: '12px', sm: '14px' },
+              fontSize: isMobile ? '12px' : '14px',
             }}
           >
-            <QuizIcon sx={{ mr: 1, color: '#0c83c8' }} /> Add Test
+            <FileText size={16} color="#0c83c8" sx={{ mr: 1 }} />
+            Add Test
           </MenuItem>
           <MenuItem
-            onClick={() => handleNavigate('/add-coding')}
+            onClick={() => handleNavigate('/add_coding')}
             sx={{
               '&:hover': { backgroundColor: '#e3f2fd' },
-              fontSize: { xs: '12px', sm: '14px' },
+              fontSize: isMobile ? '12px' : '14px',
             }}
           >
-            <CodeIcon sx={{ mr: 1, color: '#0c83c8' }} /> Add Coding Problem
+            <Code size={16} color="#0c83c8" sx={{ mr: 1 }} />
+            Add Coding Problem
           </MenuItem>
           <MenuItem
-            onClick={() => handleNavigate('/add-mcq')}
+            onClick={() => handleNavigate('/add_mcq')}
             sx={{
               '&:hover': { backgroundColor: '#e3f2fd' },
-              fontSize: { xs: '12px', sm: '14px' },
+              fontSize: isMobile ? '12px' : '14px',
             }}
           >
-            <QuestionAnswerIcon sx={{ mr: 1, color: '#0c83c8' }} /> Add MCQ
+            <HelpCircle size={16} color="#0c83c8" sx={{ mr: 1 }} />
+            Add MCQ
           </MenuItem>
         </Menu>
+
         <Dialog
           open={previewDialogOpen}
           onClose={handleClosePreviewDialog}
@@ -1015,29 +1288,35 @@ const AddTestModule = () => {
             sx: { borderRadius: '12px' },
           }}
         >
-          <DialogTitle sx={{ backgroundColor: '#0c83c8', color: 'white', fontSize: { xs: '16px', sm: '18px' } }}>
+          <DialogTitle
+            sx={{
+              background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+              color: 'white',
+              fontSize: isMobile ? '16px' : '18px',
+            }}
+          >
             Confirm Test Creation
           </DialogTitle>
           <DialogContent dividers>
-            <DialogContentText sx={{ fontSize: { xs: '14px', sm: '16px' } }}>
+            <DialogContentText sx={{ fontSize: isMobile ? '14px' : '16px' }}>
               Review the test details below:
             </DialogContentText>
-            <Typography variant="body2" sx={{ mt: 2, fontSize: { xs: '12px', sm: '14px' } }}>
+            <Typography variant="body2" sx={{ mt: 2, fontSize: isMobile ? '12px' : '14px' }}>
               <strong>Test Name:</strong> {testDetails.test_name}
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '12px', sm: '14px' } }}>
+            <Typography variant="body2" sx={{ mt: 1, fontSize: isMobile ? '12px' : '14px' }}>
               <strong>Test Language:</strong> {testDetails.test_language}
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '12px', sm: '14px' } }}>
+            <Typography variant="body2" sx={{ mt: 1, fontSize: isMobile ? '12px' : '14px' }}>
               <strong>Status:</strong> {testDetails.status}
             </Typography>
             {selectedCodeIds.length > 0 && (
-              <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '12px', sm: '14px' } }}>
+              <Typography variant="body2" sx={{ mt: 1, fontSize: isMobile ? '12px' : '14px' }}>
                 <strong>Coding Problems:</strong> {selectedCodeIds.length} selected
               </Typography>
             )}
             {selectedMcqIds.length > 0 && (
-              <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '12px', sm: '14px' } }}>
+              <Typography variant="body2" sx={{ mt: 1, fontSize: isMobile ? '12px' : '14px' }}>
                 <strong>MCQs:</strong> {selectedMcqIds.length} selected
               </Typography>
             )}
@@ -1046,8 +1325,10 @@ const AddTestModule = () => {
               sx={{
                 mt: 1,
                 fontWeight: 'bold',
-                color: '#0c83c8',
-                fontSize: { xs: '12px', sm: '14px' },
+                background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontSize: isMobile ? '12px' : '14px',
               }}
             >
               <strong>Total Score:</strong> {calculateTotalScore()} ({selectedMcqIds.length} MCQs x 1 + {selectedCodeIds.length} Coding x 10)
@@ -1058,7 +1339,8 @@ const AddTestModule = () => {
               onClick={handleClosePreviewDialog}
               sx={{
                 color: '#0c83c8',
-                fontSize: { xs: '12px', sm: '14px' },
+                fontSize: isMobile ? '12px' : '14px',
+                borderRadius: '8px',
               }}
             >
               Cancel
@@ -1067,17 +1349,19 @@ const AddTestModule = () => {
               variant="contained"
               onClick={handleCreateTest}
               disabled={createLoading}
+              startIcon={createLoading ? <CircularProgress size={16} color="inherit" /> : <Save size={16} />}
               sx={{
-                backgroundColor: '#0c83c8',
-                '&:hover': { backgroundColor: '#095e8f' },
-                fontSize: { xs: '12px', sm: '14px' },
+                background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                fontSize: isMobile ? '12px' : '14px',
+                borderRadius: '8px',
               }}
             >
-              {createLoading ? <CircularProgress size={24} sx={{ mr: 1 }} /> : null}
               Confirm
             </Button>
           </DialogActions>
         </Dialog>
+
         <Dialog
           open={detailsDialogOpen}
           onClose={handleCloseDetailsDialog}
@@ -1092,14 +1376,14 @@ const AddTestModule = () => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              backgroundColor: '#0c83c8',
+              background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
               color: 'white',
-              fontSize: { xs: '16px', sm: '18px' },
+              fontSize: isMobile ? '16px' : '18px',
             }}
           >
             {detailsDialogTitle}
             <IconButton onClick={handleCloseDetailsDialog}>
-              <CloseIcon sx={{ color: 'white' }} />
+              <X size={20} color="white" />
             </IconButton>
           </DialogTitle>
           <DialogContent dividers>
@@ -1124,9 +1408,11 @@ const AddTestModule = () => {
                     borderBottom: index < detailsDialogContent.length - 1 ? '1px solid #eee' : 'none',
                   }}
                 >
-                  <Typography variant="body2" sx={{ fontSize: { xs: '12px', sm: '14px' } }}>{item}</Typography>
+                  <Typography variant="body2" sx={{ fontSize: isMobile ? '12px' : '14px' }}>
+                    {item}
+                  </Typography>
                   <IconButton size="small" onClick={() => handleCopyToClipboard(item)}>
-                    <ContentCopyIcon fontSize="small" sx={{ color: '#0c83c8' }} />
+                    <Copy size={16} color="#0c83c8" />
                   </IconButton>
                 </Box>
               ))}
@@ -1135,10 +1421,11 @@ const AddTestModule = () => {
           <DialogActions>
             <Button
               onClick={() => handleCopyToClipboard(detailsDialogContent.join('\n'))}
-              startIcon={<ContentCopyIcon />}
+              startIcon={<Copy size={16} />}
               sx={{
                 color: '#0c83c8',
-                fontSize: { xs: '12px', sm: '14px' },
+                fontSize: isMobile ? '12px' : '14px',
+                borderRadius: '8px',
               }}
             >
               Copy All
@@ -1146,16 +1433,19 @@ const AddTestModule = () => {
             <Button
               onClick={handleCloseDetailsDialog}
               variant="contained"
+              startIcon={<X size={16} />}
               sx={{
-                backgroundColor: '#0c83c8',
-                '&:hover': { backgroundColor: '#095e8f' },
-                fontSize: { xs: '12px', sm: '14px' },
+                background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                fontSize: isMobile ? '12px' : '14px',
+                borderRadius: '8px',
               }}
             >
               Close
             </Button>
           </DialogActions>
         </Dialog>
+
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={4000}
@@ -1168,8 +1458,8 @@ const AddTestModule = () => {
             variant="filled"
             sx={{
               width: '100%',
-              backgroundColor: snackbarSeverity === 'success' ? '#0c83c8' : undefined,
-              fontSize: { xs: '12px', sm: '14px' },
+              background: snackbarSeverity === 'success' ? 'linear-gradient(90deg, #0c83c8, #fc7a46)' : undefined,
+              fontSize: isMobile ? '12px' : '14px',
             }}
           >
             {snackbarMessage}

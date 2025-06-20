@@ -229,6 +229,24 @@ export const fetchAllModules = async () => {
   }
 };
 
+// Update module
+export const updateModule = async (payload) => {
+  try {
+    return await axios.put(`${BASE_URL}/modules_gateway/modules//update_module `, payload);
+  } catch (error) {
+    throw new Error(error.response?.data?.error || error.message);
+  }
+};
+
+// Delete module
+export const deleteModule = async (mod_id) => {
+  try {
+    return await axios.delete(`${BASE_URL}/modules_gateway/modules/delete_module/${mod_id}`);
+  } catch (error) {
+    throw new Error(error.response?.data?.error || error.message);
+  }
+};
+
 // FETCH ALL ORGANISATIONS
 export const fetchAllOrganizations = async () => {
   try {
@@ -444,7 +462,7 @@ export const createCodeProblem = async (problemStatement, tags) => {
   });
 
   return response.data;
-};
+};  
 
 // Add a new Testcase
 export const createTestCase = async (payload) => {
@@ -479,6 +497,30 @@ export const updateTest = async (testData) => {
   } catch (error) {
     console.error("Update test error:", error);
     throw error;
+  }
+};
+
+// Update code API call
+
+export const updateCode = async (payload) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/coding_gateway/coding/update_code`, payload);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating code:', error);
+    throw error;
+  }
+};
+
+// fetch all test cases
+export const fetchAllTestCases = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/testcase_gateway/testcase/get_all_testCases`);
+    return response;
+  } catch (error) {
+    throw new Error(
+      error.response?.data?.error || error.message || "Failed to fetch test cases"
+    );
   }
 };
 

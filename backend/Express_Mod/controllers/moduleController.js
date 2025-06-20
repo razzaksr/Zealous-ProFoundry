@@ -90,4 +90,18 @@ router.get("/get_module_name_by_id/:id", async (req, res) => {
   }
 });
 
+// Get All Modules
+router.get("/get_all_module_name", async (req, res) => {
+  try {
+    const modules = await Module.find();
+    res.json(modules.map(mod => ({
+      mod_id: mod.mod_id,
+      mod_name: mod.mod_name
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 module.exports = router;

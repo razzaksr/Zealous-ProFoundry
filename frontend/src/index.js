@@ -15,11 +15,11 @@ import InstructionsPage from "./pages/Info";
 import AdminDashboard from "./pages/AdminDashboard";
 import PocPage from "./pages/View_Poc";
 import UserPage from "./pages/UserPage";
-import ModulePage from "./pages/ModulePage";
+import ModulePage from "./pages/View_Module";
 import OrganizationPage from "./pages/View_Organization";
 import ExpertPage from "./pages/ExpertPage";
-import McqAdminPage from "./pages/McqAdminPage";
-import TestAdminPage from "./pages/TestAdminPage";
+import McqAdminPage from "./pages/View_Mcq";
+import TestAdminPage from "./pages/View_Test";
 import CodeList from "./pages/CodeList";
 import Add_Mcq from "./pages/Add_Mcq";
 import Add_Module from "./pages/Add_Module";
@@ -37,13 +37,13 @@ import Add_User from "./pages/Add_User";
 import Update_Expert from "./pages/Update_Expert";
 import Update_Organization from "./pages/Update_Organization";
 import BulkCertificateGenerator from "./pages/BulkCertificateGenerator";
-import ClassPerformance from "./pages/reportAndPieGen";
-import AttendanceAnalytics from "./pages/attendanceComponent";
-import TrainingForm from "./pages/report_gen";
-import IndividualReport from "./pages/columnChart";
+import ClassPerformance from "./pages/MasterReport";
+import AttendanceAnalytics from "./pages/ViewAttendance";
+import TrainingForm from "./pages/MasterAnalytics";
+import IndividualReport from "./pages/IndividualStudentData";
 import Add_Test from "./pages/Add_Test";
-import PocAndTestDataGrids from "./pages/Test_Allocation";
 import Allocate_Test from "./pages/Allocate_Test";
+import UpdateModule from "./pages/Update_Module";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -87,11 +87,11 @@ root.render(
               <Route path="/update_poc" element={<Update_Poc />} />
               <Route path="/update_expert" element={<Update_Expert />} />
               <Route path="/update_organization" element={<Update_Organization />} />
+              <Route path="/update_module" element={<UpdateModule />} />
               <Route path="/reportAndPieGen" element={<ClassPerformance />} />
               <Route path="/student/:report_id" element={<IndividualReport />} />
               <Route path="/attendance" element={<AttendanceAnalytics />} />
               <Route path="/reportGen" element={<TrainingForm />} />
-              <Route path="/test_allocate" element={<PocAndTestDataGrids />} />
               <Route path="/update_test" element={<UpdateTestModule />} />
               <Route path="/bulk_certificate" element={<BulkCertificateGenerator />} />
               <Route path="/allocate_test" element={<Allocate_Test />} />

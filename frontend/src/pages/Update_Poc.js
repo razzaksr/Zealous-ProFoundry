@@ -21,6 +21,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Stepper,
+  Step,
+  StepLabel,
+  StepConnector,
+  styled,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { fetchAllPocs, fetchPocById, fetchAllUsers, fetchAllModules, updatePoc } from '../axios';
@@ -32,50 +37,50 @@ import ModuleIcon from '@mui/icons-material/Book';
 import GroupIcon from '@mui/icons-material/Group';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Admin_Dashboard from '../components/AdminDash';
-import { Stepper, Step, StepLabel, StepConnector, styled } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { stepConnectorClasses } from '@mui/material/StepConnector';
 
 const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
-    top: 22,
+    top: 20,
+    left: 'calc(-50% + 28px)',
+    right: 'calc(50% + 28px)',
   },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundColor: '#0b78b9',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundColor: '#0b78b9',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
-    height: 3,
+    height: 4,
     border: 0,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 1,
+    backgroundColor: theme.palette.grey[300],
+    borderRadius: 2,
   },
 }));
 
-const ColorlibStepIconRoot = styled('div')(({ theme }) => ({
-  backgroundColor: '#e0e0e0',
+const ColorlibStepIconRoot = styled('div')(({ theme, ownerState }) => ({
+  backgroundColor: theme.palette.grey[300],
   zIndex: 1,
   color: '#fff',
-  width: 50,
-  height: 50,
+  width: 48,
+  height: 48,
   display: 'flex',
   borderRadius: '50%',
   justifyContent: 'center',
   alignItems: 'center',
-  variants: [
-    {
-      props: ({ ownerState }) => ownerState.active || ownerState.completed,
-      style: {
-        backgroundColor: '#0b78b9',
-        boxShadow: '0 4px 10px 0 rgba(0,0,0,.25)',
-      },
-    },
-  ],
+  transition: 'all 0.3s ease',
+  ...(ownerState.active || ownerState.completed
+    ? {
+        background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+        boxShadow: '0 4px 12px rgba(12, 131, 200, 0.3)',
+      }
+    : {}),
 }));
 
 function ColorlibStepIcon(props) {
@@ -120,6 +125,7 @@ const Update_Poc = () => {
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [activeStep, setActiveStep] = useState(0);
   const [pocDetailsFetched, setPocDetailsFetched] = useState(false);
+  const theme = useTheme();
 
   // Load selections from localStorage on mount
   useEffect(() => {
@@ -161,7 +167,6 @@ const Update_Poc = () => {
         setSelectedModuleIds(moduleIds);
         setSelectedUserIds(userIds);
 
-        // Update localStorage
         localStorage.setItem('selectedModuleIds', JSON.stringify(moduleIds));
         localStorage.setItem('selectedUserIds', JSON.stringify(userIds));
 
@@ -244,7 +249,7 @@ const Update_Poc = () => {
     getUsers();
   }, []);
 
-  // Fetch POC details when clicking Next (if not already fetched)
+  // Fetch POC details when clicking Next
   const fetchPocDetails = async (pocId) => {
     try {
       setLoading(prev => ({ ...prev, pocDetails: true }));
@@ -255,7 +260,6 @@ const Update_Poc = () => {
       setSelectedModuleIds(moduleIds);
       setSelectedUserIds(userIds);
 
-      // Update localStorage
       localStorage.setItem('selectedModuleIds', JSON.stringify(moduleIds));
       localStorage.setItem('selectedUserIds', JSON.stringify(userIds));
 
@@ -272,14 +276,12 @@ const Update_Poc = () => {
     }
   };
 
-  // Map selectedModuleIds (mod_id) to module _id for DataGrid selection
   const getModuleSelectionModel = () => {
     return modules
       .filter(module => selectedModuleIds.includes(module.mod_id))
       .map(module => module._id);
   };
 
-  // Map selectedUserIds (user_id) to user _id for DataGrid selection
   const getUserSelectionModel = () => {
     return users
       .filter(user => selectedUserIds.includes(user.user_id))
@@ -369,7 +371,6 @@ const Update_Poc = () => {
       return;
     }
 
-    // Refresh users to ensure valid user_ids
     try {
       const response = await fetchAllUsers();
       setUsers(response.data || []);
@@ -381,7 +382,6 @@ const Update_Poc = () => {
       return;
     }
 
-    // Validate selectedUserIds
     const validUserIds = users.map(user => user.user_id);
     const invalidUserIds = selectedUserIds.filter(id => !validUserIds.includes(id) || !id);
     if (invalidUserIds.length > 0) {
@@ -418,7 +418,6 @@ const Update_Poc = () => {
       const updatedPocsResponse = await fetchAllPocs();
       setPocs(updatedPocsResponse.data || []);
 
-      // Clear selections and localStorage
       setSelectedPocIds([]);
       setSelectedModuleIds([]);
       setSelectedUserIds([]);
@@ -443,14 +442,42 @@ const Update_Poc = () => {
     { field: 'mod_poc_role', headerName: 'Role', width: 100 },
     { field: 'mod_poc_email', headerName: 'Email', width: 200 },
     { field: 'mod_poc_mobile', headerName: 'Mobile', width: 150 },
-    { field: 'mod_poc_id', headerName: 'POC ID', width: 200 },
+    // {
+    //   field: 'mod_poc_id',
+    //   headerName: 'POC ID',
+    //   width: 200,
+    //   renderCell: (params) => (
+    //     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+    //       <Typography variant="body2" sx={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+    //         {params.value}
+    //       </Typography>
+    //       <IconButton size="small" onClick={() => handleCopyToClipboard(params.value)}>
+    //         <ContentCopyIcon sx={{ color: '#0c83c8' }} />
+    //       </IconButton>
+    //     </Box>
+    //   ),
+    // },
   ];
 
   const columnsForModules = [
     { field: 'mod_name', headerName: 'Module Name', width: 200 },
     { field: 'mod_tech', headerName: 'Technology', width: 150 },
     { field: 'mod_duration', headerName: 'Duration', width: 200 },
-    { field: 'mod_id', headerName: 'Module ID', width: 250 },
+    // {
+    //   field: 'mod_id',
+    //   headerName: 'Module ID',
+    //   width: 250,
+    //   renderCell: (params) => (
+    //     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+    //       <Typography variant="body2" sx={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+    //         {params.value}
+    //       </Typography>
+    //       <IconButton size="small" onClick={() => handleCopyToClipboard(params.value)}>
+    //         <ContentCopyIcon sx={{ color: '#0c83c8' }} />
+    //       </IconButton>
+    //     </Box>
+    //   ),
+    // },
   ];
 
   const columnsForUsers = [
@@ -459,39 +486,126 @@ const Update_Poc = () => {
     { field: 'college', headerName: 'College', width: 100 },
     { field: 'rollno', headerName: 'Roll No', width: 120 },
     { field: 'email', headerName: 'Email', width: 200 },
-    { field: 'user_id', headerName: 'User ID', width: 200 },
+    // {
+    //   field: 'user_id',
+    //   headerName: 'User ID',
+    //   width: 200,
+    //   renderCell: (params) => (
+    //     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+    //       <Typography variant="body2" sx={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+    //         {params.value}
+    //       </Typography>
+    //       <IconButton size="small" onClick={() => handleCopyToClipboard(params.value)}>
+    //         <ContentCopyIcon sx={{ color: '#0c83c8' }} />
+    //       </IconButton>
+    //     </Box>
+    //   ),
+    // },
   ];
 
   const dataGridSx = {
     '& .MuiDataGrid-columnHeaders': {
-      backgroundColor: '#0b78b9',
-      color: 'white',
-      fontWeight: 'bold',
-      fontSize: '16px',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+      color: '#0c83c8',
+      fontWeight: '600',
+      fontSize: '14px',
+      textTransform: 'uppercase',
+      borderBottom: '2px solid #0c83c8',
     },
     '& .MuiDataGrid-columnHeaderTitle': {
-      fontWeight: 'bold',
+      fontWeight: '600',
     },
     '& .MuiDataGrid-row': {
       '&:nth-of-type(odd)': {
-        backgroundColor: '#f9f9f9',
+        backgroundColor: '#f8fafc',
       },
       '&:hover': {
         backgroundColor: '#e3f2fd',
+        transition: 'background-color 0.2s ease',
       },
     },
+    '& .MuiDataGrid-cell': {
+      borderBottom: '1px solid #e5e7eb',
+      padding: '8px',
+    },
+    boxShadow: '0 2px 8px rgba(12, 131, 200, 0.05)',
     borderRadius: '12px',
+    border: 'none',
+    overflow: 'hidden',
+    [theme.breakpoints.down('sm')]: {
+      '& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell': {
+        minWidth: '100px !important',
+      },
+    },
   };
 
   return (
     <>
       <Admin_Dashboard />
-      <Box sx={{ padding: 4, backgroundColor: '#f5f5f5', minHeight: '100vh', position: 'relative' }}>
-        <Typography variant="h4" align="center" sx={{ mb: 4, fontWeight: 'bold', color: '#0b78b9' }}>
-          Update POC
-        </Typography>
-        <Paper sx={{ p: 3, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', mb: 4 }}>
-          <Stepper alternativeLabel activeStep={activeStep} connector={<ColorlibConnector />}>
+      <Box
+        sx={{
+          padding: { xs: 2, sm: 3, md: 4 },
+          backgroundColor: '#f5f7fa',
+          minHeight: '100vh',
+          position: 'relative',
+          overflowX: 'hidden',
+        }}
+      >
+       
+        <Paper
+          sx={{
+            p: { xs: 2, sm: 3 },
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(12, 131, 200, 0.08)',
+            mb: { xs: 3, sm: 4 },
+            backgroundColor: '#ffffff',
+          }}
+        >
+          <Paper
+          sx={{
+            mb: 4,
+            p: { xs: 2, sm: 3 },
+            background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+            color: '#ffffff',
+            borderRadius: '16px',
+            textAlign: 'center',
+            opacity: 0,
+            animation: 'fadeIn 0.5s forwards',
+            '@keyframes fadeIn': {
+              from: { opacity: 0, transform: 'translateY(20px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: '700',
+              fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
+            }}
+          >
+            Update POC
+          </Typography>
+          <Typography
+            variant="subtitle2"
+            sx={{ mt: 0.5, fontSize: { xs: '12px', sm: '14px' } }}
+          >
+            Manage POC assignments
+          </Typography>
+        </Paper>
+          <Stepper
+            alternativeLabel
+            activeStep={activeStep}
+            connector={<ColorlibConnector />}
+            sx={{
+              padding: { xs: '12px 0', sm: '16px 0' },
+              '& .MuiStepLabel-label': {
+                fontSize: { xs: '0.85rem', sm: '1rem' },
+                fontWeight: '500',
+                color: activeStep >= steps.indexOf(steps[0]) ? '#0c83c8' : '#6b7280',
+              },
+            }}
+          >
             {steps.map((label) => (
               <Step key={label}>
                 <StepLabel StepIconComponent={ColorlibStepIcon}>{label}</StepLabel>
@@ -499,13 +613,30 @@ const Update_Poc = () => {
             ))}
           </Stepper>
         </Paper>
-        <Paper sx={{ p: 2, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        <Paper
+          sx={{
+            p: { xs: 1.5, sm: 2, md: 3 },
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(12, 131, 200, 0.08)',
+            backgroundColor: '#ffffff',
+          }}
+        >
           {activeStep === 0 && (
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#0b78b9' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: '600',
+                  fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                }}
+              >
                 Select Module
               </Typography>
-              <Box sx={{ height: 400, width: '100%' }}>
+              <Box sx={{ height: { xs: 300, sm: 350, md: 400 }, width: '100%' }}>
                 <DataGrid
                   rows={modules}
                   columns={columnsForModules}
@@ -524,14 +655,28 @@ const Update_Poc = () => {
                     console.log('Module selection updated:', updatedSelection);
                   }}
                   sx={dataGridSx}
+                  aria-label="Modules DataGrid"
                 />
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 1 }}>
                 <Button
                   variant="contained"
-                  color="primary"
                   onClick={handleNext}
-                  sx={{ backgroundColor: '#0b78b9', '&:hover': { backgroundColor: '#095e8f' } }}
+                  disabled={selectedModuleIds.length !== 1}
+                  sx={{
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    color: '#ffffff',
+                    fontWeight: '500',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    '&:disabled': {
+                      backgroundColor: '#b0bec5',
+                      color: '#ffffff',
+                    },
+                  }}
                 >
                   Next
                 </Button>
@@ -540,10 +685,20 @@ const Update_Poc = () => {
           )}
           {activeStep === 1 && (
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#0b78b9' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: '600',
+                  fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                }}
+              >
                 Select POC
               </Typography>
-              <Box sx={{ height: 400, width: '100%' }}>
+              <Box sx={{ height: { xs: 300, sm: 350, md: 400 }, width: '100%' }}>
                 <DataGrid
                   rows={pocs}
                   columns={columnsForPocs}
@@ -562,34 +717,70 @@ const Update_Poc = () => {
                     setPocDetailsFetched(false);
                   }}
                   sx={dataGridSx}
+                  aria-label="POCs DataGrid"
                 />
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
-                  sx={{ color: '#0b78b9', borderColor: '#0b78b9' }}
+                  sx={{
+                    color: '#0c83c8',
+                    borderColor: '#0c83c8',
+                    fontWeight: '500',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#fc7a46',
+                      color: '#fc7a46',
+                      backgroundColor: '#e3f2fd',
+                    },
+                  }}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="contained"
-                  color="primary"
                   onClick={handleNext}
                   disabled={selectedPocIds.length !== 1 || loading.pocDetails}
-                  sx={{ backgroundColor: '#0b78b9', '&:hover': { backgroundColor: '#095e8f' } }}
+                  sx={{
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    color: '#ffffff',
+                    fontWeight: '500',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                    '&:disabled': {
+                      backgroundColor: '#b0bec5',
+                      color: '#ffffff',
+                    },
+                  }}
                 >
-                  {loading.pocDetails ? <CircularProgress size={24} sx={{ mr: 1 }} /> : 'Next'}
+                  {loading.pocDetails ? <CircularProgress size={20} sx={{ color: '#ffffff', mr: 1 }} /> : 'Next'}
                 </Button>
               </Box>
             </Box>
           )}
           {activeStep === 2 && (
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#0b78b9' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: '600',
+                  fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                }}
+              >
                 Select Users
               </Typography>
-              <Box sx={{ height: 400, width: '100%' }}>
+              <Box sx={{ height: { xs: 300, sm: 350, md: 400 }, width: '100%' }}>
                 <DataGrid
                   rows={users}
                   columns={columnsForUsers}
@@ -601,31 +792,50 @@ const Update_Poc = () => {
                   rowSelectionModel={getUserSelectionModel()}
                   onRowSelectionModelChange={(newSelection) => {
                     const updatedSelection = newSelection
-                      .map(id => {
-                        const user = users.find(u => u._id === id);
-                        return user?.user_id;
-                      })
+                      .map(id => users.find(u => u._id === id)?.user_id)
                       .filter(id => id && typeof id === 'string');
                     console.log('User selection updated:', updatedSelection);
                     setSelectedUserIds(updatedSelection);
                     localStorage.setItem('selectedUserIds', JSON.stringify(updatedSelection));
                   }}
                   sx={dataGridSx}
+                  aria-label="Users DataGrid"
                 />
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, gap: 1, flexWrap: 'wrap' }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
-                  sx={{ color: '#0b78b9', borderColor: '#0b78b9' }}
+                  sx={{
+                    color: '#0c83c8',
+                    borderColor: '#0c83c8',
+                    fontWeight: '500',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#fc7a46',
+                      color: '#fc7a46',
+                      backgroundColor: '#e3f2fd',
+                    },
+                  }}
                 >
                   Previous
                 </Button>
                 <Button
                   variant="contained"
-                  color="primary"
                   onClick={handleNext}
-                  sx={{ backgroundColor: '#0b78b9', '&:hover': { backgroundColor: '#095e8f' } }}
+                  sx={{
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    color: '#ffffff',
+                    fontWeight: '500',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                  }}
                 >
                   Next
                 </Button>
@@ -634,85 +844,205 @@ const Update_Poc = () => {
           )}
           {activeStep === 3 && (
             <Box sx={{ mb: 2 }}>
-              <Typography variant="h6" sx={{ mb: 2, color: '#0b78b9' }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 2,
+                  background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  fontWeight: '600',
+                  fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                }}
+              >
                 Review and Confirm
               </Typography>
-              <Typography variant="body1" sx={{ mb: 3 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 3,
+                  color: '#4b5563',
+                  fontSize: { xs: '0.95rem', sm: '1rem' },
+                }}
+              >
                 Please review your selections below before confirming the update.
               </Typography>
 
-              {/* Module Details */}
-              <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: '8px' }}>
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+              <Box
+                sx={{
+                  mb: 3,
+                  p: { xs: 1.5, sm: 2 },
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  backgroundColor: '#fafafa',
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    mb: 1,
+                    fontWeight: '600',
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                  }}
+                >
                   Selected Module
                 </Typography>
                 {selectedModuleIds.length === 1 ? (
                   (() => {
                     const module = modules.find(mod => mod.mod_id === selectedModuleIds[0]);
                     return module ? (
-                      <Box>
-                        <Typography variant="body2"><strong>Name:</strong> {module.mod_name || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>Technology:</strong> {module.mod_tech || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>Duration:</strong> {module.mod_duration || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>Module ID:</strong> {module.mod_id || 'N/A'}</Typography>
+                      <Box sx={{ '& > p': { mb: 0.5, fontSize: { xs: '0.9rem', sm: '0.95rem' } } }}>
+                        <Typography variant="body2">
+                          <strong>Name:</strong> {module.mod_name || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Technology:</strong> {module.mod_tech || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Duration:</strong> {module.mod_duration || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Module ID:</strong> {module.mod_id || 'N/A'}
+                        </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="error">No Module found</Typography>
+                      <Typography variant="body2" sx={{ color: '#dc2626', fontSize: { xs: '0.9rem', sm: '0.95rem' } }}>
+                        No Module found
+                      </Typography>
                     );
                   })()
                 ) : (
-                  <Typography variant="body2" color="textSecondary">No Module selected</Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#6b7280', fontSize: { xs: '0.9rem', sm: '0.95rem' } }}
+                  >
+                    No Module selected
+                  </Typography>
                 )}
               </Box>
 
-              {/* POC Details */}
-              <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: '8px' }}>
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+              <Box
+                sx={{
+                  mb: 3,
+                  p: { xs: 1.5, sm: 2 },
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  backgroundColor: '#fafafa',
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    mb: 1,
+                    fontWeight: '600',
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                  }}
+                >
                   Selected POC
                 </Typography>
                 {selectedPocIds.length === 1 ? (
                   (() => {
                     const poc = pocs.find(poc => poc._id === selectedPocIds[0]);
                     return poc ? (
-                      <Box>
-                        <Typography variant="body2"><strong>Name:</strong> {poc.mod_poc_name || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>Role:</strong> {poc.mod_poc_role || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>Email:</strong> {poc.mod_poc_email || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>Mobile:</strong> {poc.mod_poc_mobile || 'N/A'}</Typography>
-                        <Typography variant="body2"><strong>POC ID:</strong> {poc.mod_poc_id || 'N/A'}</Typography>
+                      <Box sx={{ '& > p': { mb: 0.5, fontSize: { xs: '0.9rem', sm: '0.95rem' } } }}>
+                        <Typography variant="body2">
+                          <strong>Name:</strong> {poc.mod_poc_name || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Role:</strong> {poc.mod_poc_role || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Email:</strong> {poc.mod_poc_email || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Mobile:</strong> {poc.mod_poc_mobile || 'N/A'}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>POC ID:</strong> {poc.mod_poc_id || 'N/A'}
+                        </Typography>
                       </Box>
                     ) : (
-                      <Typography variant="body2" color="error">No POC found</Typography>
+                      <Typography variant="body2" sx={{ color: '#dc2626', fontSize: { xs: '0.9rem', sm: '0.95rem' } }}>
+                        No POC found
+                      </Typography>
                     );
                   })()
                 ) : (
-                  <Typography variant="body2" color="textSecondary">No POC selected</Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#6b7280', fontSize: { xs: '0.9rem', sm: '0.95rem' } }}
+                  >
+                    No POC selected
+                  </Typography>
                 )}
               </Box>
 
-              {/* Users Details */}
-              <Box sx={{ mb: 3, p: 2, border: '1px solid #ddd', borderRadius: '8px' }}>
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+              <Box
+                sx={{
+                  mb: 3,
+                  p: { xs: 1.5, sm: 2 },
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  backgroundColor: '#fafafa',
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    mb: 1,
+                    fontWeight: '600',
+                    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                  }}
+                >
                   Selected Users
                 </Typography>
                 {selectedUserIds.length > 0 ? (
-                  <TableContainer>
+                  <TableContainer sx={{ borderRadius: '8px', overflowX: 'auto' }}>
                     <Table size="small">
                       <TableHead>
-                        <TableRow sx={{ backgroundColor: '#0b78b9' }}>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Full Name</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Department</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>College</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Roll No</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Email</TableCell>
-                          <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>User ID</TableCell>
+                        <TableRow
+                          sx={{
+                            background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                            '& th': {
+                              color: '#ffffff',
+                              fontWeight: '600',
+                              fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                              padding: '10px 8px',
+                            },
+                          }}
+                        >
+                          <TableCell>Full Name</TableCell>
+                          <TableCell>Department</TableCell>
+                          <TableCell>College</TableCell>
+                          <TableCell>Roll No</TableCell>
+                          <TableCell>Email</TableCell>
+                          <TableCell>User ID</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
                         {users
                           .filter(user => selectedUserIds.includes(user.user_id))
                           .map(user => (
-                            <TableRow key={user._id}>
+                            <TableRow
+                              key={user._id}
+                              sx={{
+                                '&:hover': { backgroundColor: '#e3f2fd' },
+                                '& td': {
+                                  padding: '8px',
+                                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                                  borderBottom: '1px solid #e5e7eb',
+                                },
+                              }}
+                            >
                               <TableCell>{user.full_name || 'N/A'}</TableCell>
                               <TableCell>{user.department || 'N/A'}</TableCell>
                               <TableCell>{user.college || 'N/A'}</TableCell>
@@ -725,15 +1055,33 @@ const Update_Poc = () => {
                     </Table>
                   </TableContainer>
                 ) : (
-                  <Typography variant="body2" color="textSecondary">No Users selected</Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#6b7280', fontSize: { xs: '0.9rem', sm: '0.95rem' } }}
+                  >
+                    No Users selected
+                  </Typography>
                 )}
               </Box>
 
-              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 2, gap: 1 }}>
                 <Button
                   variant="outlined"
                   onClick={handlePrevious}
-                  sx={{ color: '#0b78b9', borderColor: '#0b78b9' }}
+                  sx={{
+                    color: '#0c83c8',
+                    borderColor: '#0c83c8',
+                    fontWeight: '500',
+                    px: 3,
+                    py: 1,
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    '&:hover': {
+                      borderColor: '#fc7a46',
+                      color: '#fc7a46',
+                      backgroundColor: '#e3f2fd',
+                    },
+                  }}
                 >
                   Previous
                 </Button>
@@ -743,84 +1091,271 @@ const Update_Poc = () => {
         </Paper>
         {activeStep === 3 && (
           <Fab
-            color="primary"
             variant="extended"
             onClick={handleOpenPreviewDialog}
             disabled={updateLoading || selectedPocIds.length !== 1}
             sx={{
               position: 'fixed',
-              bottom: 20,
-              right: 20,
+              bottom: { xs: 16, sm: 20 },
+              right: { xs: 16, sm: 20 },
               zIndex: 1000,
-              backgroundColor: '#0b78b9',
-              '&:hover': { backgroundColor: '#095e8f' },
+              background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+              color: '#ffffff',
+              fontWeight: '500',
+              px: 3,
+              py: 1.5,
+              borderRadius: '12px',
+              boxShadow: '0 4px 12px rgba(12, 131, 200, 0.15)',
+              textTransform: 'none',
+              '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+              '&:disabled': {
+                backgroundColor: '#b0bec5',
+                color: '#ffffff',
+                boxShadow: 'none',
+              },
             }}
+            aria-label="Update POC"
           >
-            {updateLoading ? <CircularProgress size={24} sx={{ mr: 1 }} /> : <SaveIcon sx={{ mr: 1 }} />}
+            {updateLoading ? <CircularProgress size={20} sx={{ color: '#ffffff', mr: 1 }} /> : <SaveIcon sx={{ mr: 1 }} />}
             Update POC
           </Fab>
         )}
-        <Dialog open={previewDialogOpen} onClose={handleClosePreviewDialog} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
+        <Dialog
+          open={previewDialogOpen}
+          onClose={handleClosePreviewDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '12px',
+              boxShadow: '0 8px 24px rgba(12, 131, 200, 0.1)',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              backgroundColor: '#f5f7fa',
+              borderBottom: '1px solid #e5e7eb',
+              fontWeight: '600',
+              background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontSize: { xs: '1.1rem', sm: '1.2rem' },
+              py: 1.5,
+            }}
+          >
             Confirm POC Update
           </DialogTitle>
-          <DialogContent dividers>
-            <DialogContentText>
+          <DialogContent
+            dividers
+            sx={{
+              py: 2,
+              px: { xs: 2, sm: 3 },
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <DialogContentText
+              sx={{
+                color: '#4b5563',
+                fontSize: { xs: '0.95rem', sm: '1rem' },
+                mb: 2,
+              }}
+            >
               Review the changes below for the selected POC:
             </DialogContentText>
             {selectedPocIds.length === 1 && (
-              <Typography variant="body2" sx={{ mt: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '0.95rem' }, color: '#1f2937' }}
+              >
                 <strong>POC:</strong> {pocs.find(poc => poc._id === selectedPocIds[0])?.mod_poc_name || 'Unknown'}
               </Typography>
             )}
             {selectedModuleIds.length === 1 && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '0.95rem' }, color: '#1f2937' }}
+              >
                 <strong>Module:</strong> {modules.find(mod => mod.mod_id === selectedModuleIds[0])?.mod_name || 'Unknown'}
               </Typography>
             )}
             {selectedUserIds.length > 0 && (
-              <Typography variant="body2" sx={{ mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '0.95rem' }, color: '#1f2937' }}
+              >
                 <strong>Users:</strong> {selectedUserIds.length} selected
               </Typography>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={handleClosePreviewDialog}>Cancel</Button>
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 1.5,
+              backgroundColor: '#f5f7fa',
+            }}
+          >
+            <Button
+              onClick={handleClosePreviewDialog}
+              sx={{
+                color: '#6b7280',
+                fontWeight: '500',
+                textTransform: 'none',
+                '&:hover': { color: '#0c83c8', backgroundColor: '#e3f2fd' },
+              }}
+            >
+              Cancel
+            </Button>
             <Button
               onClick={handleUpdatePoc}
               variant="contained"
-              color="primary"
               disabled={updateLoading}
+              sx={{
+                background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                color: '#ffffff',
+                fontWeight: '500',
+                px: 3,
+                py: 1,
+                borderRadius: '8px',
+                textTransform: 'none',
+                '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+                '&:disabled': {
+                  backgroundColor: '#b0bec5',
+                  color: '#ffffff',
+                },
+              }}
             >
-              {updateLoading ? <CircularProgress size={24} sx={{ mr: 1 }} /> : null}
-              Confirm
+              {updateLoading ? <CircularProgress size={20} sx={{ color: '#ffffff', mr: 1 }} /> : 'Confirm'}
             </Button>
           </DialogActions>
         </Dialog>
-        <Dialog open={detailsDialogOpen} onClose={handleCloseDetailsDialog} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f5f5f5' }}>
+        <Dialog
+          open={detailsDialogOpen}
+          onClose={handleCloseDetailsDialog}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '12px',
+              boxShadow: '0 8px 24px rgba(12, 131, 200, 0.1)',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#f5f7fa',
+              borderBottom: '1px solid #e5e7eb',
+              fontWeight: '600',
+              background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontSize: { xs: '1rem', sm: '1.2rem' },
+              py: 1.5,
+            }}
+          >
             {detailsDialogTitle}
-            <IconButton onClick={handleCloseDetailsDialog}>
+            <IconButton
+              onClick={handleCloseDetailsDialog}
+              sx={{
+                color: '#0c83c8',
+                '&:hover': { color: '#fc7a46' },
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
-          <DialogContent dividers>
-            <Box sx={{ maxHeight: '300px', overflow: 'auto', fontFamily: 'monospace', backgroundColor: '#f9f9f9', p: 2, borderRadius: 1 }}>
+          <DialogContent
+            dividers
+            sx={{
+              py: 2,
+              px: { xs: 2, sm: 3 },
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <Box
+              sx={{
+                maxHeight: '300px',
+                overflow: 'auto',
+                fontFamily: '"Roboto Mono", monospace',
+                backgroundColor: '#f9fafb',
+                p: 2,
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+              }}
+            >
               {detailsDialogContent.map((item, index) => (
-                <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, borderBottom: index < detailsDialogContent.length - 1 ? '1px solid #eee' : 'none' }}>
-                  <Typography variant="body2">{item}</Typography>
-                  <IconButton size="small" onClick={() => handleCopyToClipboard(item)}>
+                <Box
+                  key={index}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    p: 1,
+                    borderBottom: index < detailsDialogContent.length - 1 ? '1px solid #e5e7eb' : 'none',
+                    '&:hover': { backgroundColor: '#e3f2fd' },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                      color: '#1f2937',
+                    }}
+                  >
+                    {item}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleCopyToClipboard(item)}
+                    sx={{
+                      color: '#0c83c8',
+                      '&:hover': { color: '#fc7a46' },
+                    }}
+                  >
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Box>
               ))}
             </Box>
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => handleCopyToClipboard(detailsDialogContent.join('\n'))} startIcon={<ContentCopyIcon />}>
+          <DialogActions
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 1.5,
+              backgroundColor: '#f5f7fa',
+            }}
+          >
+            <Button
+              onClick={() => handleCopyToClipboard(detailsDialogContent.join('\n'))}
+              startIcon={<ContentCopyIcon />}
+              sx={{
+                color: '#0c83c8',
+                fontWeight: '500',
+                textTransform: 'none',
+                '&:hover': { color: '#fc7a46', backgroundColor: '#e3f2fd' },
+              }}
+            >
               Copy All
             </Button>
-            <Button onClick={handleCloseDetailsDialog} variant="contained">Close</Button>
+            <Button
+              onClick={handleCloseDetailsDialog}
+              variant="contained"
+              sx={{
+                background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                color: '#ffffff',
+                fontWeight: '500',
+                px: 3,
+                py: 1,
+                borderRadius: '8px',
+                textTransform: 'none',
+                '&:hover': { background: 'linear-gradient(90deg, #fc7a46, #0c83c8)' },
+              }}
+            >
+              Close
+            </Button>
           </DialogActions>
         </Dialog>
         <Snackbar
@@ -828,12 +1363,21 @@ const Update_Poc = () => {
           autoHideDuration={4000}
           onClose={() => setSnackbarOpen(false)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          sx={{ mb: { xs: 6, sm: 2 }, mr: 2 }}
         >
           <Alert
             onClose={() => setSnackbarOpen(false)}
             severity={snackbarSeverity}
             variant="filled"
-            sx={{ width: '100%' }}
+            sx={{
+              width: '100%',
+              background: snackbarSeverity === 'success' ? 'linear-gradient(90deg, #0c83c8, #fc7a46)' : undefined,
+              color: '#ffffff',
+              fontSize: '0.9rem',
+              '& .MuiAlert-icon': {
+                color: '#ffffff',
+              },
+            }}
           >
             {snackbarMessage}
           </Alert>

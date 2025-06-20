@@ -122,5 +122,8 @@ Content-Type: application/json
   "userId": "528f7cb8-0bfe-4366-a98d-831719ec53e6"
 }
 
+### GET NAME OF POC 
+GET http://localhost:8084/poc//read_all_poc_name
+
 
 

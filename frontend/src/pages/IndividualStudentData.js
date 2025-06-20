@@ -42,6 +42,7 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { useParams } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import Admin_Dash from "../components/AdminDash";
 
 const BASE_URL = "http://localhost:8086";
 
@@ -513,6 +514,8 @@ const Individual = () => {
   const averages = calculateAverages(student);
 
   return (
+    <>
+    <Admin_Dash/>
     <ThemeProvider theme={theme}>
       <Box sx={{ bgcolor: "background.default", minHeight: "100vh", py: 4 }}>
         <Container maxWidth="lg">
@@ -896,6 +899,7 @@ const Individual = () => {
         </Container>
       </Box>
     </ThemeProvider>
+    </>
   );
 };
 

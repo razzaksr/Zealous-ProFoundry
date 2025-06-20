@@ -31,6 +31,21 @@ router.get('/read_all_poc', async (req, res) => {
   }
 });
 
+
+// read_all_poc name 
+router.get('/read_all_poc_name', async (req, res) => {
+  try {
+    const pocs = await Poc.find();
+    res.status(200).json(pocs.map(poc => ({
+      mod_poc_id: poc.mod_poc_id,
+      mod_poc_name: poc.mod_poc_name
+    })));
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching POCs", error: error.message });
+  }
+});
+
+
 // get_poc_by_poc_id
 router.get('/get_poc_by_poc_id/:mod_poc_id', async (req, res) => {
   try {
@@ -163,47 +178,87 @@ router.put("/update_poc", async (req, res) => {
 module.exports = router;
 
 // Updated to allow empty test_id array
+
 router.put("/update_test", async (req, res) => {
   try {
-    const { mod_poc_id, test_id } = req.body;
+    const { mod_poc_id, test_id } = req.body; // Changed from 'tests' to 'test_id' to match request
 
-    if (!mod_poc_id || !Array.isArray(test_id)) {
-      return res.status(400).json({
-        message: "mod_poc_id and test_id (array of {test_id, assigned_date}) are required"
+    if (!mod_poc_id || !Array.isArray(test_id) || test_id.length === 0) {
+      return res.status(400).json({ 
+        message: "mod_poc_id and test_id (non-empty array of {test_id, assigned_date}) are required" 
       });
     }
 
-    // Validate test objects only if array is not empty
-    if (test_id.length > 0) {
-      const invalidTests = test_id.some(test => !test.test_id || !test.assigned_date);
-      if (invalidTests) {
-        return res.status(400).json({
-          message: "Each test must have test_id and assigned_date"
-        });
-      }
+    // Validate test objects
+    const invalidTests = test_id.some(test => !test.test_id || !test.assigned_date);
+    if (invalidTests) {
+      return res.status(400).json({ 
+        message: "Each test must have test_id and assigned_date" 
+      });
     }
 
     const existingPoc = await Poc.findOne({ mod_poc_id });
-    if (!existingPoc) {
-      return res.status(404).json({
-        message: "POC not found with the provided mod_poc_id"
-      });
-    }
+    if (!existingPoc) return res.status(404).json({ 
+      message: "POC not found with the provided mod_poc_id" 
+    });
 
-    existingPoc.mod_tests = test_id; // Can now be an empty array
+    existingPoc.mod_tests = test_id; // Assign the array directly since it matches the schema
     await existingPoc.save();
 
-    res.status(200).json({
-      message: "POC tests updated successfully",
-      updated_tests: existingPoc.mod_tests
+    res.status(200).json({ 
+      message: "POC tests updated successfully", 
+      updated_tests: existingPoc.mod_tests 
     });
   } catch (error) {
-    res.status(500).json({
-      message: "Internal Server Error",
-      error: error.message
+    res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: error.message 
     });
   }
 });
+
+
+// router.put("/update_test", async (req, res) => {
+//   try {
+//     const { mod_poc_id, test_id } = req.body;
+
+//     if (!mod_poc_id || !Array.isArray(test_id)) {
+//       return res.status(400).json({
+//         message: "mod_poc_id and test_id (array of {test_id, assigned_date}) are required"
+//       });
+//     }
+
+//     // Validate test objects only if array is not empty
+//     if (test_id.length > 0) {
+//       const invalidTests = test_id.some(test => !test.test_id || !test.assigned_date);
+//       if (invalidTests) {
+//         return res.status(400).json({
+//           message: "Each test must have test_id and assigned_date"
+//         });
+//       }
+//     }
+
+//     const existingPoc = await Poc.findOne({ mod_poc_id });
+//     if (!existingPoc) {
+//       return res.status(404).json({
+//         message: "POC not found with the provided mod_poc_id"
+//       });
+//     }
+
+//     existingPoc.mod_tests = test_id; // Can now be an empty array
+//     await existingPoc.save();
+
+//     res.status(200).json({
+//       message: "POC tests updated successfully",
+//       updated_tests: existingPoc.mod_tests
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       message: "Internal Server Error",
+//       error: error.message
+//     });
+//   }
+// });
 
 
 // No change needed - still clears the mod_tests array+

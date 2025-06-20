@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Paper, Snackbar, Alert } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { fetchAllOrganizations } from '../axios';
+import { fetchAllModules, deleteModule } from '../axios';
 import Admin_Dashboard from '../components/AdminDash';
-import { User, MapPin, Mail, Phone, Calendar, Copy } from 'lucide-react';
+import { Book, Code, Clock, Copy, Delete } from 'lucide-react';
 
 // Custom styles
 const styles = {
   root: {
-    padding: { xs: 2, sm: 4, md: 5 },
+    padding: { xs: 2, sm: 4, md: 6 },
     backgroundColor: '#ffffff',
     minHeight: '100vh',
     display: 'flex',
@@ -20,13 +20,26 @@ const styles = {
       to: { opacity: 1 },
     },
   },
+  headerPaper: {
+    mb: 4,
+    p: { xs: 2, sm: 3 },
+    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+    color: '#ffffff',
+    borderRadius: '16px',
+    textAlign: 'center',
+    boxShadow: '0 6px 24px rgba(0,0,0,0.1)',
+  },
   title: {
     fontWeight: 800,
-    color: '#0c83c8',
-    fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3rem' },
+    fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem' },
+    color: '#ffffff',
     letterSpacing: '0.5px',
-    textAlign: 'center',
-    mb: 3,
+  },
+  subtitle: {
+    fontSize: { xs: '0.9rem', sm: '1rem' },
+    color: '#ffffff',
+    mt: 1,
+    opacity: 0.9,
   },
   dataGridPaper: {
     p: { xs: 1, sm: 2 },
@@ -38,7 +51,7 @@ const styles = {
   },
   dataGrid: {
     '& .MuiDataGrid-columnHeaders': {
-      backgroundColor: '#0c83c8',
+      background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
       color: '#ffffff',
       fontWeight: 800,
       fontSize: '1rem',
@@ -75,26 +88,39 @@ const styles = {
   },
 };
 
-const OrganizationPage = () => {
-  const [organizations, setOrganizations] = useState([]);
+const ModulePage = () => {
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('error');
 
   useEffect(() => {
-    const getOrganizations = async () => {
+    const getModules = async () => {
       try {
-        const response = await fetchAllOrganizations();
-        setOrganizations(response.data || []);
+        const response = await fetchAllModules();
+        if (response && response.data) {
+          if (Array.isArray(response.data)) {
+            setModules(response.data);
+          } else {
+            setSnackbarMessage('Invalid data format received from server');
+            setSnackbarOpen(true);
+            setModules([]);
+          }
+        } else {
+          setSnackbarMessage('No data received from server');
+          setSnackbarOpen(true);
+          setModules([]);
+        }
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching organizations:', error);
-        setSnackbarMessage(`Error fetching organizations: ${error.message}`);
+        setSnackbarMessage(`Failed to fetch modules: ${error.message || 'Unknown error'}`);
         setSnackbarOpen(true);
+        setModules([]);
         setLoading(false);
       }
     };
-    getOrganizations();
+    getModules();
   }, []);
 
   const handleCopyToClipboard = (text) => {
@@ -102,150 +128,118 @@ const OrganizationPage = () => {
       .writeText(text)
       .then(() => {
         setSnackbarMessage('Copied to clipboard!');
+        setSnackbarSeverity('success');
         setSnackbarOpen(true);
       })
       .catch((err) => {
         console.error('Failed to copy: ', err);
         setSnackbarMessage('Failed to copy to clipboard');
+        setSnackbarSeverity('error');
         setSnackbarOpen(true);
       });
   };
 
+  const handleDelete = async (mod_id) => {
+    try {
+      await deleteModule(mod_id);
+      setModules(modules.filter((module) => module._id !== mod_id));
+      setSnackbarMessage('Module deleted successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error) {
+      setSnackbarMessage(`Failed to delete module: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+
   const columns = [
     {
-      field: 'org_name',
-      headerName: 'Organization Name',
-      width: 300,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-          <User size={20} color="#0c83c8" />
-          <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
-   {
-  field: 'org_address',
-  headerName: 'Address',
-  width: 300, // ⬅️ Make the column itself wider
-  renderCell: (params) => (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 1.5,
-        py: 0.1,
-        whiteSpace: 'normal', // ⬅️ Allow line breaks
-        wordBreak: 'break-word', // ⬅️ Prevent overflow
-      }}
-    >
-      <MapPin size={20} color="#0c83c8" style={{ marginTop: 4 }} /> {/* ⬅️ Icon slightly aligned top */}
-      <Typography
-        variant="body2"
-        sx={{
-          fontWeight: 500,
-          color: '#333',
-          fontSize: '0.85rem',
-          lineHeight: 1.4,
-        }}
-      >
-        {params.value}
-      </Typography>
-    </Box>
-  ),
-}
-,
-    {
-      field: 'org_email',
-      headerName: 'Email',
-      width: 270,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-          <Mail size={20} color="#0c83c8" />
-          <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      field: 'org_contact',
-      headerName: 'Contact',
-      width: 160,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-          <Phone size={20} color="#0c83c8" />
-          <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
-            {params.value}
-          </Typography>
-        </Box>
-      ),
-    },
-    {
-      field: 'org_associated_date',
-      headerName: 'Associated Date',
+      field: 'mod_name',
+      headerName: 'Module Name',
       width: 200,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-          <Calendar size={20} color="#0c83c8" />
+          <Book size={20} color="#0c83c8" />
           <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
-            {params.value ? new Date(params.value).toLocaleDateString() : 'N/A'}
+            {params.value}
           </Typography>
         </Box>
       ),
     },
-    // {
-    //   field: 'org_id',
-    //   headerName: 'Organization ID',
-    //   width: 250,
-    //   renderCell: (params) => (
-    //     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
-    //       <Copy size={20} color="#0c83c8" onClick={() => handleCopyToClipboard(params.value)} style={{ cursor: 'pointer' }} />
-    //       <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
-    //         {params.value}
-    //       </Typography>
-    //     </Box>
-    //   ),
-    // },
+    {
+      field: 'mod_tech',
+      headerName: 'Technology',
+      width: 150,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+          <Code size={20} color="#0c83c8" />
+          <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'mod_duration',
+      headerName: 'Duration',
+      width: 300,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+          <Clock size={20} color="#0c83c8" />
+          <Typography variant="body2" sx={{ fontWeight: 500, color: '#333' }}>
+            {params.value}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 100,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+          <Delete
+            size={20}
+            color="#d32f2f"
+            onClick={() => handleDelete(params.row._id)}
+            style={{ cursor: 'pointer' }}
+            aria-label={`Delete ${params.row.mod_name}`}
+          />
+        </Box>
+      ),
+    },
   ];
 
   return (
     <>
       <Admin_Dashboard />
       <Box sx={styles.root}>
-        <Typography variant="h4" sx={styles.title}>
-          Organization Management
-        </Typography>
+        <Paper sx={styles.headerPaper}>
+          <Typography variant="h5" sx={styles.title}>
+            Module Management
+          </Typography>
+          <Typography variant="subtitle2" sx={styles.subtitle}>
+            View all available training modules
+          </Typography>
+        </Paper>
+
         <Paper sx={styles.dataGridPaper}>
-          <Box sx={{ height: { xs: 450, sm: 500, md: 600 }, width: '100%' }}>
+          <Box sx={{ width: '100%', height: { xs: 450, sm: 500, md: 600 } }}>
             <DataGrid
-              rows={organizations}
+              rows={modules}
               columns={columns}
               pageSize={10}
-              
               rowsPerPageOptions={[10, 20, 50]}
               loading={loading}
               getRowId={(row) => row._id}
-              sx={{
-                ...styles.dataGrid, // 👈 spreads your existing styles
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: '#0c83c8',
-                  color: '#0c83c8',
-                  fontWeight: 'bold',
-                  fontSize: '0.95rem',
-                },
-                '& .MuiDataGrid-columnSeparator': {
-                  display: 'none',
-                },
-                '& .MuiCheckbox-root': {
-                  color: '#fff',
-                },
-              }}
-              aria-label="Organizations Data Grid"
+              autoHeight
+              sx={styles.dataGrid}
+              aria-label="Modules Data Grid"
             />
           </Box>
         </Paper>
+
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={4000}
@@ -254,11 +248,13 @@ const OrganizationPage = () => {
         >
           <Alert
             onClose={() => setSnackbarOpen(false)}
-            severity={snackbarMessage.includes('Error') ? 'error' : 'success'}
+            severity={snackbarSeverity}
             variant="filled"
             sx={{
-              backgroundColor: snackbarMessage.includes('Error') ? '#d32f2f' : '#2e7d32',
-              '&:hover': { backgroundColor: snackbarMessage.includes('Error') ? '#ef5350' : '#388e3c' },
+              backgroundColor: snackbarSeverity === 'success' ? '#2e7d32' : '#d32f2f',
+              '&:hover': {
+                backgroundColor: snackbarSeverity === 'success' ? '#388e3c' : '#ef5350',
+              },
             }}
           >
             {snackbarMessage}
@@ -269,4 +265,4 @@ const OrganizationPage = () => {
   );
 };
 
-export default OrganizationPage;
+export default ModulePage;

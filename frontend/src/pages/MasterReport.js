@@ -16,13 +16,18 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { ClipboardMinus } from "lucide-react";
 import jsPDF from "jspdf";
 import { fetchPocReportById, generateReport } from "../axios"; // Import the API functions
+import { useTheme, useMediaQuery } from '@mui/material';
+
 
 // Import the logos from the assets folder
 import zealousLogo from "../assests/Zealous.png";
 import crescentLogo from "../assests/Crescent.png";
 import college from "../assests/MECLogo.jpg";
+import AdminDashboard from "./AdminDashboard";
+import Admin_Dash from "../components/AdminDash";
 
 const companyOptions = ["Zealous Tech Corp", "Crescent edTech"];
 
@@ -75,6 +80,8 @@ const TrainingForm = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [zealousLogoBase64, setZealousLogoBase64] = useState("");
   const [crescentLogoBase64, setCrescentLogoBase64] = useState("");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Convert image to base64
   const convertImageToBase64 = (imageUrl, callback) => {
@@ -1382,508 +1389,641 @@ yPos = tableY;
       </List>
     );
   };
-
+const styles = {
+  root: {
+    padding: { xs: 2, sm: 3, md: 4 },
+    backgroundColor: '#f5f7fa',
+    minHeight: '100vh',
+    animation: 'fadeIn 0.5s ease-in',
+    '@keyframes fadeIn': {
+      from: { opacity: 0 },
+      to: { opacity: 1 },
+    },
+  },
+  paper: {
+    padding: { xs: 2, sm: 3, md: 4 },
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 4px 20px rgba(12, 131, 200, 0.08)',
+    maxWidth: 800,
+    margin: 'auto',
+    border: 'none',
+  },
+  title: {
+    fontWeight: 700,
+    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+    mb: 2,
+  },
+  subtitle: {
+    fontWeight: 600,
+    color: '#0c83c8',
+    fontSize: { xs: '1rem', sm: '1.2rem' },
+    mt: 3,
+    mb: 1,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+  },
+  textField: {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '8px',
+      '&:hover fieldset': {
+        borderColor: '#fc7a46',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: '#0c83c8',
+      },
+    },
+    '& .MuiInputLabel-root': {
+      color: '#0c83c8',
+      '&.Mui-focused': {
+        color: '#fc7a46',
+      },
+    },
+    '& .MuiFormHelperText-root': {
+      color: '#4b5563',
+      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+    },
+    '& .Mui-error fieldset': {
+      borderColor: '#dc2626',
+    },
+  },
+  button: {
+    background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+    color: '#ffffff',
+    '&:hover': {
+      background: 'linear-gradient(90deg, #fc7a46, #0c83c8)',
+    },
+    fontWeight: 500,
+    px: 3,
+    py: 1,
+    textTransform: 'none',
+    borderRadius: '8px',
+    '&:disabled': {
+      background: '#b0bec5',
+      color: '#ffffff',
+    },
+  },
+  outlinedButton: {
+    color: '#0c83c8',
+    borderColor: '#0c83c8',
+    fontWeight: 500,
+    px: 3,
+    py: 1,
+    textTransform: 'none',
+    borderRadius: '8px',
+    '&:hover': {
+      borderColor: '#fc7a46',
+      color: '#fc7a46',
+      backgroundColor: '#e3f2fd',
+    },
+  },
+  sectionBox: {
+    pl: 2,
+    pr: 2,
+    pb: 2,
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    backgroundColor: '#f8fafc',
+    mb: 3,
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: { xs: '0.875rem', sm: '1rem' },
+    mt: 2,
+  },
+  successText: {
+    color: '#2e7d32',
+    fontSize: { xs: '0.875rem', sm: '1rem' },
+    mt: 2,
+  },
+};
   return (
-    <Box p={3}>
-      <Paper elevation={3} sx={{ padding: 4, maxWidth: 800, margin: "auto" }}>
-        <Typography variant="h5" mb={2}>
-          Create Training
-        </Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            label="Title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-            margin="normal"
-          />
-          <TextField
-            label="Module ID"
-            name="mod_id"
-            value={formData.mod_id}
-            onChange={handleChange}
-            fullWidth
-            required
-            margin="normal"
-          />
-          <TextField
-            label="POC ID"
-            name="mod_poc_id"
-            value={formData.mod_poc_id}
-            onChange={handleChange}
-            fullWidth
-            required
-            margin="normal"
-          />
-          <Button
-            variant="outlined"
-            onClick={fetchDetails}
-            fullWidth
-            sx={{ mt: 1, mb: 2 }}
-          >
-            Fetch Details
-          </Button>
-          <TextField
-            label="Schedule"
-            name="schedule"
-            value={formData.schedule}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Execution Dates"
-            name="executiondates"
-            value={formData.executiondates}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label="Background"
-            name="background"
-            value={formData.background}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-            margin="normal"
-          />
-          <TextField
-            label="Scope of the Training"
-            name="scopeOfTheTraining"
-            value={formData.scopeOfTheTraining}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-            margin="normal"
-            helperText="Enter each scope item on a new line for automatic numbering"
-          />
-          <TextField
-            label="Total Strength"
-            name="totalStrength"
-            value={formData.totalStrength}
-            onChange={handleChange}
-            fullWidth
-            type="number"
-            margin="normal"
-          />
-          <Typography variant="h6" mt={3} mb={1}>
-            Point of Contact Details
-          </Typography>
-          <Box
-            sx={{
-              pl: 2,
-              pr: 2,
-              pb: 2,
-              border: "1px solid #e0e0e0",
-              borderRadius: 1,
-            }}
-          >
+    <>
+      <Admin_Dash />
+      <Box sx={styles.root}>
+        <Paper sx={styles.paper}>
+          <Paper
+          sx={{
+            mb: 4,
+            p: { xs: 2, sm: 3 },
+            background: 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+            color: '#ffffff',
+            borderRadius: '16px',
+            textAlign: 'center',
+            opacity: 0,
+            animation: 'fadeIn 0.5s forwards',
+            '@keyframes fadeIn': {
+              from: { opacity: 0, transform: 'translateY(20px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <ClipboardMinus sx={{ fontSize: isMobile ? 20 : 24 }} />
+            <Typography
+              variant={isMobile ? 'h6' : 'h5'}
+              fontWeight={600}
+              sx={{ fontSize: isMobile ? '1.2rem' : '1.5rem' }}
+            >
+              Create Master Report
+            </Typography>
+          </Box>
+          
+        </Paper>
+          <form onSubmit={handleSubmit}>
             <TextField
-              label="Name"
-              name="name"
-              value={formData.pointOfContact.name}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Role"
-              name="role"
-              value={formData.pointOfContact.role}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Email"
-              name="email"
-              value={formData.pointOfContact.email}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Contact"
-              name="contact"
-              value={formData.pointOfContact.contact}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-            />
-            <TextField
-              label="Details of Assessment day wise:"
-              name="test_details"
-              value={formData.pointOfContact.test_details}
+              label="Title"
+              name="title"
+              value={formData.title}
               onChange={handleChange}
               fullWidth
               multiline
               rows={3}
               margin="normal"
-              helperText="Enter each test item on a new line for automatic numbering"
+              sx={styles.textField}
+              aria-label="Training Title"
             />
             <TextField
-            label="Top performers"
-            name="student_ranking"
-            value={formData.student_ranking}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            rows={3}
-            margin="normal"
-            helperText="Enter each scope item on a new line for automatic numbering"
-          />
-          </Box>
-         
-          <Typography variant="h6" mt={3} mb={1}>
-            Expert Details
-          </Typography>
-          {formData.expertDetails.map((expert, index) => (
-            <Box
-              key={index}
-              sx={{
-                pl: 2,
-                pr: 2,
-                pb: 2,
-                mb: 2,
-                border: "1px solid #e0e0e0",
-                borderRadius: 1,
-              }}
+              label="Module ID"
+              name="mod_id"
+              value={formData.mod_id}
+              onChange={handleChange}
+              fullWidth
+              required
+              margin="normal"
+              sx={styles.textField}
+              aria-label="Module ID"
+            />
+            <TextField
+              label="POC ID"
+              name="mod_poc_id"
+              value={formData.mod_poc_id}
+              onChange={handleChange}
+              fullWidth
+              required
+              margin="normal"
+              sx={styles.textField}
+              aria-label="POC ID"
+            />
+            <Button
+              variant="outlined"
+              onClick={fetchDetails}
+              fullWidth
+              sx={{ ...styles.outlinedButton, mt: 1, mb: 2 }}
+              aria-label="Fetch Details"
             >
+              Fetch Details
+            </Button>
+            <TextField
+              label="Schedule"
+              name="schedule"
+              value={formData.schedule}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+              sx={styles.textField}
+              aria-label="Schedule"
+            />
+            <TextField
+              label="Execution Dates"
+              name="executiondates"
+              value={formData.executiondates}
+              onChange={handleChange}
+              fullWidth
+              margin="normal"
+              sx={styles.textField}
+              aria-label="Execution Dates"
+            />
+            <TextField
+              label="Background"
+              name="background"
+              value={formData.background}
+              onChange={handleChange}
+              fullWidth
+              multiline
+              rows={3}
+              margin="normal"
+              sx={styles.textField}
+              aria-label="Background"
+            />
+            <TextField
+              label="Scope of the Training"
+              name="scopeOfTheTraining"
+              value={formData.scopeOfTheTraining}
+              onChange={handleChange}
+              fullWidth
+              multiline
+              rows={3}
+              margin="normal"
+              helperText="Enter each scope item on a new line for automatic numbering"
+              sx={styles.textField}
+              aria-label="Scope of the Training"
+            />
+            <TextField
+              label="Total Strength"
+              name="totalStrength"
+              value={formData.totalStrength}
+              onChange={handleChange}
+              fullWidth
+              type="number"
+              margin="normal"
+              sx={styles.textField}
+              aria-label="Total Strength"
+            />
+            <Typography variant="h6" sx={styles.subtitle}>
+              Point of Contact Details
+            </Typography>
+            <Box sx={styles.sectionBox}>
               <TextField
                 label="Name"
-                value={expert.name}
-                onChange={(e) =>
-                  handleChange(e, index, "name", "expertDetails")
-                }
+                name="name"
+                value={formData.pointOfContact.name}
+                onChange={handleChange}
                 fullWidth
                 margin="normal"
+                sx={styles.textField}
+                aria-label="POC Name"
               />
               <TextField
                 label="Role"
-                value={expert.role}
-                onChange={(e) =>
-                  handleChange(e, index, "role", "expertDetails")
-                }
+                name="role"
+                value={formData.pointOfContact.role}
+                onChange={handleChange}
                 fullWidth
                 margin="normal"
+                sx={styles.textField}
+                aria-label="POC Role"
               />
               <TextField
                 label="Email"
-                value={expert.email}
-                onChange={(e) =>
-                  handleChange(e, index, "email", "expertDetails")
-                }
+                name="email"
+                value={formData.pointOfContact.email}
+                onChange={handleChange}
                 fullWidth
                 margin="normal"
+                sx={styles.textField}
+                aria-label="POC Email"
               />
               <TextField
-                select
-                label="Company"
-                value={expert.company}
-                onChange={(e) =>
-                  handleChange(e, index, "company", "expertDetails")
-                }
+                label="Contact"
+                name="contact"
+                value={formData.pointOfContact.contact}
+                onChange={handleChange}
                 fullWidth
                 margin="normal"
-              >
-                {companyOptions.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </TextField>
+                sx={styles.textField}
+                aria-label="POC Contact"
+              />
               <TextField
-                label="Address"
-                name="address"
-                value={formData.address}
+                label="Details of Assessment day wise"
+                name="test_details"
+                value={formData.pointOfContact.test_details}
                 onChange={handleChange}
                 fullWidth
                 multiline
                 rows={3}
                 margin="normal"
-                helperText="Enter each address line separately for proper formatting"
-              />
-            </Box>
-          ))}
-          <Typography variant="h6" mt={3} mb={1}>
-            Daily Summary
-            <IconButton color="primary" onClick={addSummaryField}>
-              <AddIcon />
-            </IconButton>
-          </Typography>
-          {formData.pointOfContact.summary.map((item, index) => (
-            <Box
-              key={index}
-              sx={{
-                pl: 2,
-                pr: 2,
-                pb: 2,
-                mb: 2,
-                border: "1px solid #e0e0e0",
-                borderRadius: 1,
-              }}
-            >
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography variant="subtitle1">Day {index + 1}</Typography>
-                <IconButton
-                  color="error"
-                  onClick={() => deleteSummaryField(index)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-              <TextField
-                label="Day"
-                value={item.day}
-                onChange={(e) => handleChange(e, index, "day", "summary")}
-                fullWidth
-                margin="normal"
+                helperText="Enter each test item on a new line for automatic numbering"
+                sx={styles.textField}
+                aria-label="Assessment Details"
               />
               <TextField
-                label="Topics Covered"
-                value={item.topicsCovered}
-                onChange={(e) =>
-                  handleChange(e, index, "topicsCovered", "summary")
-                }
-                fullWidth
-                multiline
-                rows={2}
-                margin="normal"
-              />
-              <TextField
-                label="Technical Tasks Performed"
-                value={item.technicalTasksPerformed}
-                onChange={(e) =>
-                  handleChange(e, index, "technicalTasksPerformed", "summary")
-                }
+                label="Top performers"
+                name="student_ranking"
+                value={formData.student_ranking}
+                onChange={handleChange}
                 fullWidth
                 multiline
                 rows={3}
                 margin="normal"
-                helperText="Enter each task on a new line for automatic bullet points"
-              />
-              <TextField
-                label="Git Link"
-                value={item.gitLink}
-                onChange={(e) => handleChange(e, index, "gitLink", "summary")}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Attendance Present (comma separated)"
-                value={item.attendancePresent}
-                onChange={(e) =>
-                  handleChange(e, index, "attendancePresent", "summary")
-                }
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Attendance Absent (comma separated)"
-                value={item.attendanceAbsent}
-                onChange={(e) =>
-                  handleChange(e, index, "attendanceAbsent", "summary")
-                }
-                fullWidth
-                margin="normal"
+                helperText="Enter each scope item on a new line for automatic numbering"
+                sx={styles.textField}
+                aria-label="Top Performers"
               />
             </Box>
-          ))}
-          <Typography variant="h6" mt={3} mb={1}>
-            Attachments
-          </Typography>
-          <Box
-            sx={{
-              mb: 3,
-              pl: 2,
-              pr: 2,
-              pb: 2,
-              border: "1px solid #e0e0e0",
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="subtitle1" mb={1}>
-              Event Photos (PDFs and Images)
+            <Typography variant="h6" sx={styles.subtitle}>
+              Expert Details
             </Typography>
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={<AddIcon />}
-              sx={{ mb: 1 }}
-            >
-              Add Files
-              <input
-                type="file"
-                accept="application/pdf,image/*"
-                multiple
-                hidden
-                onChange={(e) => handleFileUpload(e, "eventPhotos")}
-              />
-            </Button>
-            {renderFileList("eventPhotos", "Event Photos")}
-          </Box>
-          <Box
-            sx={{
-              mb: 3,
-              pl: 2,
-              pr: 2,
-              pb: 2,
-              border: "1px solid #e0e0e0",
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="subtitle1" mb={1}>
-              Attendance Report with Graph Chart
+            {formData.expertDetails.map((expert, index) => (
+              <Box key={index} sx={styles.sectionBox}>
+                <TextField
+                  label="Name"
+                  value={expert.name}
+                  onChange={(e) => handleChange(e, index, "name", "expertDetails")}
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Expert ${index + 1} Name`}
+                />
+                <TextField
+                  label="Role"
+                  value={expert.role}
+                  onChange={(e) => handleChange(e, index, "role", "expertDetails")}
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Expert ${index + 1} Role`}
+                />
+                <TextField
+                  label="Email"
+                  value={expert.email}
+                  onChange={(e) => handleChange(e, index, "email", "expertDetails")}
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Expert ${index + 1} Email`}
+                />
+                <TextField
+                  select
+                  label="Company"
+                  value={expert.company}
+                  onChange={(e) => handleChange(e, index, "company", "expertDetails")}
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Expert ${index + 1} Company`}
+                >
+                  {companyOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  margin="normal"
+                  helperText="Enter each address line separately for proper formatting"
+                  sx={styles.textField}
+                  aria-label="Address"
+                />
+              </Box>
+            ))}
+            <Typography variant="h6" sx={styles.subtitle}>
+              Daily Summary
+              <IconButton
+                color="primary"
+                onClick={addSummaryField}
+                aria-label="Add Daily Summary"
+              >
+                <AddIcon />
+              </IconButton>
             </Typography>
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={<AddIcon />}
-              sx={{ mb: 1 }}
-            >
-              Add Files
-              <input
-                type="file"
-                accept="application/pdf"
-                multiple
-                hidden
-                onChange={(e) => handleFileUpload(e, "attendanceReport")}
-              />
-            </Button>
-            {renderFileList("attendanceReport", "Attendance Report")}
-          </Box>
-          <Box
-            sx={{
-              mb: 3,
-              pl: 2,
-              pr: 2,
-              pb: 2,
-              border: "1px solid #e0e0e0",
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="subtitle1" mb={1}>
-              Statistics of Each Day in Pie Chart
+            {formData.pointOfContact.summary.map((item, index) => (
+              <Box key={index} sx={styles.sectionBox}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Typography variant="subtitle1" sx={{ color: '#0c83c8' }}>
+                    Day {index + 1}
+                  </Typography>
+                  <IconButton
+                    color="error"
+                    onClick={() => deleteSummaryField(index)}
+                    aria-label={`Delete Day ${index + 1} Summary`}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+                <TextField
+                  label="Day"
+                  value={item.day}
+                  onChange={(e) => handleChange(e, index, "day", "summary")}
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Day ${index + 1}`}
+                />
+                <TextField
+                  label="Topics Covered"
+                  value={item.topicsCovered}
+                  onChange={(e) =>
+                    handleChange(e, index, "topicsCovered", "summary")
+                  }
+                  fullWidth
+                  multiline
+                  rows={2}
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Day ${index + 1} Topics Covered`}
+                />
+                <TextField
+                  label="Technical Tasks Performed"
+                  value={item.technicalTasksPerformed}
+                  onChange={(e) =>
+                    handleChange(e, index, "technicalTasksPerformed", "summary")
+                  }
+                  fullWidth
+                  multiline
+                  rows={3}
+                  margin="normal"
+                  helperText="Enter each task on a new line for automatic bullet points"
+                  sx={styles.textField}
+                  aria-label={`Day ${index + 1} Technical Tasks`}
+                />
+                <TextField
+                  label="Git Link"
+                  value={item.gitLink}
+                  onChange={(e) => handleChange(e, index, "gitLink", "summary")}
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Day ${index + 1} Git Link`}
+                />
+                <TextField
+                  label="Attendance Present (comma separated)"
+                  value={item.attendancePresent}
+                  onChange={(e) =>
+                    handleChange(e, index, "attendancePresent", "summary")
+                  }
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Day ${index + 1} Attendance Present`}
+                />
+                <TextField
+                  label="Attendance Absent (comma separated)"
+                  value={item.attendanceAbsent}
+                  onChange={(e) =>
+                    handleChange(e, index, "attendanceAbsent", "summary")
+                  }
+                  fullWidth
+                  margin="normal"
+                  sx={styles.textField}
+                  aria-label={`Day ${index + 1} Attendance Absent`}
+                />
+              </Box>
+            ))}
+            <Typography variant="h6" sx={styles.subtitle}>
+              Attachments
             </Typography>
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={<AddIcon />}
-              sx={{ mb: 1 }}
-            >
-              Add Files
-              <input
-                type="file"
-                accept="application/pdf"
-                multiple
-                hidden
-                onChange={(e) => handleFileUpload(e, "statisticsChart")}
-              />
-            </Button>
-            {renderFileList("statisticsChart", "Statistics Chart")}
-          </Box>
-          <Box
-            sx={{
-              mb: 3,
-              pl: 2,
-              pr: 2,
-              pb: 2,
-              border: "1px solid #e0e0e0",
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="subtitle1" mb={1}>
-              Individual's Progress in Each Day as Grid
-            </Typography>
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={<AddIcon />}
-              sx={{ mb: 1 }}
-            >
-              Add Files
-              <input
-                type="file"
-                accept="application/pdf"
-                multiple
-                hidden
-                onChange={(e) => handleFileUpload(e, "individualProgress")}
-              />
-            </Button>
-            {renderFileList("individualProgress", "Individual Progress")}
-          </Box>
-          <Box
-            sx={{
-              mb: 3,
-              pl: 2,
-              pr: 2,
-              pb: 2,
-              border: "1px solid #e0e0e0",
-              borderRadius: 1,
-            }}
-          >
-            <Typography variant="subtitle1" mb={1}>
-              Overall Column Chart for Total Test Mark
-            </Typography>
-            <Button
-              variant="contained"
-              component="label"
-              startIcon={<AddIcon />}
-              sx={{ mb: 1 }}
-            >
-              Add Files
-              <input
-                type="file"
-                accept="application/pdf"
-                multiple
-                hidden
-                onChange={(e) => handleFileUpload(e, "overallColumnChart")}
-              />
-            </Button>
-            {renderFileList("overallColumnChart", "Overall Column Chart")}
-          </Box>
-          <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-            >
-              Generate Report
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              fullWidth
-              onClick={generatePDF}
-              startIcon={generatingPdf ? null : <AddIcon />}
-            >
-              {generatingPdf ? "Generating PDF..." : "Create Master PDF"}
-            </Button>
-          </Box>
-          {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
-          )}
-          {response && (
-            <Typography color="success" sx={{ mt: 2 }}>
-              Report Generated: {response.title}
-            </Typography>
-          )}
-        </form>
-      </Paper>
-    </Box>
+            <Box sx={styles.sectionBox}>
+              <Typography variant="subtitle1" sx={{ color: '#0c83c8', mb: 1 }}>
+                Event Photos (PDFs and Images)
+              </Typography>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<AddIcon />}
+                sx={{ ...styles.button, mb: 1 }}
+                aria-label="Add Event Photos"
+              >
+                Add Files
+                <input
+                  type="file"
+                  accept="application/pdf,image/*"
+                  multiple
+                  hidden
+                  onChange={(e) => handleFileUpload(e, "eventPhotos")}
+                />
+              </Button>
+              {renderFileList("eventPhotos", "Event Photos")}
+            </Box>
+            <Box sx={styles.sectionBox}>
+              <Typography variant="subtitle1" sx={{ color: '#0c83c8', mb: 1 }}>
+                Attendance Report with Graph Chart
+              </Typography>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<AddIcon />}
+                sx={{ ...styles.button, mb: 1 }}
+                aria-label="Add Attendance Report"
+              >
+                Add Files
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  hidden
+                  onChange={(e) => handleFileUpload(e, "attendanceReport")}
+                />
+              </Button>
+              {renderFileList("attendanceReport", "Attendance Report")}
+            </Box>
+            <Box sx={styles.sectionBox}>
+              <Typography variant="subtitle1" sx={{ color: '#0c83c8', mb: 1 }}>
+                Statistics of Each Day in Pie Chart
+              </Typography>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<AddIcon />}
+                sx={{ ...styles.button, mb: 1 }}
+                aria-label="Add Statistics Chart"
+              >
+                Add Files
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  hidden
+                  onChange={(e) => handleFileUpload(e, "statisticsChart")}
+                />
+              </Button>
+              {renderFileList("statisticsChart", "Statistics Chart")}
+            </Box>
+            <Box sx={styles.sectionBox}>
+              <Typography variant="subtitle1" sx={{ color: '#0c83c8', mb: 1 }}>
+                Individual's Progress in Each Day as Grid
+              </Typography>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<AddIcon />}
+                sx={{ ...styles.button, mb: 1 }}
+                aria-label="Add Individual Progress"
+              >
+                Add Files
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  hidden
+                  onChange={(e) => handleFileUpload(e, "individualProgress")}
+                />
+              </Button>
+              {renderFileList("individualProgress", "Individual Progress")}
+            </Box>
+            <Box sx={styles.sectionBox}>
+              <Typography variant="subtitle1" sx={{ color: '#0c83c8', mb: 1 }}>
+                Overall Column Chart for Total Test Mark
+              </Typography>
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<AddIcon />}
+                sx={{ ...styles.button, mb: 1 }}
+                aria-label="Add Overall Column Chart"
+              >
+                Add Files
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  hidden
+                  onChange={(e) => handleFileUpload(e, "overallColumnChart")}
+                />
+              </Button>
+              {renderFileList("overallColumnChart", "Overall Column Chart")}
+            </Box>
+            <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                sx={styles.button}
+                fullWidth
+                aria-label="Generate Report"
+              >
+                Generate Report
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  ...styles.button,
+                  background: generatingPdf
+                    ? '#b0bec5'
+                    : 'linear-gradient(90deg, #fc7a46, #0c83c8)',
+                  '&:hover': {
+                    background: generatingPdf
+                      ? '#b0bec5'
+                      : 'linear-gradient(90deg, #0c83c8, #fc7a46)',
+                  },
+                }}
+                fullWidth
+                onClick={generatePDF}
+                startIcon={generatingPdf ? null : <AddIcon />}
+                disabled={generatingPdf}
+                aria-label="Create Master PDF"
+              >
+                {generatingPdf ? 'Generating PDF...' : 'Create Master PDF'}
+              </Button>
+            </Box>
+            {error && (
+              <Typography sx={styles.errorText}>
+                {error}
+              </Typography>
+            )}
+            {response && (
+              <Typography sx={styles.successText}>
+                Report Generated: {response.title}
+              </Typography>
+            )}
+          </form>
+        </Paper>
+      </Box>
+    </>
   );
 };
 
